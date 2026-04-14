@@ -196,3 +196,7 @@ Bot verifies on startup:
 **Version:** 1.0.0 (Complete Migration)
 **Last Updated:** March 26, 2026
 **Railway Optimized** ✅
+
+
+  ## Monitoring
+  Bot includes real-time monitoring capabilities.
