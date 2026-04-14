@@ -1,4 +1,4 @@
-# Binance Futures Martingale Trading Bot - Railway Ready
+  # Binance Trading Bot - Professional Edition
 
 Complete automated trading bot for Binance Futures with martingale position sizing, time-based exits, and intelligent signal scoring.
 
