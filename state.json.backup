@@ -1,0 +1,17 @@
+{
+  "level": 5,
+  "in_position": false,
+  "current_symbol": null,
+  "current_direction": null,
+  "entry_price": null,
+  "entry_quantity": null,
+  "current_size_usd": 0.0,
+  "entry_candle_time": null,
+  "last_max_loss_time": 0,
+  "cooldown_blacklist": {
+    "SIGNUSDT": 1776172203.424384
+  },
+  "max_adverse_excursion_pct": 0.0,
+  "mae_candle": 0,
+  "saved_at": "2026-04-14T12:50:03.424879"
+}
