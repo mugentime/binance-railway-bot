@@ -191,7 +191,8 @@ Bot verifies on startup:
 - Enable IP whitelist if possible
 - Monitor for unauthorized access
 
----
+--- ## Logging
+  Comprehensive logging system for tracking all bot activities.
 
 **Version:** 1.0.0 (Complete Migration)
 **Last Updated:** March 26, 2026
