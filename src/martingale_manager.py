@@ -79,17 +79,17 @@ class MartingaleManager:
 
     def position_size_usd(self) -> float:
         """Calculate notional position size for current level"""
-        return self.base_size_usd() * (1.5 ** self.level) * config.LEVERAGE
+        return self.base_size_usd() * (3.0 ** self.level) * config.LEVERAGE
 
     def margin_required(self) -> float:
         """Calculate margin required for current level"""
-        return self.base_size_usd() * (1.5 ** self.level)
+        return self.base_size_usd() * (3.0 ** self.level)
 
     def total_chain_margin(self) -> float:
         """Calculate total margin for full Martingale chain"""
         # Geometric series: sum = a * (r^n - 1) / (r - 1)
-        # For 1.5x multiplier from level 0 to MAX_LEVEL
-        multiplier = 1.5
+        # For 3.0x multiplier from level 0 to MAX_LEVEL
+        multiplier = 3.0
         base = self.base_size_usd()
         return base * ((multiplier ** (config.MAX_LEVEL + 1)) - 1) / (multiplier - 1)
 

@@ -21,7 +21,7 @@ BINANCE_BASE_URL = "https://fapi.binance.com"
 # net_loss = 0.70% + 0.10% = 0.80%  ✓ symmetric
 TAKER_FEE = 0.0005            # 0.05%
 MAKER_FEE = 0.0002            # 0.02%
-TP_PCT = 0.020                # 2.0% gross take profit (widened for inverted momentum)
+TP_PCT = 0.007                # 0.7% gross take profit
 SL_PCT = 0.04                 # 4.0% price-based stop loss (prevents -8% catastrophes)
 
 # Strategy mode
@@ -34,11 +34,11 @@ MAX_LEVEL = 10                 # 3 levels total (0-2). Cumul margin = $14 of $30
 LEVERAGE = 20                 # 20x leverage
 COOLDOWN_AFTER_MAX_LOSS = 0  # 1 hour cooldown after blowing a full chain
 DAILY_LOSS_LIMIT_USD = 1000.0   # Effectively disabled - high limit
-MAX_HOLD_CANDLES = 54         # Maximum candles to hold position before timeout close (4.5 hours at 5m)
+MAX_HOLD_CANDLES = 54         # Maximum candles to hold position before timeout close (2.25 hours at 2.5m)
 
 # Scanner parameters
-SCAN_INTERVAL_SECS = 300      # 5 minutes (300 seconds)
-KLINE_INTERVAL = "5m"        # 15 minute candles (changed from 30m)
+SCAN_INTERVAL_SECS = 150      # 2.5 minutes (150 seconds)
+KLINE_INTERVAL = "5m"        # 5 minute candles
 KLINE_LIMIT = 50              # Candles to fetch per pair
 MIN_24H_VOLUME_USD = 10_000_000  # $10M+ required to filter out low-liquidity meme coins
 LOW_VOLUME_THRESHOLD = 500_000    # $500k - if 24h volume below this, widen SL by 1.5x
@@ -53,7 +53,7 @@ QUOTE_ASSET = "USDT"
 
 # Cooldown blacklist parameters
 COOLDOWN_CANDLES = 4          # Number of candles to block a pair after loss
-COOLDOWN_DURATION_SECS = COOLDOWN_CANDLES * SCAN_INTERVAL_SECS  # 4 * 10sec = 40 seconds
+COOLDOWN_DURATION_SECS = COOLDOWN_CANDLES * SCAN_INTERVAL_SECS  # 4 * 150sec = 600 seconds (10 min)
 
 # SMA Trend Filter
 SMA_PERIOD = 50                  # 50-period SMA for trend detection
