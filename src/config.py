@@ -17,11 +17,11 @@ BINANCE_BASE_URL = "https://fapi.binance.com"
 # Entry: MARKET (taker 0.05%)
 # TP exit: LIMIT (maker 0.02%) → win-side fees = 0.07%
 # SL exit: STOP_MARKET (taker 0.05%) → loss-side fees = 0.10%
-# net_win = 0.87% - 0.07% = 0.80%
-# net_loss = 0.70% + 0.10% = 0.80%  ✓ symmetric
+# net_win = 0.4% - 0.07% = 0.33%
+# net_loss = 0.70% + 0.10% = 0.80%
 TAKER_FEE = 0.0005            # 0.05%
 MAKER_FEE = 0.0002            # 0.02%
-TP_PCT = 0.007                # 0.7% gross take profit
+TP_PCT = 0.004                # 0.4% gross take profit
 SL_PCT = 0.04                 # 4.0% price-based stop loss (prevents -8% catastrophes)
 
 # Strategy mode
@@ -30,9 +30,12 @@ SIGNAL_DIRECTION = "inverted"  # "normal" or "inverted" - oversold → SHORT, ov
 
 # Martingale parameters
 BASE_SIZE_PCT = 0.03          # 3% of account balance per trade at level 0 (dynamic sizing)
-MAX_LEVEL = 10                 # 3 levels total (0-2). Cumul margin = $14 of $30 account — fits within chain margin
+MARTINGALE_MULTIPLIER = 1.5   # Position size multiplier per level (1.5x = 50% increase)
+MAX_LEVEL = 3                 # CRITICAL: Max 3 levels (0-3) to prevent account blowouts
+                              # Level 3 = 3% × (1.5^3) × 20x = 202% of account max
 LEVERAGE = 20                 # 20x leverage
 COOLDOWN_AFTER_MAX_LOSS = 0  # 1 hour cooldown after blowing a full chain
+MAX_POSITION_PCT = 0.25       # EMERGENCY BRAKE: Never risk more than 25% of account in one position
 DAILY_LOSS_LIMIT_USD = 1000.0   # Effectively disabled - high limit
 MAX_HOLD_CANDLES = 54         # Maximum candles to hold position before timeout close (2.25 hours at 2.5m)
 

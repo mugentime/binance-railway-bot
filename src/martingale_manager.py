@@ -50,6 +50,13 @@ class MartingaleManager:
         # Cooldown blacklist - {symbol: cooldown_expiry_timestamp}
         self.cooldown_blacklist: Dict[str, float] = {}
 
+        # Consecutive loss tracking for regime switching
+        self.consecutive_losses: int = 0
+        self.regime_flipped: bool = False  # True when regime is inverted
+
+        # Chain PnL tracking - cumulative profit/loss across current chain
+        self.chain_pnl_history: List[float] = []  # List of net PnL for each trade in current chain
+
         # Dynamic sizing - balance at chain start
         self.chain_start_balance: float = 0.0
         self.executor: Optional['OrderExecutor'] = None
@@ -78,19 +85,35 @@ class MartingaleManager:
         return self.chain_start_balance * config.BASE_SIZE_PCT
 
     def position_size_usd(self) -> float:
-        """Calculate notional position size for current level"""
-        return self.base_size_usd() * (3.0 ** self.level) * config.LEVERAGE
+        """
+        Calculate notional position size for current level with EMERGENCY BRAKE
+        Uses configurable multiplier and enforces maximum position size cap
+        """
+        calculated_size = self.base_size_usd() * (config.MARTINGALE_MULTIPLIER ** self.level) * config.LEVERAGE
+
+        # EMERGENCY BRAKE: Cap position at MAX_POSITION_PCT of account
+        max_allowed = self.chain_start_balance * config.MAX_POSITION_PCT * config.LEVERAGE
+
+        if calculated_size > max_allowed:
+            log(f"🚨 EMERGENCY BRAKE: Position size ${calculated_size:.2f} exceeds maximum ${max_allowed:.2f} "
+                f"({config.MAX_POSITION_PCT*100:.0f}% of account) - CAPPING", "warning")
+            return max_allowed
+
+        return calculated_size
 
     def margin_required(self) -> float:
         """Calculate margin required for current level"""
-        return self.base_size_usd() * (3.0 ** self.level)
+        return self.base_size_usd() * (config.MARTINGALE_MULTIPLIER ** self.level)
 
     def total_chain_margin(self) -> float:
         """Calculate total margin for full Martingale chain"""
         # Geometric series: sum = a * (r^n - 1) / (r - 1)
-        # For 3.0x multiplier from level 0 to MAX_LEVEL
-        multiplier = 3.0
+        # From level 0 to MAX_LEVEL using configured multiplier
+        multiplier = config.MARTINGALE_MULTIPLIER
         base = self.base_size_usd()
+        if multiplier == 1.0:
+            # Special case: no growth
+            return base * (config.MAX_LEVEL + 1)
         return base * ((multiplier ** (config.MAX_LEVEL + 1)) - 1) / (multiplier - 1)
 
     def can_enter(self) -> bool:
@@ -171,16 +194,43 @@ class MartingaleManager:
         )
         self.history.append(trade)
 
+        # Reset consecutive loss counter on win
+        self.consecutive_losses = 0
+
+        # Add this trade's PnL to chain history
+        self.chain_pnl_history.append(net_pnl)
+
+        # Calculate cumulative PnL across entire chain
+        cumulative_pnl = sum(self.chain_pnl_history)
+
         # Calculate total candles held
         total_candles = self.candles_held(time.time())
 
         log(f"WIN: {self.current_symbol} {self.current_direction} @ {exit_price:.4f} | "
-            f"PnL={format_usd(net_pnl)} | Level={self.level} → 0")
+            f"PnL={format_usd(net_pnl)} | Cumulative chain PnL={format_usd(cumulative_pnl)}")
         log(f"MAE: {self.max_adverse_excursion_pct:.2f}% (candle {self.mae_candle} of {total_candles})")
 
-        # Reset to level 0 and clear cached balance (will be refetched on next cycle)
-        self.level = 0
-        self.chain_start_balance = 0.0
+        # Only reset to level 0 if ENTIRE CHAIN is profitable
+        if cumulative_pnl > 0:
+            log(f"CHAIN PROFITABLE: {format_usd(cumulative_pnl)} | Level={self.level} → 0")
+            self.level = 0
+            self.chain_start_balance = 0.0
+            self.chain_pnl_history = []  # Clear chain history
+        else:
+            # Chain still negative - increment level to increase position size
+            log(f"CHAIN STILL NEGATIVE: {format_usd(cumulative_pnl)} | Level={self.level} → {self.level + 1}", "warning")
+            self.level += 1
+
+            # Check if max level exceeded even after a win
+            if self.level > config.MAX_LEVEL:
+                log(f"MAX LEVEL HIT ({config.MAX_LEVEL}) after WIN - Chain still unprofitable | "
+                    f"Cumulative chain PnL={format_usd(cumulative_pnl)} | "
+                    f"Entering {config.COOLDOWN_AFTER_MAX_LOSS}s cooldown", "warning")
+                self.last_max_loss_time = time.time()
+                self.level = 0
+                self.chain_start_balance = 0.0
+                self.chain_pnl_history = []  # Reset chain on MAX_LEVEL
+
         self._clear_position()
 
     def close_loss(self, exit_price: float):
@@ -205,6 +255,12 @@ class MartingaleManager:
         )
         self.history.append(trade)
 
+        # Add this trade's PnL to chain history
+        self.chain_pnl_history.append(net_pnl)
+
+        # Calculate cumulative PnL across entire chain
+        cumulative_pnl = sum(self.chain_pnl_history)
+
         # Add symbol to cooldown blacklist
         cooldown_expiry = time.time() + config.COOLDOWN_DURATION_SECS
         self.cooldown_blacklist[self.current_symbol] = cooldown_expiry
@@ -213,7 +269,8 @@ class MartingaleManager:
         total_candles = self.candles_held(time.time())
 
         log(f"LOSS: {self.current_symbol} {self.current_direction} @ {exit_price:.4f} | "
-            f"PnL={format_usd(net_pnl)} | Level={self.level} → {self.level + 1}")
+            f"PnL={format_usd(net_pnl)} | Cumulative chain PnL={format_usd(cumulative_pnl)} | "
+            f"Level={self.level} → {self.level + 1}")
         log(f"MAE: {self.max_adverse_excursion_pct:.2f}% (candle {self.mae_candle} of {total_candles})")
         log(f"BLACKLIST: {self.current_symbol} added to cooldown for {config.COOLDOWN_CANDLES} candles "
             f"({config.COOLDOWN_DURATION_SECS/60:.0f} minutes)", "warning")
@@ -221,13 +278,28 @@ class MartingaleManager:
         # Increment level
         self.level += 1
 
+        # Track consecutive losses for regime switching
+        self.consecutive_losses += 1
+        log(f"Consecutive losses: {self.consecutive_losses}")
+
+        if self.consecutive_losses >= 3 and not self.regime_flipped:
+            self.regime_flipped = True
+            self.consecutive_losses = 0  # Reset counter after flip
+            log("🔄 REGIME FLIPPED: 3 consecutive losses - inverting strategy", "warning")
+        elif self.consecutive_losses >= 3 and self.regime_flipped:
+            self.regime_flipped = False
+            self.consecutive_losses = 0  # Reset counter after flip back
+            log("🔄 REGIME RESTORED: 3 consecutive losses - returning to normal", "warning")
+
         # Check if max level exceeded
         if self.level > config.MAX_LEVEL:
             log(f"MAX LEVEL HIT ({config.MAX_LEVEL}) - Full chain blowout | "
+                f"Cumulative chain PnL={format_usd(sum(self.chain_pnl_history))} | "
                 f"Entering {config.COOLDOWN_AFTER_MAX_LOSS}s cooldown", "warning")
             self.last_max_loss_time = time.time()
             self.level = 0
             self.chain_start_balance = 0.0  # Clear cached balance for next cycle
+            self.chain_pnl_history = []  # Clear chain history on MAX_LEVEL reset
 
         self._clear_position()
 
@@ -255,6 +327,7 @@ class MartingaleManager:
 
         self.level = 0
         self.chain_start_balance = 0.0
+        self.chain_pnl_history = []  # Clear chain PnL history
         self.last_max_loss_time = 0
         self._clear_position()
 

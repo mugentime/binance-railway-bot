@@ -422,43 +422,30 @@ class OrderExecutor:
             log(f"SL order skipped: SL_PCT={config.SL_PCT} (stop-loss disabled)")
             return
 
-        # STOP LOSS - STOP_LIMIT via Algo Order API (prevents excessive slippage)
-        # Set limit price 0.5% below trigger to cap worst-case fill price
+        # STOP LOSS - STOP_MARKET for GUARANTEED EXECUTION
+        # CRITICAL: Always executes at market when triggered, prevents catastrophic losses
         sl_side = "SELL" if direction == "LONG" else "BUY"
-
-        # Calculate limit price with buffer
-        if direction == "LONG":
-            # For LONG: limit price is below trigger (worse price)
-            sl_limit_price = sl_price_rounded * (1 - config.SL_LIMIT_BUFFER_PCT)
-        else:
-            # For SHORT: limit price is above trigger (worse price)
-            sl_limit_price = sl_price_rounded * (1 + config.SL_LIMIT_BUFFER_PCT)
-
-        # Round limit price to tick size
-        sl_limit_price = self._round_to_tick_size(sl_limit_price, tick_size)
-        sl_limit_str = f"{sl_limit_price:.{price_precision}f}"
 
         sl_params = {
             "symbol": symbol,
             "side": sl_side,
-            "algoType": "CONDITIONAL",
-            "type": "STOP",  # STOP order (STOP_LIMIT for algo orders)
-            "triggerPrice": sl_price_str,
-            "price": sl_limit_str,  # Limit price caps worst-case fill
+            "type": "STOP_MARKET",  # Market execution when triggered - GUARANTEED FILL
+            "stopPrice": sl_price_str,
             "quantity": quantity_str,
+            "reduceOnly": "true",
             "workingType": "MARK_PRICE",
         }
         sl_params = self._sign_params(sl_params)
 
         resp = self.client.post(
-            f"{config.BINANCE_BASE_URL}/fapi/v1/algoOrder",
+            f"{config.BINANCE_BASE_URL}/fapi/v1/order",
             params=sl_params,
             headers=self._headers()
         )
         resp.raise_for_status()
         sl_order = resp.json()
-        algo_id = sl_order.get("algoId")
-        log(f"SL STOP_LIMIT algo order placed: {symbol} trigger={sl_price_str} limit={sl_limit_str} (algoId: {algo_id})")
+        order_id = sl_order.get("orderId")
+        log(f"SL STOP_MARKET order placed: {symbol} trigger={sl_price_str} (orderId: {order_id})")
 
     def close_position_market(self, symbol: str, direction: str, quantity: float) -> dict:
         """
@@ -545,11 +532,10 @@ class OrderExecutor:
         return order
 
     def cancel_all_orders(self, symbol: str):
-        """Cancel all open orders for symbol (both regular and algo orders)"""
+        """Cancel all open orders for symbol (includes TP LIMIT and SL STOP_MARKET)"""
         params = {"symbol": symbol}
         params = self._sign_params(params)
 
-        # Cancel regular orders (TP LIMIT orders)
         try:
             resp = self.client.delete(
                 f"{config.BINANCE_BASE_URL}/fapi/v1/allOpenOrders",
@@ -557,25 +543,9 @@ class OrderExecutor:
                 headers=self._headers()
             )
             resp.raise_for_status()
-            log(f"Cancelled all regular orders for {symbol}")
+            log(f"Cancelled all orders for {symbol} (TP + SL)")
         except Exception as e:
-            log(f"Error cancelling regular orders for {symbol}: {e}", "warning")
-
-        # Cancel algo orders (SL STOP_MARKET orders)
-        try:
-            # Need to re-sign params for second request
-            params = {"symbol": symbol}
-            params = self._sign_params(params)
-
-            resp = self.client.delete(
-                f"{config.BINANCE_BASE_URL}/fapi/v1/algoOpenOrders",
-                params=params,
-                headers=self._headers()
-            )
-            resp.raise_for_status()
-            log(f"Cancelled all algo orders for {symbol}")
-        except Exception as e:
-            log(f"Error cancelling algo orders for {symbol}: {e}", "warning")
+            log(f"Error cancelling orders for {symbol}: {e}", "warning")
 
     def get_position(self, symbol: str) -> Optional[dict]:
         """Get position info for symbol"""
