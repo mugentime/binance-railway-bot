@@ -106,8 +106,83 @@ def verify_and_sync_state(executor: OrderExecutor, manager: MartingaleManager) -
         # Case 1: Bot thinks position open, but exchange says closed
         if manager.in_position and not all_open:
             log(f"AUTO-RECOVERY: Bot state says in position ({manager.current_symbol}), "
-                f"but no positions on exchange - clearing state", "warning")
-            manager._clear_position()
+                f"but no positions on exchange - determining outcome and recording trade", "warning")
+
+            # Cancel all orders (TP + SL) before clearing state to prevent orphaned orders
+            executor.cancel_all_orders(manager.current_symbol)
+
+            # Get actual fill price from last trade (not current market price!)
+            try:
+                # Fetch recent trades to get the actual exit fill price
+                import time as time_module
+                end_time = int(time_module.time() * 1000)
+                start_time = end_time - (3600 * 1000)  # Last 1 hour
+
+                params = {
+                    "symbol": manager.current_symbol,
+                    "startTime": start_time,
+                    "endTime": end_time,
+                    "limit": 50
+                }
+                params = executor._sign_params(params)
+
+                resp = executor.client.get(
+                    f"{config.BINANCE_BASE_URL}/fapi/v1/userTrades",
+                    params=params,
+                    headers=executor._headers()
+                )
+                resp.raise_for_status()
+                trades = resp.json()
+
+                if not trades:
+                    log(f"AUTO-RECOVERY: No recent trades found, using current market price as fallback", "warning")
+                    import httpx
+                    resp = httpx.get(
+                        f"{config.BINANCE_BASE_URL}/fapi/v1/ticker/price",
+                        params={"symbol": manager.current_symbol},
+                        timeout=10.0
+                    )
+                    resp.raise_for_status()
+                    exit_price = float(resp.json()["price"])
+                    actual_pnl = None
+                else:
+                    # Get the most recent fill (last trade that closed the position)
+                    last_trade = trades[-1]
+                    exit_price = float(last_trade['price'])
+                    actual_pnl = float(last_trade['realizedPnl'])
+
+                    log(f"AUTO-RECOVERY: Using actual fill price from trade @ {exit_price:.6f}, "
+                        f"Binance PnL: ${actual_pnl:.4f}")
+
+                # Determine if position was profitable
+                entry_price = manager.entry_price
+                direction = manager.current_direction
+
+                if direction == "LONG":
+                    was_profitable = exit_price > entry_price
+                else:  # SHORT
+                    was_profitable = exit_price < entry_price
+
+                # Check if TP was likely hit
+                tp_price = manager.tp_price()
+                tp_hit = False
+                if direction == "LONG":
+                    tp_hit = exit_price >= tp_price
+                else:  # SHORT
+                    tp_hit = exit_price <= tp_price
+
+                # Record the trade outcome using ACTUAL fill price
+                if tp_hit or was_profitable:
+                    log(f"AUTO-RECOVERY: Recording as WIN (price moved from {entry_price:.6f} to {exit_price:.6f})")
+                    manager.close_win(exit_price)
+                else:
+                    log(f"AUTO-RECOVERY: Recording as LOSS (price moved from {entry_price:.6f} to {exit_price:.6f})")
+                    manager.close_loss(exit_price)
+
+            except Exception as e:
+                log(f"AUTO-RECOVERY: Could not determine outcome, clearing state: {e}", "warning")
+                manager._clear_position()
+
             save_state(manager)
             return True
 
@@ -230,6 +305,9 @@ async def main_loop():
         manager.cooldown_blacklist = saved_state.get("cooldown_blacklist", {})
         manager.max_adverse_excursion_pct = saved_state.get("max_adverse_excursion_pct", 0.0)
         manager.mae_candle = saved_state.get("mae_candle", 0)
+        manager.consecutive_losses = saved_state.get("consecutive_losses", 0)
+        manager.regime_flipped = saved_state.get("regime_flipped", False)
+        manager.chain_pnl_history = saved_state.get("chain_pnl_history", [])
 
         log(f"State restored: level={manager.level}, in_position={manager.in_position}")
 
@@ -276,6 +354,20 @@ async def main_loop():
                 manager.entry_quantity = abs(float(position['positionAmt']))
                 manager.current_direction = "LONG" if float(position['positionAmt']) > 0 else "SHORT"
                 manager.entry_candle_time = time.time()  # Approximate
+
+            # CRITICAL: Verify and place missing SL after adopting position
+            if manager.in_position:
+                log(f"Verifying TP/SL orders for adopted position {manager.current_symbol}...")
+                sl_ok = executor.verify_and_place_missing_sl(
+                    symbol=manager.current_symbol,
+                    direction=manager.current_direction,
+                    tp_price=manager.tp_price(),
+                    sl_price=manager.sl_price(),
+                    quantity=manager.entry_quantity
+                )
+                if not sl_ok:
+                    log(f"CRITICAL: Could not place SL for adopted position {manager.current_symbol}!", "error")
+                    log(f"MANUAL INTERVENTION REQUIRED - Check position on Binance!", "error")
 
         # If in position, check if it's still open
         if manager.in_position:
@@ -403,6 +495,19 @@ async def main_loop():
                         f"Candles: {candles_held} | Unrealized PnL: {format_usd(unrealized_pnl)} | "
                         f"Drawdown: {current_drawdown_pct:.2f}% | MAE: {manager.max_adverse_excursion_pct:.2f}% @ candle {manager.mae_candle}")
 
+                    # CRITICAL: Verify SL exists every 5 candles (safety check)
+                    if candles_held % 5 == 0 and candles_held > 0:
+                        log(f"Periodic SL verification check (candle {candles_held})...")
+                        sl_ok = executor.verify_and_place_missing_sl(
+                            symbol=manager.current_symbol,
+                            direction=manager.current_direction,
+                            tp_price=manager.tp_price(),
+                            sl_price=manager.sl_price(),
+                            quantity=manager.entry_quantity
+                        )
+                        if not sl_ok:
+                            log(f"WARNING: SL verification failed for {manager.current_symbol}", "warning")
+
                     # Break-even protection: after 12 candles, close if negative
                     if candles_held >= 12 and unrealized_pnl < 0:
                         log(f"BREAK-EVEN PROTECTION: {candles_held} candles held, PnL negative "
@@ -468,7 +573,16 @@ async def main_loop():
 
             log("Scoring signals...")
             blacklisted = manager.get_blacklisted_symbols()
-            signals = scorer.score_all_pairs(pair_data, blacklisted, regime_data)
+
+            # Apply regime flip if triggered by consecutive losses
+            effective_regime = regime_data.copy()
+            if manager.regime_flipped:
+                # Invert the regime: trending ↔ ranging
+                original = effective_regime['regime']
+                effective_regime['regime'] = 'ranging' if original == 'trending' else 'trending'
+                log(f"REGIME OVERRIDE: {original} → {effective_regime['regime']} (flipped due to losses)")
+
+            signals = scorer.score_all_pairs(pair_data, blacklisted, effective_regime)
 
             # Filter by safety blocks
             if safety.block_longs:
@@ -550,13 +664,53 @@ async def main_loop():
                     adjusted_sl_price = base_sl_price
 
                 # Place TP/SL
-                executor.place_tp_sl_orders(
+                try:
+                    executor.place_tp_sl_orders(
+                        symbol=best.symbol,
+                        direction=best.direction,
+                        tp_price=manager.tp_price(),
+                        sl_price=adjusted_sl_price,
+                        quantity=entry_qty,
+                    )
+                except Exception as tp_sl_error:
+                    log(f"CRITICAL: TP/SL placement failed: {tp_sl_error}", "error")
+                    log(f"Position {best.symbol} may be UNPROTECTED - attempting recovery...", "error")
+
+                    # Attempt to verify and place missing SL
+                    sl_ok = executor.verify_and_place_missing_sl(
+                        symbol=best.symbol,
+                        direction=best.direction,
+                        tp_price=manager.tp_price(),
+                        sl_price=adjusted_sl_price,
+                        quantity=entry_qty
+                    )
+
+                    if not sl_ok:
+                        log(f"RECOVERY FAILED: Could not place SL after error - CLOSING POSITION", "error")
+                        # Close position immediately if we can't place SL
+                        try:
+                            executor.close_position_market(best.symbol, best.direction, entry_qty)
+                            manager._clear_position()
+                            save_state(manager)
+                            log(f"Position closed due to SL placement failure", "error")
+                            continue
+                        except Exception as close_error:
+                            log(f"CRITICAL: Failed to close unprotected position: {close_error}", "error")
+                            log(f"MANUAL INTERVENTION REQUIRED - Check position {best.symbol} on Binance!", "error")
+                            continue
+
+                # FINAL VERIFICATION: Ensure SL was placed successfully
+                log(f"Verifying TP/SL orders were placed successfully...")
+                sl_ok = executor.verify_and_place_missing_sl(
                     symbol=best.symbol,
                     direction=best.direction,
                     tp_price=manager.tp_price(),
                     sl_price=adjusted_sl_price,
-                    quantity=entry_qty,
+                    quantity=entry_qty
                 )
+
+                if not sl_ok:
+                    log(f"VERIFICATION WARNING: SL may not be active for {best.symbol}", "warning")
 
                 # Save state
                 save_state(manager)

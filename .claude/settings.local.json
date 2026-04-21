@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(tasklist:*)",
+      "Bash(wmic process:*)",
+      "Bash(findstr:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "binance",
+    "claude-flow",
+    "ruv-swarm",
+    "magicui",
+    "claude-code-mcp-enhanced"
+  ]
+}

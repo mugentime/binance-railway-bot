@@ -1,5 +1,5 @@
 {
-  "level": 5,
+  "level": 2,
   "in_position": false,
   "current_symbol": null,
   "current_direction": null,
@@ -7,11 +7,17 @@
   "entry_quantity": null,
   "current_size_usd": 0.0,
   "entry_candle_time": null,
-  "last_max_loss_time": 0,
+  "last_max_loss_time": 1776741003.3121972,
   "cooldown_blacklist": {
-    "SIGNUSDT": 1776172203.424384
+    "AAVEUSDT": 1776750003.1513844
   },
   "max_adverse_excursion_pct": 0.0,
   "mae_candle": 0,
-  "saved_at": "2026-04-14T12:50:03.424879"
+  "consecutive_losses": 1,
+  "regime_flipped": false,
+  "chain_pnl_history": [
+    -0.10067203864524296,
+    -0.07079048484919259
+  ],
+  "saved_at": "2026-04-21T05:30:03.152181"
 }

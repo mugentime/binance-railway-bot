@@ -17,12 +17,13 @@ BINANCE_BASE_URL = "https://fapi.binance.com"
 # Entry: MARKET (taker 0.05%)
 # TP exit: LIMIT (maker 0.02%) → win-side fees = 0.07%
 # SL exit: STOP_MARKET (taker 0.05%) → loss-side fees = 0.10%
-# net_win = 0.4% - 0.07% = 0.33%
-# net_loss = 0.70% + 0.10% = 0.80%
+# net_win = 10.0% - 0.07% = 9.93%
+# net_loss = 4.0% + 0.10% = 4.10%
+# Risk/Reward: 2.5:1 (excellent for martingale)
 TAKER_FEE = 0.0005            # 0.05%
 MAKER_FEE = 0.0002            # 0.02%
-TP_PCT = 0.004                # 0.4% gross take profit
-SL_PCT = 0.04                 # 4.0% price-based stop loss (prevents -8% catastrophes)
+TP_PCT = 0.10                 # 10.0% gross take profit
+SL_PCT = 0.04                 # 4.0% price-based stop loss (prevents catastrophes)
 
 # Strategy mode
 STRATEGY_MODE = "MEAN_REVERSION"  # "MEAN_REVERSION" or "TREND_FOLLOWING"

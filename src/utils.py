@@ -46,6 +46,9 @@ def save_state(manager, filepath="state.json"):
         "cooldown_blacklist": manager.cooldown_blacklist,
         "max_adverse_excursion_pct": manager.max_adverse_excursion_pct,
         "mae_candle": manager.mae_candle,
+        "consecutive_losses": manager.consecutive_losses,
+        "regime_flipped": manager.regime_flipped,
+        "chain_pnl_history": manager.chain_pnl_history,
         "saved_at": datetime.utcnow().isoformat(),
     }
 
