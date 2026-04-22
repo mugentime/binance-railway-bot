@@ -670,26 +670,37 @@ class OrderExecutor:
         resp.raise_for_status()
         return resp.json()
 
+    def get_algo_open_orders(self, symbol: str) -> list:
+        """Get all algo (conditional) open orders for symbol"""
+        params = {"symbol": symbol}
+        params = self._sign_params(params)
+
+        resp = self.client.get(
+            f"{config.BINANCE_BASE_URL}/fapi/v1/algoOpenOrders",
+            params=params,
+            headers=self._headers()
+        )
+        resp.raise_for_status()
+        return resp.json()
+
     def verify_and_place_missing_sl(self, symbol: str, direction: str, tp_price: float, sl_price: float, quantity: float) -> bool:
         """
         Verify if SL order exists, place it if missing
         Returns: True if SL exists or was successfully placed, False otherwise
         """
         try:
-            # Get all open orders for symbol
-            open_orders = self.get_open_orders(symbol)
+            # Get algo orders for symbol (SL orders are placed as algo orders)
+            algo_orders = self.get_algo_open_orders(symbol)
 
-            # Check for STOP_MARKET order (SL)
+            # Check for existing conditional STOP order (SL)
             has_sl = False
-            has_tp = False
 
-            for order in open_orders:
-                order_type = order.get('type', '')
-                if order_type in ['STOP_MARKET', 'STOP']:
+            for order in algo_orders:
+                order_type = order.get('algoType', '')
+                if order_type == 'CONDITIONAL':
                     has_sl = True
-                    log(f"✓ SL order exists: {symbol} @ {order.get('stopPrice', 'N/A')}")
-                elif order_type == 'LIMIT':
-                    has_tp = True
+                    log(f"✓ SL order exists: {symbol} @ {order.get('triggerPrice', 'N/A')} (algoId: {order.get('algoId', 'N/A')})")
+                    break
 
             if has_sl:
                 return True  # SL already exists
