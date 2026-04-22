@@ -32,8 +32,7 @@ SIGNAL_DIRECTION = "inverted"  # "normal" or "inverted" - oversold → SHORT, ov
 # Martingale parameters
 BASE_SIZE_PCT = 0.03          # 3% of account balance per trade at level 0 (dynamic sizing)
 MARTINGALE_MULTIPLIER = 1.5   # Position size multiplier per level (1.5x = 50% increase)
-MAX_LEVEL = 3                 # CRITICAL: Max 3 levels (0-3) to prevent account blowouts
-                              # Level 3 = 3% × (1.5^3) × 20x = 202% of account max
+MAX_LEVEL = 10                # Max 10 levels
 LEVERAGE = 20                 # 20x leverage
 COOLDOWN_AFTER_MAX_LOSS = 0  # 1 hour cooldown after blowing a full chain
 MAX_POSITION_PCT = 0.25       # EMERGENCY BRAKE: Never risk more than 25% of account in one position

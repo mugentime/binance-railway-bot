@@ -676,7 +676,7 @@ class OrderExecutor:
         params = self._sign_params(params)
 
         resp = self.client.get(
-            f"{config.BINANCE_BASE_URL}/fapi/v1/algoOpenOrders",
+            f"{config.BINANCE_BASE_URL}/fapi/v1/openAlgoOrders",
             params=params,
             headers=self._headers()
         )
