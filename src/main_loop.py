@@ -13,6 +13,7 @@ from signal_scorer import SignalScorer
 from martingale_manager import MartingaleManager
 from order_executor import OrderExecutor
 from safety_checks import SafetyChecker
+from volatility_tracker import VolatilityTracker
 import numpy as np
 
 def detect_market_regime(executor) -> dict:
@@ -283,6 +284,7 @@ async def main_loop():
     manager = MartingaleManager()
     executor = OrderExecutor()
     safety_checker = SafetyChecker()
+    volatility_tracker = VolatilityTracker(executor)
 
     # Set executor reference for dynamic balance fetching
     manager.set_executor(executor)
@@ -310,6 +312,10 @@ async def main_loop():
         manager.chain_pnl_history = saved_state.get("chain_pnl_history", [])
 
         log(f"State restored: level={manager.level}, in_position={manager.in_position}")
+
+        if manager.level > config.MAX_LEVEL:
+            log(f"WARNING: Loaded level={manager.level} exceeds MAX_LEVEL={config.MAX_LEVEL}. Resetting to 0.", "warning")
+            manager.level = 0
 
         if manager.cooldown_blacklist:
             log(f"Blacklist restored: {len(manager.cooldown_blacklist)} symbols on cooldown")
@@ -399,6 +405,12 @@ async def main_loop():
             except Exception as e:
                 log(f"Error checking position on startup: {e}", "error")
 
+    # Calculate initial volatility scores (7 days of 10%+ hourly moves)
+    log("")
+    all_symbols = await scanner.get_all_symbols()
+    volatility_tracker.calculate_volatility_scores(all_symbols)
+    log("")
+
     try:
         while True:
             # Wait for next candle
@@ -414,6 +426,12 @@ async def main_loop():
 
             # Clean expired blacklist entries
             manager.clean_expired_blacklist()
+
+            # Refresh volatility scores if needed (every 24 hours)
+            if volatility_tracker.should_refresh():
+                log("Refreshing volatility scores (24h elapsed)...")
+                all_symbols = await scanner.get_all_symbols()
+                volatility_tracker.calculate_volatility_scores(all_symbols)
 
             # If in position, check for timeout first
             if manager.in_position:
@@ -582,7 +600,7 @@ async def main_loop():
                 effective_regime['regime'] = 'ranging' if original == 'trending' else 'trending'
                 log(f"REGIME OVERRIDE: {original} → {effective_regime['regime']} (flipped due to losses)")
 
-            signals = scorer.score_all_pairs(pair_data, blacklisted, effective_regime)
+            signals = scorer.score_all_pairs(pair_data, blacklisted, effective_regime, volatility_tracker)
 
             # Filter by safety blocks
             if safety.block_longs:

@@ -74,6 +74,10 @@ WEIGHTS = {
 }
 ENTRY_THRESHOLD = 55.0        # Min composite score to enter (lowered for more signals)
 
+# Volatility bonus (10%+ hourly moves in last 7 days)
+VOLATILITY_WEIGHT = 0.3       # Multiplier for volatility score bonus
+VOLATILITY_REFRESH_HOURS = 24 # Refresh volatility scores every 24 hours
+
 # Z-score extreme filter
 FILTER_ZSCORE_EXTREME = True  # Skip entries where |Z| > threshold
 ZSCORE_EXTREME_THRESHOLD = 2.5  # Skip if absolute Z-score exceeds this value

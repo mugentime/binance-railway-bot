@@ -224,7 +224,7 @@ class SignalScorer:
         )
         return composite
 
-    def score_all_pairs(self, pair_data: Dict[str, dict], blacklisted_symbols: List[str] = None, regime_data: dict = None) -> List[SignalResult]:
+    def score_all_pairs(self, pair_data: Dict[str, dict], blacklisted_symbols: List[str] = None, regime_data: dict = None, volatility_tracker=None) -> List[SignalResult]:
         """
         Score all pairs for both LONG and SHORT
         Returns sorted list (highest score first), filtered by ENTRY_THRESHOLD
@@ -291,6 +291,11 @@ class SignalScorer:
                 long_composite = 0.0  # Zero out score
                 skipped_trend_filter.append(f"{symbol} LONG (slope={sma_slope_pct:.4f}%)")
 
+            # VOLATILITY BONUS: Apply multiplier based on historical 10%+ hourly moves
+            if volatility_tracker is not None and long_composite > 0:
+                vol_bonus = volatility_tracker.get_volatility_bonus(symbol)
+                long_composite = long_composite * (1 + vol_bonus)
+
             # Get actual direction (kept for backwards compatibility)
             actual_long_direction = "LONG"
 
@@ -332,6 +337,11 @@ class SignalScorer:
             if sma_slope_pct > config.SMA_SLOPE_THRESHOLD:
                 short_composite = 0.0  # Zero out score
                 skipped_trend_filter.append(f"{symbol} SHORT (slope={sma_slope_pct:.4f}%)")
+
+            # VOLATILITY BONUS: Apply multiplier based on historical 10%+ hourly moves
+            if volatility_tracker is not None and short_composite > 0:
+                vol_bonus = volatility_tracker.get_volatility_bonus(symbol)
+                short_composite = short_composite * (1 + vol_bonus)
 
             # Get actual direction (kept for backwards compatibility)
             actual_short_direction = "SHORT"
@@ -413,6 +423,12 @@ class SignalScorer:
 
         if signals:
             log(f"> ENTERING HIGHEST SCORE: {signals[0].symbol} {signals[0].direction} @ {signals[0].score:.2f}")
+            # Log volatility bonus if tracker is available
+            if volatility_tracker is not None:
+                vol_bonus = volatility_tracker.get_volatility_bonus(signals[0].symbol)
+                norm_score = volatility_tracker.get_normalized_score(signals[0].symbol)
+                raw_count = volatility_tracker.raw_scores.get(signals[0].symbol, 0)
+                log(f"  Volatility bonus: {vol_bonus*100:.1f}% (score: {norm_score:.3f}, {raw_count} hours with 10%+ moves)")
             if signals[0].score < 30:
                 log(f"  [!] WARNING: Score is weak (<30). Higher risk of loss.")
             elif signals[0].score < 45:
