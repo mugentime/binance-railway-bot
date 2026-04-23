@@ -77,6 +77,8 @@ ENTRY_THRESHOLD = 55.0        # Min composite score to enter (lowered for more s
 # Volatility bonus (10%+ hourly moves in last 7 days)
 VOLATILITY_WEIGHT = 0.3       # Multiplier for volatility score bonus
 VOLATILITY_REFRESH_HOURS = 24 # Refresh volatility scores every 24 hours
+MIN_VOLATILITY_INSTANCES = 50   # Exclude pairs with fewer than 50 ten-percent hourly moves in 7 days (too slow)
+MAX_VOLATILITY_INSTANCES = 2000 # Exclude pairs with more than 2000 instances (too chaotic, likely junk tokens)
 
 # Z-score extreme filter
 FILTER_ZSCORE_EXTREME = True  # Skip entries where |Z| > threshold

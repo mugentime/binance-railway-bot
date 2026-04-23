@@ -40,8 +40,8 @@ class OrderExecutor:
 
     def _sign_params(self, params: dict) -> dict:
         """Sign parameters with HMAC-SHA256"""
-        # Re-sync time if it's been more than 5 minutes (prevents drift)
-        if time.time() - self.last_sync_time > 300:  # 5 minutes
+        # Re-sync time if it's been more than 30 minutes (prevents drift)
+        if time.time() - self.last_sync_time > 1800:  # 30 minutes
             self._sync_server_time()
 
         # Use server-synced time

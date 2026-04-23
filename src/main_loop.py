@@ -419,6 +419,9 @@ async def main_loop():
             log("-"*80)
             log(f"CYCLE START | Level={manager.level} | In position={manager.in_position}")
 
+            # Sync time with Binance server to prevent timestamp drift
+            executor._sync_server_time()
+
             # CRITICAL: Verify state is synchronized with exchange
             if not verify_and_sync_state(executor, manager):
                 log("State verification failed - stopping bot for safety", "error")
@@ -589,6 +592,28 @@ async def main_loop():
             log("Scanning pairs...")
             pair_data = await scanner.scan_all_pairs()
 
+            # Filter by volatility band (exclude too slow/chaotic symbols)
+            original_count = len(pair_data)
+            original_symbols = set(pair_data.keys())
+            pair_data = {
+                symbol: data for symbol, data in pair_data.items()
+                if volatility_tracker.is_valid_symbol(symbol)
+            }
+            filtered_count = original_count - len(pair_data)
+
+            # DIAGNOSTIC: Show volatility filter impact
+            log("="*80)
+            log("VOLATILITY FILTER DIAGNOSTIC")
+            log(f"Total symbols scanned: {original_count}")
+            log(f"Symbols in tradeable pool (passed filter): {len(pair_data)}")
+            log(f"Symbols excluded by volatility filter: {filtered_count}")
+
+            if filtered_count > 0:
+                excluded_symbols = original_symbols - set(pair_data.keys())
+                excluded_list = sorted(list(excluded_symbols))[:10]  # Show first 10
+                log(f"Sample excluded symbols: {', '.join(excluded_list)}")
+            log("="*80)
+
             log("Scoring signals...")
             blacklisted = manager.get_blacklisted_symbols()
 
@@ -601,6 +626,34 @@ async def main_loop():
                 log(f"REGIME OVERRIDE: {original} → {effective_regime['regime']} (flipped due to losses)")
 
             signals = scorer.score_all_pairs(pair_data, blacklisted, effective_regime, volatility_tracker)
+
+            # DIAGNOSTIC: Show scoring results
+            log("="*80)
+            log("SCORING DIAGNOSTIC")
+            if signals:
+                top = signals[0]
+                log(f"TOP SIGNAL (from tradeable pool): {top.symbol} {top.direction} @ {top.score:.2f}")
+                log(f"  RSI: {top.rsi:.1f} | BB%B: {top.bb_pct_b:.2f} | Z-Score: {top.zscore:.2f}")
+                log(f"  Volume Ratio: {top.volume_ratio:.2f} | Spread: {top.spread_pct*100:.4f}%")
+
+                # Show volatility info for this symbol
+                vol_score = volatility_tracker.get_normalized_score(top.symbol)
+                vol_bonus = volatility_tracker.get_volatility_bonus(top.symbol)
+                raw_count = volatility_tracker.raw_scores.get(top.symbol, 0)
+                log(f"  Volatility: {raw_count} hours with 10%+ moves | norm_score={vol_score:.3f} | bonus={vol_bonus*100:.1f}%")
+
+                # Entry decision
+                if top.score >= config.ENTRY_THRESHOLD:
+                    log(f"  ✓ WILL ENTER: Score {top.score:.2f} >= threshold {config.ENTRY_THRESHOLD}")
+                else:
+                    log(f"  ✗ NO ENTRY: Score {top.score:.2f} < threshold {config.ENTRY_THRESHOLD}")
+            else:
+                log("NO SIGNALS - No symbols met the scoring threshold after all filters")
+
+            log(f"Total signals generated: {len(signals)}")
+            log(f"Entry threshold: {config.ENTRY_THRESHOLD}")
+            log(f"NOTE: Excluded symbols ({filtered_count}) are not scored, so we cannot compare their potential scores")
+            log("="*80)
 
             # Filter by safety blocks
             if safety.block_longs:
