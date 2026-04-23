@@ -98,38 +98,54 @@ class VolatilityTracker:
 
     def _count_10pct_moves(self, symbol: str, client: httpx.Client, days: int = 7) -> int:
         """
-        Count how many 1-hour candles had 10%+ price range (high-low)
-        Returns: count of qualifying hours
+        Count total instances of 10%+ moves using 1-minute klines with sliding 60-minute window
+        Returns: total number of 1-minute candles where the 60-minute range exceeded 10%
         """
         end_time = int(time.time() * 1000)
         start_time = end_time - (days * 24 * 60 * 60 * 1000)
 
         try:
-            params = {
-                "symbol": symbol,
-                "interval": "1h",
-                "startTime": start_time,
-                "endTime": end_time,
-                "limit": 1000  # 7 days = 168 hours, well under limit
-            }
+            # Fetch all 1-minute klines (may require multiple requests)
+            all_klines = []
+            current_start = start_time
 
-            resp = client.get(
-                f"{config.BINANCE_BASE_URL}/fapi/v1/klines",
-                params=params
-            )
-            resp.raise_for_status()
-            klines = resp.json()
+            while current_start < end_time:
+                params = {
+                    "symbol": symbol,
+                    "interval": "1m",
+                    "startTime": current_start,
+                    "endTime": end_time,
+                    "limit": 1500  # Max per request
+                }
 
-            if not klines:
+                resp = client.get(
+                    f"{config.BINANCE_BASE_URL}/fapi/v1/klines",
+                    params=params
+                )
+                resp.raise_for_status()
+                klines = resp.json()
+
+                if not klines:
+                    break
+
+                all_klines.extend(klines)
+                current_start = klines[-1][6] + 1  # Close time + 1ms
+
+            if len(all_klines) < 60:
                 return 0
 
+            # Sliding window of 60 candles (60 minutes)
             count = 0
-            for kline in klines:
-                high = float(kline[2])
-                low = float(kline[3])
+            for i in range(len(all_klines) - 59):
+                window = all_klines[i:i+60]
 
-                if low > 0:
-                    move_pct = ((high - low) / low) * 100
+                # Get high and low within this 60-minute window
+                window_high = max(float(k[2]) for k in window)  # High price
+                window_low = min(float(k[3]) for k in window)   # Low price
+
+                # Calculate percentage move
+                if window_low > 0:
+                    move_pct = ((window_high - window_low) / window_low) * 100
                     if move_pct >= 10.0:
                         count += 1
 
