@@ -100,59 +100,88 @@ class VolatilityTracker:
         """
         Count total instances of 10%+ moves using 1-minute klines with sliding 60-minute window
         Returns: total number of 1-minute candles where the 60-minute range exceeded 10%
+        Uses IDENTICAL logic to analyze_10pct_moves.py
         """
         end_time = int(time.time() * 1000)
         start_time = end_time - (days * 24 * 60 * 60 * 1000)
 
+        # Fetch all 1-minute klines (may require multiple requests)
+        all_klines = []
+        current_start = start_time
+        MAX_RETRIES = 3
+        RETRY_DELAY = 2
+
         try:
-            # Fetch all 1-minute klines (may require multiple requests)
-            all_klines = []
-            current_start = start_time
-
             while current_start < end_time:
-                params = {
-                    "symbol": symbol,
-                    "interval": "1m",
-                    "startTime": current_start,
-                    "endTime": end_time,
-                    "limit": 1500  # Max per request
-                }
+                for attempt in range(MAX_RETRIES):
+                    try:
+                        params = {
+                            "symbol": symbol,
+                            "interval": "1m",
+                            "startTime": current_start,
+                            "endTime": end_time,
+                            "limit": 1500  # Max per request
+                        }
 
-                resp = client.get(
-                    f"{config.BINANCE_BASE_URL}/fapi/v1/klines",
-                    params=params
-                )
-                resp.raise_for_status()
-                klines = resp.json()
+                        resp = client.get(
+                            f"{config.BINANCE_BASE_URL}/fapi/v1/klines",
+                            params=params
+                        )
+                        resp.raise_for_status()
+                        klines = resp.json()
 
-                if not klines:
-                    break
+                        if not klines:
+                            return self._calculate_instances(all_klines)
 
-                all_klines.extend(klines)
-                current_start = klines[-1][6] + 1  # Close time + 1ms
+                        all_klines.extend(klines)
 
-            if len(all_klines) < 60:
-                return 0
+                        # Update start time to last kline's close time + 1
+                        current_start = klines[-1][6] + 1  # Close time + 1ms
 
-            # Sliding window of 60 candles (60 minutes)
-            count = 0
-            for i in range(len(all_klines) - 59):
-                window = all_klines[i:i+60]
+                        # Rate limit protection
+                        time.sleep(0.15)
+                        break  # Success, exit retry loop
 
-                # Get high and low within this 60-minute window
-                window_high = max(float(k[2]) for k in window)  # High price
-                window_low = min(float(k[3]) for k in window)   # Low price
+                    except (httpx.TimeoutException, httpx.ConnectError, httpx.ReadTimeout) as e:
+                        if attempt < MAX_RETRIES - 1:
+                            wait_time = RETRY_DELAY * (attempt + 1)
+                            time.sleep(wait_time)
+                        else:
+                            log(f"  Network error for {symbol} after {MAX_RETRIES} attempts", "warning")
+                            return 0
+                    except Exception as e:
+                        log(f"  Error fetching klines for {symbol}: {type(e).__name__}", "warning")
+                        return 0
 
-                # Calculate percentage move
-                if window_low > 0:
-                    move_pct = ((window_high - window_low) / window_low) * 100
-                    if move_pct >= 10.0:
-                        count += 1
-
-            return count
+            return self._calculate_instances(all_klines)
 
         except Exception as e:
             return 0
+
+    def _calculate_instances(self, klines: list) -> int:
+        """
+        Calculate instances using sliding window - IDENTICAL to analyze_10pct_moves.py
+        """
+        if len(klines) < 60:
+            return 0
+
+        count = 0
+        # Sliding window of 60 candles (60 minutes)
+        for i in range(len(klines) - 59):
+            window = klines[i:i+60]
+
+            # Get high and low within this 60-minute window
+            window_high = max(float(k[2]) for k in window)  # High price
+            window_low = min(float(k[3]) for k in window)   # Low price
+
+            # Calculate percentage move
+            if window_low > 0:
+                move_pct = ((window_high - window_low) / window_low) * 100
+
+                if move_pct >= 10.0:
+                    count += 1
+
+        return count
 
     def _filter_by_volatility_band(self) -> None:
         """
