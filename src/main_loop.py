@@ -5,7 +5,7 @@ Orchestrator - the main entry point
 import asyncio
 import time
 import math
-from typing import Optional
+from typing import Optional, Callable, Any
 from utils import log, save_state, load_state, format_usd, setup_signal_handlers
 import config
 from pair_scanner import PairScanner
@@ -15,6 +15,63 @@ from order_executor import OrderExecutor
 from safety_checks import SafetyChecker
 from volatility_tracker import VolatilityTracker
 import numpy as np
+import httpx
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    """Simple health check endpoint for Railway"""
+    def do_GET(self):
+        if self.path == '/health':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'OK')
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(self, format, *args):
+        # Suppress HTTP logs
+        pass
+
+def start_health_server():
+    """Start health check server in background thread"""
+    try:
+        server = HTTPServer(('0.0.0.0', 8080), HealthCheckHandler)
+        log("Health check server started on port 8080")
+        server.serve_forever()
+    except Exception as e:
+        log(f"Failed to start health server: {e}", "warning")
+
+def retry_with_backoff(func: Callable, max_retries: int = 3, initial_delay: float = 10.0) -> Any:
+    """
+    Retry function with exponential backoff for network errors
+    Args:
+        func: Function to retry
+        max_retries: Maximum retry attempts (default 3)
+        initial_delay: Initial delay in seconds (default 5s)
+    Returns: Function result or raises last exception
+    """
+    delay = initial_delay
+    last_exception = None
+
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except (httpx.ConnectError, httpx.TimeoutException, httpx.ReadTimeout,
+                OSError, ConnectionError) as e:
+            last_exception = e
+            if attempt < max_retries - 1:
+                log(f"Network error (attempt {attempt + 1}/{max_retries}): {type(e).__name__} - {e}", "warning")
+                log(f"Retrying in {delay}s...", "warning")
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff: 5s, 10s, 20s
+            else:
+                log(f"Network error after {max_retries} attempts: {type(e).__name__} - {e}", "error")
+                raise last_exception
+
+    raise last_exception
 
 def detect_market_regime(executor) -> dict:
     """
@@ -278,6 +335,10 @@ async def main_loop():
     log(f"TP: {config.TP_PCT*100:.2f}% | SL: {config.SL_PCT*100:.2f}%")
     log(f"Scan interval: {config.SCAN_INTERVAL_SECS}s | Entry threshold: {config.ENTRY_THRESHOLD}")
 
+    # Start health check server for Railway
+    health_thread = threading.Thread(target=start_health_server, daemon=True)
+    health_thread.start()
+
     # Initialize components
     scanner = PairScanner()
     scorer = SignalScorer()
@@ -419,13 +480,23 @@ async def main_loop():
             log("-"*80)
             log(f"CYCLE START | Level={manager.level} | In position={manager.in_position}")
 
-            # Sync time with Binance server to prevent timestamp drift
-            executor._sync_server_time()
+            # Sync time with Binance server to prevent timestamp drift (with retry)
+            try:
+                retry_with_backoff(lambda: executor._sync_server_time())
+            except Exception as e:
+                log(f"Failed to sync server time after retries: {e}", "error")
+                log("Continuing with current timestamp (may cause drift)", "warning")
 
-            # CRITICAL: Verify state is synchronized with exchange
-            if not verify_and_sync_state(executor, manager):
-                log("State verification failed - stopping bot for safety", "error")
-                return
+            # CRITICAL: Verify state is synchronized with exchange (with retry)
+            try:
+                state_ok = retry_with_backoff(lambda: verify_and_sync_state(executor, manager))
+                if not state_ok:
+                    log("State verification failed - stopping bot for safety", "error")
+                    return
+            except Exception as e:
+                log(f"Failed to verify state after retries: {e}", "error")
+                log("Skipping this cycle for safety", "warning")
+                continue
 
             # Clean expired blacklist entries
             manager.clean_expired_blacklist()

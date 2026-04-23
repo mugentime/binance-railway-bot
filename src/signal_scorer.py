@@ -365,14 +365,12 @@ class SignalScorer:
             if short_composite >= config.ENTRY_THRESHOLD:
                 signals.append(short_result)
 
-        # Sort all scores by score (highest first)
+        # Sort all scores by score (highest first) - for logging only
         all_scores.sort(key=lambda x: x.score, reverse=True)
 
-        # ALWAYS return the top signal, regardless of threshold
-        if all_scores:
-            signals = [all_scores[0]]  # Always pick #1 highest score
-        else:
-            signals = []
+        # Sort filtered signals by score (highest first)
+        # Only signals that passed ENTRY_THRESHOLD are in this list
+        signals.sort(key=lambda x: x.score, reverse=True)
 
         # Log detailed output - TOP 30 scores
         log("=" * 120)

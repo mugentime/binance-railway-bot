@@ -72,7 +72,7 @@ WEIGHTS = {
     "spread": 0.15,           # Increased from 0.10
     "funding": 0.05,
 }
-ENTRY_THRESHOLD = 55.0        # Min composite score to enter (lowered for more signals)
+ENTRY_THRESHOLD = 45.0        # Min composite score to enter
 
 # Volatility bonus (10%+ hourly moves in last 7 days)
 VOLATILITY_WEIGHT = 0.3       # Multiplier for volatility score bonus
