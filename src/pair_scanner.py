@@ -79,6 +79,9 @@ class PairScanner:
         resp.raise_for_status()
         exchange_info = resp.json()
 
+        # Build lookup map for faster access
+        exchange_symbols_map = {s["symbol"]: s for s in exchange_info["symbols"]}
+
         # Get 24h ticker for volume filtering
         resp = await self.client.get(f"{config.BINANCE_BASE_URL}/fapi/v1/ticker/24hr")
         resp.raise_for_status()
@@ -89,13 +92,29 @@ class PairScanner:
         resp.raise_for_status()
         prices = {p["symbol"]: float(p["price"]) for p in resp.json()}
 
-        symbols = []
         # Estimate base size for filtering (assuming $100 account: $100 * 3% = $3)
         estimated_base_size = 100.0 * config.BASE_SIZE_PCT
         level_0_notional = estimated_base_size * config.LEVERAGE  # e.g., $60 at level 0
 
-        for symbol_info in exchange_info["symbols"]:
-            symbol = symbol_info["symbol"]
+        # Use curated list if enabled, otherwise scan all symbols
+        if config.USE_CURATED_PAIR_LIST:
+            log(f"Using curated pair list ({len(config.CURATED_PAIR_LIST)} pairs)")
+            candidate_symbols = config.CURATED_PAIR_LIST
+            skipped_not_found = []
+        else:
+            log("Using dynamic symbol discovery")
+            candidate_symbols = [s["symbol"] for s in exchange_info["symbols"]]
+            skipped_not_found = None
+
+        symbols = []
+
+        for symbol in candidate_symbols:
+            # Check if symbol exists on USDT-M futures
+            symbol_info = exchange_symbols_map.get(symbol)
+            if not symbol_info:
+                if skipped_not_found is not None:
+                    skipped_not_found.append(symbol)
+                continue
 
             # Basic filters
             if symbol_info["quoteAsset"] != config.QUOTE_ASSET:
@@ -111,10 +130,11 @@ class PairScanner:
             if not symbol.isascii():
                 continue
 
-            # Volume filter
-            volume = tickers.get(symbol, 0)
-            if volume < config.MIN_24H_VOLUME_USD:
-                continue
+            # Volume filter (only if dynamic discovery)
+            if not config.USE_CURATED_PAIR_LIST:
+                volume = tickers.get(symbol, 0)
+                if volume < config.MIN_24H_VOLUME_USD:
+                    continue
 
             # Minimum order size filter (CRITICAL for level 0 trades)
             price = prices.get(symbol)
@@ -140,6 +160,10 @@ class PairScanner:
                 continue
 
             symbols.append(symbol)
+
+        # Report skipped pairs if using curated list
+        if skipped_not_found:
+            log(f"SKIPPED ({len(skipped_not_found)}): Not found on USDT-M futures: {', '.join(skipped_not_found)}")
 
         self.symbols_cache = symbols
         log(f"Filtered to {len(symbols)} tradeable symbols (level-0 notional=${level_0_notional})")

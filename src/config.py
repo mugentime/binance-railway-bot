@@ -92,6 +92,34 @@ RSI_SHORT_THRESHOLD = 75      # Only enter on RSI > 75 (overbought → LONG in i
 BTC_DUMP_THRESHOLD_4H = -0.05  # Pause longs if BTC down >5% in 4h
 BTC_PUMP_THRESHOLD_4H = 0.05   # Pause shorts if BTC up >5% in 4h
 
+# Top 100 pairs ranked by 30-day move frequency (backtest-derived)
+# How often each pair makes 10%+ moves in under 1 hour
+# Use this curated list for faster scanning instead of dynamic discovery
+USE_CURATED_PAIR_LIST = True  # Set to False to use dynamic pair discovery
+
+CURATED_PAIR_LIST = [
+    "RAVEUSDT", "SIRENUSDT", "ARIAUSDT", "BULLAUSDT", "STOUSDT",
+    "BLESSUSDT", "BASUSDT", "ONUSDT", "NOMUSDT", "TRADOORUSDT",
+    "BRUSDT", "AKEUSDT", "DUSDT", "PIPPINUSDT", "PLAYUSDT",
+    "BSBUSDT", "BASEDUSDT", "CYSUSDT", "AGTUSDT", "HIGHUSDT",
+    "TAKEUSDT", "DRIFTUSDT", "QUSDT", "CHIPUSDT", "ORDIUSDT",
+    "SKYAIUSDT", "MAGMAUSDT", "KOMAUSDT", "XNYUSDT", "UBUSDT",
+    "LABUSDT", "JCTUSDT", "PIEVERSEUSDT", "ENJUSDT", "PTBUSDT",
+    "APRUSDT", "MOVRUSDT", "BEATUSDT", "SOLVUSDT", "AIAUSDT",
+    "CTSIUSDT", "GWEIUSDT", "GENIUSUSDT", "NAORISUSDT", "COLLECTUSDT",
+    "MYXUSDT", "PROMUSDT", "AINUSDT", "BLUAIUSDT", "ONTUSDT",
+    "PORTALUSDT", "GTCUSDT", "PHBUSDT", "MUSDT", "LYNUSDT",
+    "CLOUSDT", "RIVERUSDT", "PRLUSDT", "TSTUSDT", "BIOUSDT",
+    "BANKUSDT", "SWARMSUSDT", "REDUSDT", "GUAUSDT", "1000SATSUSDT",
+    "ZEREBROUSDT", "SPKUSDT", "BTRUSDT", "UAIUSDT", "NEIROUSDT",
+    "FIDAUSDT", "GUNUSDT", "GIGGLEUSDT", "ALICEUSDT", "STABLEUSDT",
+    "IRYSUSDT", "INXUSDT", "EDGEUSDT", "JOEUSDT", "BANUSDT",
+    "SOONUSDT", "CUSDT", "HEMIUSDT", "EDUUSDT", "PNUTUSDT",
+    "FIGHTUSDT", "TAUSDT", "GRIFFAINUSDT", "BROCCOLIF3BUSDT",
+    "TAGUSDT", "AIOUSDT", "FOLKSUSDT", "USUSDT", "MEGAUSDT",
+    "ONGUSDT", "KERNELUSDT", "PUMPBTCUSDT", "EVAAUSDT"
+]
+
 # Excluded pairs (stablecoins and slow-moving pairs)
 EXCLUDED_SYMBOLS = [
     # Stablecoins and pegged assets
