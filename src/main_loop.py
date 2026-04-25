@@ -281,34 +281,13 @@ async def main_loop():
     # Setup graceful shutdown handlers
     setup_signal_handlers(manager)
 
-    # STARTUP: Always check for orphaned positions on exchange regardless of state
+    # Fetch open positions once at startup (reused for both checks below)
     all_open_startup = executor.get_all_open_positions()
     if len(all_open_startup) > 1:
         symbols = [f"{p['symbol']} ({p['positionAmt']})" for p in all_open_startup]
-        log(f"CRITICAL: Multiple positions on exchange at startup: {', '.join(symbols)}", "error")
+        log(f"CRITICAL: Multiple positions at startup: {', '.join(symbols)}", "error")
         log("Please manually close all but one before restarting.", "error")
         return
-    elif len(all_open_startup) == 1:
-        # Single orphaned position — adopt it immediately and place SL
-        p = all_open_startup[0]
-        log(f"STARTUP: Found orphaned position {p['symbol']} ({p['positionAmt']}) — adopting", "warning")
-        position = executor.get_position(p['symbol'])
-        manager.in_position = True
-        manager.current_symbol = p['symbol']
-        manager.entry_price = float(position['entryPrice'])
-        manager.entry_quantity = abs(float(position['positionAmt']))
-        manager.current_direction = "LONG" if float(position['positionAmt']) > 0 else "SHORT"
-        manager.entry_candle_time = time.time()
-        manager.current_size_usd = abs(float(position['positionAmt'])) * float(position['entryPrice'])
-        # Place SL immediately — don't wait for periodic check
-        executor.verify_and_place_missing_sl(
-            symbol=manager.current_symbol,
-            direction=manager.current_direction,
-            tp_price=manager.tp_price(),
-            sl_price=manager.sl_price(),
-            quantity=manager.entry_quantity
-        )
-        save_state(manager)
 
     # Load existing state (crash recovery)
     saved_state = load_state()
@@ -338,91 +317,74 @@ async def main_loop():
         if manager.cooldown_blacklist:
             log(f"Blacklist restored: {len(manager.cooldown_blacklist)} symbols on cooldown")
 
-        # STARTUP VERIFICATION: Check all open positions on exchange
-        all_open = executor.get_all_open_positions()
-        if all_open:
-            log(f"STARTUP: Found {len(all_open)} open position(s) on exchange:")
-            for p in all_open:
-                symbol = p['symbol']
-                qty = float(p['positionAmt'])
-                direction = "LONG" if qty > 0 else "SHORT"
-                entry = float(p['entryPrice'])
-                pnl = float(p['unRealizedProfit'])
-                log(f"  - {symbol} {direction} | Qty: {abs(qty)} | Entry: {entry:.6f} | PNL: ${pnl:.2f}")
-
-            if len(all_open) > 1:
-                log(f"ERROR: Multiple positions detected! Bot only supports 1 position at a time.", "error")
-                log(f"Please manually close all but one position on Binance before restarting.", "error")
-                return  # Exit bot
-
-            # Check if position matches bot state
-            exchange_symbol = all_open[0]['symbol']
-            if manager.in_position:
-                if manager.current_symbol != exchange_symbol:
-                    log(f"WARNING: State mismatch - Bot thinks position is {manager.current_symbol}, "
-                        f"but exchange shows {exchange_symbol}", "warning")
-                    log(f"Adopting exchange position: {exchange_symbol}", "warning")
-                    # Update bot state to match reality
-                    position = executor.get_position(exchange_symbol)
-                    manager.current_symbol = exchange_symbol
-                    manager.entry_price = float(position['entryPrice'])
-                    manager.entry_quantity = abs(float(position['positionAmt']))
-                    manager.current_direction = "LONG" if float(position['positionAmt']) > 0 else "SHORT"
+    # Reconcile bot state with exchange reality
+    if manager.in_position and not all_open_startup:
+        # Bot thinks open but exchange has nothing — determine outcome
+        log(f"STARTUP: State says in position ({manager.current_symbol}) but exchange shows none — determining outcome", "warning")
+        executor.cancel_all_orders(manager.current_symbol)
+        last_trade = executor.get_last_trade(manager.current_symbol)
+        if last_trade:
+            exit_price = float(last_trade['price'])
+            direction = manager.current_direction
+            tp_hit = (exit_price >= manager.tp_price() if direction == "LONG" else exit_price <= manager.tp_price())
+            was_profitable = (exit_price > manager.entry_price if direction == "LONG" else exit_price < manager.entry_price)
+            if tp_hit or was_profitable:
+                manager.close_win(exit_price)
             else:
-                log(f"WARNING: Bot thinks no position, but {exchange_symbol} is open on exchange", "warning")
-                log(f"Adopting exchange position: {exchange_symbol}", "warning")
-                manager.in_position = True
-                position = executor.get_position(exchange_symbol)
-                manager.current_symbol = exchange_symbol
-                manager.entry_price = float(position['entryPrice'])
-                manager.entry_quantity = abs(float(position['positionAmt']))
-                manager.current_direction = "LONG" if float(position['positionAmt']) > 0 else "SHORT"
-                manager.entry_candle_time = time.time()  # Approximate
+                manager.close_loss(exit_price)
+        else:
+            manager._clear_position()
+        save_state(manager)
 
-            # CRITICAL: Verify and place missing SL after adopting position
-            if manager.in_position:
-                log(f"Verifying TP/SL orders for adopted position {manager.current_symbol}...")
-                sl_ok = executor.verify_and_place_missing_sl(
-                    symbol=manager.current_symbol,
-                    direction=manager.current_direction,
-                    tp_price=manager.tp_price(),
-                    sl_price=manager.sl_price(),
-                    quantity=manager.entry_quantity
-                )
-                if not sl_ok:
-                    log(f"CRITICAL: Could not place SL for adopted position {manager.current_symbol}!", "error")
-                    log(f"MANUAL INTERVENTION REQUIRED - Check position on Binance!", "error")
+    elif not manager.in_position and len(all_open_startup) == 1:
+        # No state but exchange has a position — adopt it and place SL immediately
+        p = all_open_startup[0]
+        log(f"STARTUP: Found untracked position {p['symbol']} ({p['positionAmt']}) — adopting", "warning")
+        position = executor.get_position(p['symbol'])
+        manager.in_position = True
+        manager.current_symbol = p['symbol']
+        manager.entry_price = float(position['entryPrice'])
+        manager.entry_quantity = abs(float(position['positionAmt']))
+        manager.current_direction = "LONG" if float(position['positionAmt']) > 0 else "SHORT"
+        manager.entry_candle_time = time.time()
+        manager.current_size_usd = abs(float(position['positionAmt'])) * float(position['entryPrice'])
+        executor.verify_and_place_missing_sl(
+            symbol=manager.current_symbol,
+            direction=manager.current_direction,
+            tp_price=manager.tp_price(),
+            sl_price=manager.sl_price(),
+            quantity=manager.entry_quantity
+        )
+        save_state(manager)
 
-        # If in position, check if it's still open
-        if manager.in_position:
-            try:
-                position = executor.get_position(manager.current_symbol)
-
-                if position is None:
-                    log(f"ERROR: Failed to fetch position for {manager.current_symbol} on startup - RETRYING", "error")
-                    time.sleep(5)  # Wait 5 seconds
-                    position = executor.get_position(manager.current_symbol)
-
-                    if position is None:
-                        log(f"CRITICAL: Still cannot fetch position after retry - EXITING to prevent multiple positions", "error")
-                        log(f"Please manually check your position for {manager.current_symbol} on Binance before restarting", "error")
-                        return  # Exit the bot safely
-                elif float(position["positionAmt"]) == 0:
-                    log(f"Position {manager.current_symbol} was closed while offline - checking outcome...")
-                    outcome = check_position_closed(executor, manager)
-
-                    # Get actual exit price from last trade
-                    last_trade = executor.get_last_trade(manager.current_symbol)
-                    exit_price = float(last_trade["price"]) if last_trade else float(position.get("entryPrice", 0))
-
-                    if outcome == "WIN":
-                        manager.close_win(exit_price)
-                    else:
-                        manager.close_loss(exit_price)
-                    save_state(manager)
-            except Exception as e:
-                log(f"Error checking position on startup: {e}", "error")
-
+    elif manager.in_position and len(all_open_startup) == 1:
+        # Both agree there's a position — verify SL is placed
+        exchange_symbol = all_open_startup[0]['symbol']
+        if manager.current_symbol != exchange_symbol:
+            log(f"STARTUP: Symbol mismatch (state={manager.current_symbol}, exchange={exchange_symbol}) — adopting exchange", "warning")
+            position = executor.get_position(exchange_symbol)
+            manager.current_symbol = exchange_symbol
+            manager.entry_price = float(position['entryPrice'])
+            manager.entry_quantity = abs(float(position['positionAmt']))
+            manager.current_direction = "LONG" if float(position['positionAmt']) > 0 else "SHORT"
+        executor.verify_and_place_missing_sl(
+            symbol=manager.current_symbol,
+            direction=manager.current_direction,
+            tp_price=manager.tp_price(),
+            sl_price=manager.sl_price(),
+            quantity=manager.entry_quantity
+        )
+        # Check if position was closed while offline
+        if float(all_open_startup[0].get('positionAmt', 0)) == 0:
+            log(f"STARTUP: Position {manager.current_symbol} was closed while offline")
+            outcome = check_position_closed(executor, manager)
+            last_trade = executor.get_last_trade(manager.current_symbol)
+            exit_price = float(last_trade["price"]) if last_trade else manager.entry_price
+            if outcome == "WIN":
+                manager.close_win(exit_price)
+            else:
+                manager.close_loss(exit_price)
+            save_state(manager)
 
     try:
         while True:

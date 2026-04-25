@@ -252,32 +252,9 @@ class PairScanner:
                         # Not enough candles, skip
                         return
 
-                    # Calculate 50-period SMA and slope
-                    if len(closes) >= config.SMA_PERIOD:
-                        # Simple Moving Average using convolution (O(n) efficiency)
-                        sma_values = np.convolve(closes, np.ones(config.SMA_PERIOD)/config.SMA_PERIOD, mode='valid')
-
-                        # Calculate slope over last SMA_SLOPE_LOOKBACK points
-                        if len(sma_values) >= config.SMA_SLOPE_LOOKBACK:
-                            # Linear regression slope: (n*Σxy - Σx*Σy) / (n*Σx² - (Σx)²)
-                            recent_sma = sma_values[-config.SMA_SLOPE_LOOKBACK:]
-                            x = np.arange(config.SMA_SLOPE_LOOKBACK)
-                            n = config.SMA_SLOPE_LOOKBACK
-
-                            slope = (n * np.sum(x * recent_sma) - np.sum(x) * np.sum(recent_sma)) / \
-                                    (n * np.sum(x**2) - np.sum(x)**2)
-
-                            # Normalize slope as percentage per candle
-                            sma_slope_pct = (slope / sma_values[-1]) * 100
-
-                            # Validate: handle NaN/Inf
-                            if np.isnan(sma_slope_pct) or np.isinf(sma_slope_pct):
-                                sma_slope_pct = 0.0
-                        else:
-                            sma_slope_pct = 0.0  # Insufficient data for slope
-                    else:
-                        sma_slope_pct = 0.0  # Insufficient candles for SMA
-
+                    # SMA slope computation removed: KLINE_LIMIT=50, SMA_PERIOD=50
+                    # produces only 1 SMA value, slope is always 0.0
+                    sma_slope_pct = 0.0
                     # Order book depth (2 weight)
                     await asyncio.sleep(0.05)  # Rate limit control
                     depth_resp = await self.client.get(
