@@ -58,40 +58,27 @@ class VolatilityTracker:
                     log(f"  Error calculating volatility for {symbol}: {e}", "warning")
                     continue
 
-        # Filter symbols by volatility band
-        self._filter_by_volatility_band()
+        # NO FILTERING - all symbols are now valid (removed exclusion logic)
+        # High-volatility pairs are PREFERRED, not excluded
+        self.valid_symbols = set(self.raw_scores.keys())
+        self.excluded_too_slow = {}
+        self.excluded_too_chaotic = {}
 
-        # Normalize only the valid symbols to 0-1 range
+        # Normalize all symbols to 0-1 range (for backward compatibility with old bonus system)
         self._normalize_scores()
 
         self.last_update_time = time.time()
         elapsed = time.time() - start_time
 
-        # Log filtering statistics
+        # Log statistics
         log("="*80)
-        log("VOLATILITY BAND FILTER RESULTS")
+        log("VOLATILITY SCORING RESULTS (No Exclusions)")
         log("="*80)
         log(f"Total symbols analyzed: {len(symbols)}")
         log(f"Symbols with 10%+ moves: {len(self.raw_scores)}")
         log(f"")
-        log(f"PASSED FILTER: {len(self.valid_symbols)} symbols")
-        log(f"EXCLUDED (too slow < {config.MIN_VOLATILITY_INSTANCES}): {len(self.excluded_too_slow)} symbols")
-        log(f"EXCLUDED (too chaotic > {config.MAX_VOLATILITY_INSTANCES}): {len(self.excluded_too_chaotic)} symbols")
-        log(f"")
-
-        # Show top excluded symbols for each category (if any)
-        if self.excluded_too_slow:
-            top_slow = sorted(self.excluded_too_slow.items(), key=lambda x: x[1], reverse=True)[:5]
-            log(f"Top excluded (too slow):")
-            for sym, count in top_slow:
-                log(f"  {sym}: {count} hours")
-
-        if self.excluded_too_chaotic:
-            top_chaotic = sorted(self.excluded_too_chaotic.items(), key=lambda x: x[1], reverse=True)[:5]
-            log(f"Top excluded (too chaotic):")
-            for sym, count in top_chaotic:
-                log(f"  {sym}: {count} hours")
-
+        log(f"NEW SYSTEM: All symbols allowed, high volatility PREFERRED")
+        log(f"Flat point bonuses: 500+ hrs=+20, 200-499=+15, 50-199=+10, 10-49=+5, <10=+0")
         log(f"")
         log(f"Time elapsed: {elapsed:.1f}s")
         log("="*80)
@@ -185,28 +172,11 @@ class VolatilityTracker:
 
     def _filter_by_volatility_band(self) -> None:
         """
-        Filter symbols by volatility band (MIN to MAX instances)
-        Excludes symbols that are too slow or too chaotic
+        DEPRECATED: No longer filters or excludes any symbols
+        High-volatility pairs are now PREFERRED, not excluded
         """
-        self.valid_symbols = set()
-        self.excluded_too_slow = {}
-        self.excluded_too_chaotic = {}
-
-        for symbol, count in self.raw_scores.items():
-            if count < config.MIN_VOLATILITY_INSTANCES:
-                self.excluded_too_slow[symbol] = count
-            elif count > config.MAX_VOLATILITY_INSTANCES:
-                self.excluded_too_chaotic[symbol] = count
-            else:
-                self.valid_symbols.add(symbol)
-
-        # Remove excluded symbols from raw_scores for normalization
-        # Keep original raw_scores for logging purposes
-        original_raw_scores = self.raw_scores.copy()
-        self.raw_scores = {
-            symbol: count for symbol, count in original_raw_scores.items()
-            if symbol in self.valid_symbols
-        }
+        # All symbols are valid - no exclusions
+        pass
 
     def _normalize_scores(self) -> None:
         """Normalize raw scores to 0-1 range (only valid symbols)"""
@@ -243,6 +213,7 @@ class VolatilityTracker:
 
     def get_volatility_bonus(self, symbol: str) -> float:
         """
+        DEPRECATED: Old multiplicative bonus system
         Calculate volatility bonus multiplier for final score
         Returns: multiplier value (e.g., 0.15 for 50% normalized score with weight 0.3)
         """
@@ -250,14 +221,36 @@ class VolatilityTracker:
         bonus = config.VOLATILITY_WEIGHT * norm_score
         return bonus
 
+    def get_volatility_bonus_points(self, symbol: str) -> float:
+        """
+        Calculate volatility bonus as FLAT POINTS (new system)
+        Based on raw count of 10%+ hourly moves over 7 days
+
+        Returns: flat points (0-20)
+        - 500+ hours → +20 points
+        - 200-499 → +15 points
+        - 50-199 → +10 points
+        - 10-49 → +5 points
+        - <10 → +0 points
+        """
+        raw_count = self.raw_scores.get(symbol, 0)
+
+        if raw_count >= 500:
+            return 20.0
+        elif raw_count >= 200:
+            return 15.0
+        elif raw_count >= 50:
+            return 10.0
+        elif raw_count >= 10:
+            return 5.0
+        else:
+            return 0.0
+
     def is_valid_symbol(self, symbol: str) -> bool:
         """
         Check if symbol should be allowed for trading
-        Returns: False only if explicitly excluded (too slow/chaotic)
-                 True for all other symbols (including those not in cache)
+        NEW SYSTEM: All symbols are valid, no exclusions
+        Returns: Always True (high-volatility pairs are now PREFERRED)
         """
-        # Exclude only if explicitly found to be too slow or too chaotic
-        if symbol in self.excluded_too_slow or symbol in self.excluded_too_chaotic:
-            return False
-        # Allow everything else (including symbols not in cache)
+        # All symbols allowed - no exclusions
         return True

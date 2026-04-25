@@ -688,15 +688,9 @@ async def main_loop():
             log("Scoring signals...")
             blacklisted = manager.get_blacklisted_symbols()
 
-            # Apply regime flip if triggered by consecutive losses
-            effective_regime = regime_data.copy()
-            if manager.regime_flipped:
-                # Invert the regime: trending ↔ ranging
-                original = effective_regime['regime']
-                effective_regime['regime'] = 'ranging' if original == 'trending' else 'trending'
-                log(f"REGIME OVERRIDE: {original} → {effective_regime['regime']} (flipped due to losses)")
-
-            signals = scorer.score_all_pairs(pair_data, blacklisted, effective_regime, volatility_tracker)
+            # NOTE: New scorer doesn't use regime_data (no regime penalty)
+            # Regime flip will be applied to signal DIRECTION after scoring
+            signals = scorer.score_all_pairs(pair_data, blacklisted, regime_data, volatility_tracker)
 
             # DIAGNOSTIC: Show scoring results
             log("="*80)
@@ -708,10 +702,9 @@ async def main_loop():
                 log(f"  Volume Ratio: {top.volume_ratio:.2f} | Spread: {top.spread_pct*100:.4f}%")
 
                 # Show volatility info for this symbol
-                vol_score = volatility_tracker.get_normalized_score(top.symbol)
-                vol_bonus = volatility_tracker.get_volatility_bonus(top.symbol)
                 raw_count = volatility_tracker.raw_scores.get(top.symbol, 0)
-                log(f"  Volatility: {raw_count} hours with 10%+ moves | norm_score={vol_score:.3f} | bonus={vol_bonus*100:.1f}%")
+                vol_bonus_points = volatility_tracker.get_volatility_bonus_points(top.symbol)
+                log(f"  Volatility: {raw_count} hours with 10%+ moves | bonus={vol_bonus_points:.0f} points")
 
                 # Entry decision
                 if top.score >= config.ENTRY_THRESHOLD:
@@ -738,6 +731,14 @@ async def main_loop():
 
             # Get best signal
             best = signals[0]
+
+            # Apply regime flip if triggered by consecutive losses
+            # NEW: Flip the DIRECTION instead of the regime (new scorer has no regime penalty)
+            if manager.regime_flipped:
+                original_direction = best.direction
+                best.direction = "SHORT" if original_direction == "LONG" else "LONG"
+                log(f"🔄 REGIME FLIP APPLIED: {original_direction} → {best.direction} (inverting due to 3 consecutive losses)")
+
             log(f"BEST SIGNAL: {best.symbol} {best.direction} | Score={best.score:.2f} | "
                 f"RSI={best.rsi:.1f} BB={best.bb_pct_b:.2f} Z={best.zscore:.2f}")
 

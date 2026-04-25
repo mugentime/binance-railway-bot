@@ -1,10 +1,10 @@
 """
-Martingale Signal Scanner - Signal Scorer
-Computes composite mean-reversion score for each pair
+Martingale Signal Scanner - Signal Scorer (Volume-First Redesign)
+Computes composite score based on empirical data from 4,821 real 10%+ moves
 """
 import numpy as np
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, Tuple, Optional
 import config
 from utils import log
 
@@ -12,31 +12,22 @@ from utils import log
 class SignalResult:
     symbol: str
     direction: str       # "LONG" or "SHORT"
-    score: float         # 0-100
+    score: float         # 0-120 (100 base + 20 volatility bonus)
     rsi: float
     bb_pct_b: float
     zscore: float
     volume_ratio: float
     spread_pct: float
     funding_rate: float
-    sma_slope_pct: float = 0.0  # SMA slope percentage per candle
-    volume_24h: float = 0.0      # 24h quote volume in USD
+    sma_slope_pct: float = 0.0
+    volume_24h: float = 0.0
+    volume_score: float = 0.0      # Individual component scores for debugging
+    slope_score: float = 0.0
+    momentum_score: float = 0.0
+    zscore_score: float = 0.0
+    volatility_bonus: float = 0.0
 
 class SignalScorer:
-    @staticmethod
-    def get_actual_direction(original_direction: str, signal_direction: str = None) -> str:
-        """
-        Get actual direction based on signal inversion setting.
-        In inverted mode: oversold → SHORT, overbought → LONG
-        Args:
-            original_direction: "LONG" or "SHORT"
-            signal_direction: Override config (for dynamic regime detection)
-        """
-        direction_mode = signal_direction if signal_direction is not None else config.SIGNAL_DIRECTION
-        if direction_mode == "inverted":
-            return "SHORT" if original_direction == "LONG" else "LONG"
-        return original_direction
-
     @staticmethod
     def calculate_rsi(closes: np.ndarray, period: int = 14) -> float:
         """Calculate RSI indicator"""
@@ -110,148 +101,169 @@ class SignalScorer:
         return ratio
 
     @staticmethod
-    def normalize_long_score(rsi: float, bb_pct_b: float, zscore: float,
-                           volume_ratio: float, spread_pct: float, funding_rate: float) -> Dict[str, float]:
-        """Normalize indicators to 0-100 score for LONG signals"""
-
-        # RSI: oversold condition (RSI < threshold)
-        rsi_threshold = config.RSI_LONG_THRESHOLD
-        if rsi >= rsi_threshold:
-            rsi_score = 0.0
-        else:
-            rsi_score = min(100.0, (rsi_threshold - rsi) / 20 * 100)
-
-        # Bollinger: below lower band (%B < 0)
-        if bb_pct_b >= 0:
-            bb_score = 0.0
-        else:
-            bb_score = min(100.0, abs(bb_pct_b) * 100)
-
-        # Z-score: strong deviation below mean (Z < -1.5)
-        if zscore >= -1.5:
-            zscore_score = 0.0
-        else:
-            zscore_score = min(100.0, (abs(zscore) - 1.5) / 2.5 * 100)
-
-        # Volume: spike above average (ratio > 1.5)
-        if volume_ratio < 1.5:
-            volume_score = 0.0
-        else:
-            volume_score = min(100.0, (volume_ratio - 1.5) / 3.5 * 100)
-
-        # Spread: tighter is better (< 0.1%)
-        if spread_pct >= 0.1:
-            spread_score = 0.0
-        else:
-            spread_score = (0.1 - spread_pct) / 0.09 * 100
-
-        # Funding: negative funding (shorts paying longs)
-        if funding_rate >= 0:
-            funding_score = 0.0
-        else:
-            funding_score = min(100.0, abs(funding_rate) / 0.001 * 100)
-
-        return {
-            "rsi": rsi_score,
-            "bollinger": bb_score,
-            "zscore": zscore_score,
-            "volume": volume_score,
-            "spread": spread_score,
-            "funding": funding_score,
-        }
-
-    @staticmethod
-    def normalize_short_score(rsi: float, bb_pct_b: float, zscore: float,
-                            volume_ratio: float, spread_pct: float, funding_rate: float) -> Dict[str, float]:
-        """Normalize indicators to 0-100 score for SHORT signals"""
-
-        # RSI: overbought condition (RSI > threshold)
-        rsi_threshold = config.RSI_SHORT_THRESHOLD
-        if rsi <= rsi_threshold:
-            rsi_score = 0.0
-        else:
-            rsi_score = min(100.0, (rsi - rsi_threshold) / 20 * 100)
-
-        # Bollinger: above upper band (%B > 1)
-        if bb_pct_b <= 1:
-            bb_score = 0.0
-        else:
-            bb_score = min(100.0, (bb_pct_b - 1) * 100)
-
-        # Z-score: strong deviation above mean (Z > 1.5)
-        if zscore <= 1.5:
-            zscore_score = 0.0
-        else:
-            zscore_score = min(100.0, (zscore - 1.5) / 2.5 * 100)
-
-        # Volume: same as longs
-        if volume_ratio < 1.5:
-            volume_score = 0.0
-        else:
-            volume_score = min(100.0, (volume_ratio - 1.5) / 3.5 * 100)
-
-        # Spread: same as longs
-        if spread_pct >= 0.1:
-            spread_score = 0.0
-        else:
-            spread_score = (0.1 - spread_pct) / 0.09 * 100
-
-        # Funding: positive funding (longs paying shorts)
-        if funding_rate <= 0:
-            funding_score = 0.0
-        else:
-            funding_score = min(100.0, funding_rate / 0.001 * 100)
-
-        return {
-            "rsi": rsi_score,
-            "bollinger": bb_score,
-            "zscore": zscore_score,
-            "volume": volume_score,
-            "spread": spread_score,
-            "funding": funding_score,
-        }
-
-    @staticmethod
-    def calculate_composite_score(sub_scores: Dict[str, float]) -> float:
-        """Calculate weighted composite score"""
-        composite = (
-            sub_scores["rsi"] * config.WEIGHTS["rsi"] +
-            sub_scores["bollinger"] * config.WEIGHTS["bollinger"] +
-            sub_scores["zscore"] * config.WEIGHTS["zscore"] +
-            sub_scores["volume"] * config.WEIGHTS["volume"] +
-            sub_scores["spread"] * config.WEIGHTS["spread"] +
-            sub_scores["funding"] * config.WEIGHTS["funding"]
-        )
-        return composite
-
-    def score_all_pairs(self, pair_data: Dict[str, dict], blacklisted_symbols: List[str] = None, regime_data: dict = None, volatility_tracker=None) -> List[SignalResult]:
+    def calculate_volume_score(volume_ratio: float) -> float:
         """
-        Score all pairs for both LONG and SHORT
+        PRIMARY SIGNAL — VOLUME (40 points max)
+        HARD BLOCK if < 1.0x (returns 0) - lowered from 1.5x for better coverage
+
+        1.0x → 0 points (threshold)
+        1.5x → 10 points
+        2.0x → 20 points
+        3.0x → 30 points
+        5.0x+ → 40 points (max)
+        """
+        if volume_ratio < 1.0:
+            return 0.0  # HARD BLOCK - below average volume
+
+        if volume_ratio >= 5.0:
+            return 40.0
+        elif volume_ratio >= 3.0:
+            # 3.0 to 5.0: 30 to 40 points
+            return 30.0 + ((volume_ratio - 3.0) / 2.0) * 10.0
+        elif volume_ratio >= 2.0:
+            # 2.0 to 3.0: 20 to 30 points
+            return 20.0 + ((volume_ratio - 2.0) / 1.0) * 10.0
+        elif volume_ratio >= 1.5:
+            # 1.5 to 2.0: 10 to 20 points
+            return 10.0 + ((volume_ratio - 1.5) / 0.5) * 10.0
+        else:
+            # 1.0 to 1.5: 0 to 10 points
+            return ((volume_ratio - 1.0) / 0.5) * 10.0
+
+    @staticmethod
+    def calculate_slope_score(sma_slope_pct: float) -> Tuple[float, Optional[str]]:
+        """
+        DIRECTION — SMA SLOPE (30 points max)
+        Also determines primary direction
+
+        Returns: (score, direction)
+        - Strong uptrend (>+0.3%): 30 points, LONG
+        - Strong downtrend (<-0.3%): 30 points, SHORT
+        - Flat (-0.3% to +0.3%): scaled points, use secondary signals
+        """
+        abs_slope = abs(sma_slope_pct)
+
+        if abs_slope >= 0.3:
+            # Strong trend: full points
+            direction = "LONG" if sma_slope_pct > 0 else "SHORT"
+            return 30.0, direction
+        else:
+            # Flat trend: scaled points (0 to 30), no direction yet
+            slope_score = (abs_slope / 0.3) * 30.0
+            return slope_score, None
+
+    @staticmethod
+    def calculate_momentum_score(bb_pct_b: float, rsi: float, slope_direction: Optional[str] = None) -> Tuple[float, str]:
+        """
+        MOMENTUM CONFIRMATION — BB%B + RSI (20 points max)
+        Also determines secondary direction if slope is flat
+        TREND-FOLLOWING logic (not mean-reversion)
+
+        BB%B scoring (10 points max):
+        - >1.0 (strong upward momentum): 10 points → suggests LONG
+        - <0.0 (strong downward momentum): 10 points → suggests SHORT
+        - 0.0 to 1.0 (normal): scaled points, >0.5 leans LONG, <0.5 leans SHORT
+
+        RSI scoring (10 points max):
+        - >70 (strong bullish): 10 points → suggests LONG
+        - <30 (weak bearish): 10 points → suggests SHORT
+        - 30 to 70 (neutral): scaled points, >50 leans LONG, <50 leans SHORT
+        """
+        # BB%B scoring - TREND-FOLLOWING
+        if bb_pct_b > 1.0:
+            # Above upper band = strong upward momentum
+            bb_score = min(10.0, (bb_pct_b - 1.0) * 10.0)
+            bb_direction = "LONG"  # FLIPPED from mean-reversion
+        elif bb_pct_b < 0.0:
+            # Below lower band = strong downward momentum
+            bb_score = min(10.0, abs(bb_pct_b) * 10.0)
+            bb_direction = "SHORT"  # FLIPPED from mean-reversion
+        else:
+            # 0.0 to 1.0: score based on distance from center (0.5)
+            distance_from_center = abs(bb_pct_b - 0.5)
+            bb_score = distance_from_center * 10.0  # Max 5 points
+            bb_direction = "LONG" if bb_pct_b > 0.5 else "SHORT"  # FLIPPED
+
+        # RSI scoring - TREND-FOLLOWING
+        if rsi > 70:
+            # Strong bullish momentum
+            rsi_score = min(10.0, (rsi - 70) / 30 * 10.0)
+            rsi_direction = "LONG"  # FLIPPED from mean-reversion
+        elif rsi < 30:
+            # Weak/bearish momentum
+            rsi_score = min(10.0, (30 - rsi) / 30 * 10.0)
+            rsi_direction = "SHORT"  # FLIPPED from mean-reversion
+        else:
+            # 30 to 70: score based on distance from center (50)
+            distance_from_center = abs(rsi - 50)
+            rsi_score = (distance_from_center / 20) * 5.0  # Max 5 points
+            rsi_direction = "LONG" if rsi > 50 else "SHORT"  # FLIPPED
+
+        total_momentum = bb_score + rsi_score
+
+        # Determine direction if slope is flat (slope_direction is None)
+        if slope_direction is None:
+            # Use BB%B and RSI agreement
+            if bb_direction == rsi_direction:
+                # Both agree
+                direction = bb_direction
+            else:
+                # Disagree: use whichever has stronger signal
+                direction = bb_direction if bb_score > rsi_score else rsi_direction
+        else:
+            # Slope already determined direction
+            direction = slope_direction
+
+        return total_momentum, direction
+
+    @staticmethod
+    def calculate_zscore_score(zscore: float) -> float:
+        """
+        ABNORMALITY CONFIRMATION — Z-SCORE (10 points max)
+        Measures abnormality (distance from normal)
+
+        |Z| >= 2.5: 10 points (highly abnormal)
+        |Z| >= 2.0: 7 points
+        |Z| >= 1.5: 4 points
+        |Z| < 1.5: scaled 0-4 points
+        """
+        abs_z = abs(zscore)
+
+        if abs_z >= 2.5:
+            return 10.0
+        elif abs_z >= 2.0:
+            return 7.0
+        elif abs_z >= 1.5:
+            return 4.0
+        else:
+            return (abs_z / 1.5) * 4.0
+
+    def score_all_pairs(self, pair_data: Dict[str, dict], blacklisted_symbols: List[str] = None,
+                       regime_data: dict = None, volatility_tracker=None) -> List[SignalResult]:
+        """
+        Score all pairs using volume-first approach
         Returns sorted list (highest score first), filtered by ENTRY_THRESHOLD
 
         Args:
             pair_data: Dictionary of pair market data
             blacklisted_symbols: List of symbols on cooldown (skip these)
-            regime_data: Dict with 'regime', 'slope_pct', etc. (for logging only)
+            regime_data: DEPRECATED - not used anymore
+            volatility_tracker: Optional volatility tracker for bonus points
         """
         if blacklisted_symbols is None:
             blacklisted_symbols = []
 
-        # Extract regime for logging (not used for penalties anymore)
-        regime = 'ranging'
-        if regime_data is not None:
-            regime = regime_data.get('regime', 'ranging')
-
         all_scores = []  # Store ALL scores (even below threshold)
         signals = []     # Store only above-threshold signals
         skipped_blacklist = []  # Track skipped symbols
-        skipped_trend_filter = []  # Track trend-filtered symbols
+        skipped_volume = []  # Track volume-blocked symbols
 
         for symbol, data in pair_data.items():
             # Skip blacklisted symbols
             if symbol in blacklisted_symbols:
                 skipped_blacklist.append(symbol)
                 continue
+
             closes = data["closes"]
             volumes = data["volumes"]
             spread_pct = data["spread_pct"]
@@ -265,45 +277,39 @@ class SignalScorer:
             zscore = self.calculate_zscore(closes)
             volume_ratio = self.calculate_volume_ratio(volumes)
 
-            # Z-score extreme filter - skip if move is too extreme
-            if config.FILTER_ZSCORE_EXTREME and abs(zscore) > config.ZSCORE_EXTREME_THRESHOLD:
-                continue  # Skip this pair entirely
+            # PRIMARY SIGNAL: VOLUME (40 points max, hard block if < 1.0x)
+            volume_score = self.calculate_volume_score(volume_ratio)
+            if volume_score == 0.0:
+                # HARD BLOCK: volume too low, skip this pair
+                skipped_volume.append(f"{symbol} (vol={volume_ratio:.2f}x)")
+                continue
 
-            # Score LONG
-            # STRATEGY MODE: If TREND_FOLLOWING, use SHORT scoring logic for LONG signals
-            if config.STRATEGY_MODE == "TREND_FOLLOWING":
-                long_scores = self.normalize_short_score(  # REVERSED for trend-following
-                    rsi, bb_pct_b, zscore, volume_ratio, spread_pct, funding_rate
-                )
-            else:
-                long_scores = self.normalize_long_score(  # Normal mean-reversion
-                    rsi, bb_pct_b, zscore, volume_ratio, spread_pct, funding_rate
-                )
-            long_composite = self.calculate_composite_score(long_scores)
+            # DIRECTION: SMA SLOPE (30 points max)
+            slope_score, slope_direction = self.calculate_slope_score(sma_slope_pct)
 
-            # RANGING MARKET PENALTY: Heavily penalize LONG signals in ranging markets
-            # This is the ORIGINAL logic - always penalize longs in ranging markets
-            if regime == 'ranging':
-                long_composite *= 0.3
+            # MOMENTUM: BB%B + RSI (20 points max)
+            momentum_score, final_direction = self.calculate_momentum_score(bb_pct_b, rsi, slope_direction)
 
-            # TREND FILTER: Block LONG only if slope is STRONGLY negative (< -threshold)
-            if sma_slope_pct < -config.SMA_SLOPE_THRESHOLD:
-                long_composite = 0.0  # Zero out score
-                skipped_trend_filter.append(f"{symbol} LONG (slope={sma_slope_pct:.4f}%)")
+            # ABNORMALITY: Z-SCORE (10 points max)
+            zscore_score = self.calculate_zscore_score(zscore)
 
-            # VOLATILITY BONUS: Apply multiplier based on historical 10%+ hourly moves
-            if volatility_tracker is not None and long_composite > 0:
-                vol_bonus = volatility_tracker.get_volatility_bonus(symbol)
-                long_composite = long_composite * (1 + vol_bonus)
+            # BASE SCORE (100 points max)
+            base_score = volume_score + slope_score + momentum_score + zscore_score
 
-            # Get actual direction (kept for backwards compatibility)
-            actual_long_direction = "LONG"
+            # VOLATILITY BONUS (20 points max, flat point system)
+            volatility_bonus = 0.0
+            if volatility_tracker is not None:
+                raw_count = volatility_tracker.raw_scores.get(symbol, 0)
+                volatility_bonus = volatility_tracker.get_volatility_bonus_points(symbol)
 
-            # Store ALL LONG scores
-            long_result = SignalResult(
+            # TOTAL SCORE (120 points max)
+            total_score = base_score + volatility_bonus
+
+            # Create signal result
+            result = SignalResult(
                 symbol=symbol,
-                direction=actual_long_direction,  # Use inverted direction if configured
-                score=long_composite,
+                direction=final_direction,
+                score=total_score,
                 rsi=rsi,
                 bb_pct_b=bb_pct_b,
                 zscore=zscore,
@@ -312,131 +318,85 @@ class SignalScorer:
                 funding_rate=funding_rate,
                 sma_slope_pct=sma_slope_pct,
                 volume_24h=volume_24h,
+                volume_score=volume_score,
+                slope_score=slope_score,
+                momentum_score=momentum_score,
+                zscore_score=zscore_score,
+                volatility_bonus=volatility_bonus,
             )
-            all_scores.append(long_result)
 
-            if long_composite >= config.ENTRY_THRESHOLD:
-                signals.append(long_result)
+            all_scores.append(result)
 
-            # Score SHORT
-            # STRATEGY MODE: If TREND_FOLLOWING, use LONG scoring logic for SHORT signals
-            if config.STRATEGY_MODE == "TREND_FOLLOWING":
-                short_scores = self.normalize_long_score(  # REVERSED for trend-following
-                    rsi, bb_pct_b, zscore, volume_ratio, spread_pct, funding_rate
-                )
-            else:
-                short_scores = self.normalize_short_score(  # Normal mean-reversion
-                    rsi, bb_pct_b, zscore, volume_ratio, spread_pct, funding_rate
-                )
-            short_composite = self.calculate_composite_score(short_scores)
+            # Add to signals list if above threshold
+            if total_score >= config.ENTRY_THRESHOLD:
+                signals.append(result)
 
-            # NO PENALTY for SHORT signals (original logic)
-            # SHORT signals are never penalized
-
-            # TREND FILTER: Block SHORT only if slope is STRONGLY positive (> +threshold)
-            if sma_slope_pct > config.SMA_SLOPE_THRESHOLD:
-                short_composite = 0.0  # Zero out score
-                skipped_trend_filter.append(f"{symbol} SHORT (slope={sma_slope_pct:.4f}%)")
-
-            # VOLATILITY BONUS: Apply multiplier based on historical 10%+ hourly moves
-            if volatility_tracker is not None and short_composite > 0:
-                vol_bonus = volatility_tracker.get_volatility_bonus(symbol)
-                short_composite = short_composite * (1 + vol_bonus)
-
-            # Get actual direction (kept for backwards compatibility)
-            actual_short_direction = "SHORT"
-
-            # Store ALL SHORT scores
-            short_result = SignalResult(
-                symbol=symbol,
-                direction=actual_short_direction,  # Use inverted direction if configured
-                score=short_composite,
-                rsi=rsi,
-                bb_pct_b=bb_pct_b,
-                zscore=zscore,
-                volume_ratio=volume_ratio,
-                spread_pct=spread_pct,
-                funding_rate=funding_rate,
-                sma_slope_pct=sma_slope_pct,
-                volume_24h=volume_24h,
-            )
-            all_scores.append(short_result)
-
-            if short_composite >= config.ENTRY_THRESHOLD:
-                signals.append(short_result)
-
-        # Sort all scores by score (highest first) - for logging only
+        # Sort all scores by score (highest first)
         all_scores.sort(key=lambda x: x.score, reverse=True)
 
         # Sort filtered signals by score (highest first)
-        # Only signals that passed ENTRY_THRESHOLD are in this list
         signals.sort(key=lambda x: x.score, reverse=True)
 
-        # Log detailed output - TOP 30 scores
-        log("=" * 120)
-        log(f"SCAN RESULTS - Top 30 of {len(all_scores)} total signals")
-        log("=" * 120)
-        log("")
-
-        # Show regime penalty (original logic restored)
-        if regime == 'ranging':
-            log(f"REGIME PENALTY: RANGING → LONGS penalized (-70%), SHORTS no penalty")
-        else:
-            log(f"REGIME PENALTY: TRENDING → No penalties applied")
+        # Log detailed output
+        log("=" * 140)
+        log(f"SCAN RESULTS (Volume-First Scorer) - Top 30 of {len(all_scores)} total signals")
+        log("=" * 140)
         log("")
 
         if skipped_blacklist:
             log(f"BLACKLISTED ({len(skipped_blacklist)}): {', '.join(skipped_blacklist)}")
             log("")
-        if skipped_trend_filter:
-            log(f"TREND FILTERED ({len(skipped_trend_filter)}): Strong trend blocks counter-trend signals (threshold ±{config.SMA_SLOPE_THRESHOLD}%)")
-            log(f"  Blocked: {', '.join(skipped_trend_filter[:10])}")
-            if len(skipped_trend_filter) > 10:
-                log(f"  ... and {len(skipped_trend_filter) - 10} more")
+
+        if skipped_volume:
+            log(f"VOLUME BLOCKED ({len(skipped_volume)}): Volume < 1.5x average (hard requirement)")
+            log(f"  Blocked: {', '.join(skipped_volume[:10])}")
+            if len(skipped_volume) > 10:
+                log(f"  ... and {len(skipped_volume) - 10} more")
             log("")
-        log("STRATEGY: Always pick HIGHEST SCORE (ignoring threshold)")
+
+        log("SCORING SYSTEM (Volume-First):")
+        log("  VOLUME (40 pts) - PRIMARY SIGNAL, hard block if < 1.5x")
+        log("  SLOPE (30 pts) - Direction from SMA slope, full points if |slope| > 0.3%")
+        log("  MOMENTUM (20 pts) - BB%B (10) + RSI (10), confirms direction")
+        log("  Z-SCORE (10 pts) - Abnormality confirmation")
+        log("  VOLATILITY (20 pts) - Flat bonus based on 10%+ hourly move frequency")
+        log(f"  THRESHOLD: {config.ENTRY_THRESHOLD} points minimum")
         log("")
         log("COLUMN GUIDE:")
-        log("  Score    = Signal strength (0-100). Higher = stronger signal")
-        log("  Dir      = LONG (buy, expect rise) | SHORT (sell, expect drop)")
-        log("  RSI      = Overbought/Oversold. >70 = overbought, <30 = oversold")
-        log("  BB%B     = Price position. >1.0 = above range (high), <0.0 = below range (low)")
-        log("  Z-Score  = Deviation from normal. >2 = abnormally high, <-2 = abnormally low")
-        log("  Vol      = Volume vs average. >1.5 = high activity")
-        log("  Spread%  = Trading cost. Lower = better (easier to trade)")
-        log("  Fund%    = Funding rate. Positive = longs pay shorts (bearish)")
-        log(f"  Slope%   = SMA trend. Only blocks if |slope| > {config.SMA_SLOPE_THRESHOLD}% (strong trend)")
+        log("  Score    = Total points (0-120). Base (100) + Volatility bonus (20)")
+        log("  Dir      = LONG (slope >+0.3%) | SHORT (slope <-0.3%) | BB%B+RSI if flat")
+        log("  Vol/Slp/Mom/Zsc/Vlt = Component scores (debugging)")
+        log("  RSI/BB%B/Z-Score/Vol = Raw indicator values")
         log("")
-        log(f"{'>':<2} {'Rank':<6} {'Symbol':<15} {'Dir':<6} {'Score':<8} {'RSI':<8} {'BB%B':<8} {'Z-Score':<10} {'Vol':<8} {'Spread%':<10} {'Fund%':<10} {'Slope%':<10}")
-        log("-" * 130)
+        log(f"{'>':<2} {'Rank':<6} {'Symbol':<15} {'Dir':<6} {'Score':<8} {'Vol':<6} {'Slp':<6} {'Mom':<6} {'Zsc':<6} {'Vlt':<6} | "
+            f"{'RSI':<8} {'BB%B':<8} {'Z':<8} {'VolRatio':<10} {'Slope%':<10}")
+        log("-" * 140)
 
         for i, sig in enumerate(all_scores[:30], 1):
-            marker = ">" if i == 1 else " "  # Arrow marks the #1 pick
-            log(f"{marker} {i:<5} {sig.symbol:<15} {sig.direction:<6} {sig.score:<8.2f} "
-                f"{sig.rsi:<8.2f} {sig.bb_pct_b:<8.2f} {sig.zscore:<10.2f} "
-                f"{sig.volume_ratio:<8.2f} {sig.spread_pct*100:<10.4f} {sig.funding_rate*100:<10.4f} "
-                f"{sig.sma_slope_pct:<10.4f}")
+            marker = ">" if i == 1 else " "
+            log(f"{marker} {i:<5} {sig.symbol:<15} {sig.direction:<6} {sig.score:<8.1f} "
+                f"{sig.volume_score:<6.1f} {sig.slope_score:<6.1f} {sig.momentum_score:<6.1f} "
+                f"{sig.zscore_score:<6.1f} {sig.volatility_bonus:<6.1f} | "
+                f"{sig.rsi:<8.2f} {sig.bb_pct_b:<8.2f} {sig.zscore:<8.2f} "
+                f"{sig.volume_ratio:<10.2f} {sig.sma_slope_pct:<10.4f}")
 
-        log("=" * 120)
+        log("=" * 140)
 
         if signals:
-            log(f"> ENTERING HIGHEST SCORE: {signals[0].symbol} {signals[0].direction} @ {signals[0].score:.2f}")
-            # Log volatility bonus if tracker is available
-            if volatility_tracker is not None:
-                vol_bonus = volatility_tracker.get_volatility_bonus(signals[0].symbol)
-                norm_score = volatility_tracker.get_normalized_score(signals[0].symbol)
-                raw_count = volatility_tracker.raw_scores.get(signals[0].symbol, 0)
-                log(f"  Volatility bonus: {vol_bonus*100:.1f}% (score: {norm_score:.3f}, {raw_count} hours with 10%+ moves)")
-            if signals[0].score < 30:
-                log(f"  [!] WARNING: Score is weak (<30). Higher risk of loss.")
-            elif signals[0].score < 45:
-                log(f"  [!] CAUTION: Score is moderate (30-45). Proceed with care.")
+            sig = signals[0]
+            log(f"> ENTERING HIGHEST SCORE: {sig.symbol} {sig.direction} @ {sig.score:.1f} points")
+            log(f"  Breakdown: Vol={sig.volume_score:.1f} + Slope={sig.slope_score:.1f} + "
+                f"Momentum={sig.momentum_score:.1f} + Z={sig.zscore_score:.1f} + Volatility={sig.volatility_bonus:.1f}")
+            if sig.score < 45:
+                log(f"  [!] WARNING: Score is weak (<45). Higher risk.")
+            elif sig.score < config.ENTRY_THRESHOLD:
+                log(f"  [!] CAUTION: Score below threshold ({config.ENTRY_THRESHOLD}).")
             else:
-                log(f"  [OK] Score is decent (45+). Good trading opportunity.")
+                log(f"  [OK] Score is solid (>={config.ENTRY_THRESHOLD}). Good opportunity.")
         else:
-            log(f"[X] NO SIGNALS AVAILABLE (no pairs scanned)")
+            log(f"[X] NO SIGNALS ABOVE THRESHOLD ({config.ENTRY_THRESHOLD} points)")
 
-        log("=" * 120)
+        log("=" * 140)
 
         return signals
 
@@ -461,12 +421,12 @@ if __name__ == "__main__":
             print(f"{'='*80}")
             print(f"Total signals above threshold: {len(signals)}")
             print(f"\nTop 10 signals:")
-            print(f"{'Rank':<6} {'Symbol':<15} {'Dir':<6} {'Score':<8} {'RSI':<8} {'BB%B':<8} {'Z':<8} {'Vol':<8}")
+            print(f"{'Rank':<6} {'Symbol':<15} {'Dir':<6} {'Score':<8} {'Vol':<6} {'Slp':<6} {'Mom':<6}")
             print(f"{'-'*80}")
 
             for i, sig in enumerate(signals[:10], 1):
-                print(f"{i:<6} {sig.symbol:<15} {sig.direction:<6} {sig.score:<8.2f} "
-                      f"{sig.rsi:<8.2f} {sig.bb_pct_b:<8.2f} {sig.zscore:<8.2f} {sig.volume_ratio:<8.2f}")
+                print(f"{i:<6} {sig.symbol:<15} {sig.direction:<6} {sig.score:<8.1f} "
+                      f"{sig.volume_score:<6.1f} {sig.slope_score:<6.1f} {sig.momentum_score:<6.1f}")
 
         finally:
             await scanner.close()

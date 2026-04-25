@@ -4,7 +4,8 @@
       "Bash(python:*)",
       "Bash(tasklist:*)",
       "Bash(wmic process:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(git push:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
