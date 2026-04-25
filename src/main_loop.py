@@ -283,11 +283,32 @@ async def main_loop():
 
     # STARTUP: Always check for orphaned positions on exchange regardless of state
     all_open_startup = executor.get_all_open_positions()
-    if all_open_startup and len(all_open_startup) > 1:
+    if len(all_open_startup) > 1:
         symbols = [f"{p['symbol']} ({p['positionAmt']})" for p in all_open_startup]
         log(f"CRITICAL: Multiple positions on exchange at startup: {', '.join(symbols)}", "error")
         log("Please manually close all but one before restarting.", "error")
         return
+    elif len(all_open_startup) == 1:
+        # Single orphaned position — adopt it immediately and place SL
+        p = all_open_startup[0]
+        log(f"STARTUP: Found orphaned position {p['symbol']} ({p['positionAmt']}) — adopting", "warning")
+        position = executor.get_position(p['symbol'])
+        manager.in_position = True
+        manager.current_symbol = p['symbol']
+        manager.entry_price = float(position['entryPrice'])
+        manager.entry_quantity = abs(float(position['positionAmt']))
+        manager.current_direction = "LONG" if float(position['positionAmt']) > 0 else "SHORT"
+        manager.entry_candle_time = time.time()
+        manager.current_size_usd = abs(float(position['positionAmt'])) * float(position['entryPrice'])
+        # Place SL immediately — don't wait for periodic check
+        executor.verify_and_place_missing_sl(
+            symbol=manager.current_symbol,
+            direction=manager.current_direction,
+            tp_price=manager.tp_price(),
+            sl_price=manager.sl_price(),
+            quantity=manager.entry_quantity
+        )
+        save_state(manager)
 
     # Load existing state (crash recovery)
     saved_state = load_state()
@@ -582,10 +603,7 @@ async def main_loop():
                 continue
 
             # Scan and score pairs
-            log("Scanning pairs...")
             pair_data = await scanner.scan_all_pairs()
-
-            log(f"Scanning {len(pair_data)} pairs...")
             log("Scoring signals...")
             blacklisted = manager.get_blacklisted_symbols()
             signals = scorer.score_all_pairs(pair_data, blacklisted)
@@ -602,7 +620,6 @@ async def main_loop():
 
             # Get best signal
             best = signals[0]
-
 
             log(f"BEST SIGNAL: {best.symbol} {best.direction} | Score={best.score:.2f} | "
                 f"RSI={best.rsi:.1f} BB={best.bb_pct_b:.2f} Z={best.zscore:.2f}")

@@ -298,9 +298,9 @@ class PairScanner:
                         return  # Skip this pair
 
                     # Slippage guard: Estimate fill price for max level position
-                    # Estimate based on $100 account for filtering purposes
+                    # Based on $100 account baseline (conservative filter)
                     estimated_base_size = 100.0 * config.BASE_SIZE_PCT
-                    max_notional = estimated_base_size * (1.5 ** config.MAX_LEVEL) * config.LEVERAGE
+                    max_notional = estimated_base_size * (config.MARTINGALE_MULTIPLIER ** config.MAX_LEVEL) * config.LEVERAGE
 
                     # Calculate estimated fill price from order book
                     # For LONG: buying at asks, for SHORT: selling at bids

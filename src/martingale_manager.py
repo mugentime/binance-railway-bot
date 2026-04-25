@@ -289,6 +289,7 @@ class MartingaleManager:
                 f"Entering {config.COOLDOWN_AFTER_MAX_LOSS}s cooldown", "warning")
             self.last_max_loss_time = time.time()
             self.level = 0
+            self.consecutive_losses = 0  # Reset on chain blowout
             self.chain_start_balance = 0.0  # Clear cached balance for next cycle
             self.chain_pnl_history = []  # Clear chain history on MAX_LEVEL reset
 
