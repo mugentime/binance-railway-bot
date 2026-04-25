@@ -211,21 +211,14 @@ class SignalScorer:
             # Neutral zone
             return 0.0, None
 
-    def score_all_pairs(self, pair_data: Dict[str, dict], blacklisted_symbols: List[str] = None,
-                       regime_data: dict = None, volatility_tracker=None) -> List[SignalResult]:
+    def score_all_pairs(self, pair_data: Dict[str, dict], blacklisted_symbols: List[str] = None) -> List[SignalResult]:
         """
-        Score all pairs using backtest-optimized weighted scoring
-        Returns sorted list (highest score first), filtered by ENTRY_THRESHOLD
+        Score all pairs using backtest-optimized weighted scoring.
+        Returns sorted list (highest score first).
 
         Entry gate: volume_ratio > 1.5 (hard requirement)
-        Scoring: weighted sum of 4 components (max 100 points)
+        Scoring: volume 40%, RSI 25%, BB 20%, Z-score 15% (max 100 pts)
         Direction: inverted momentum (mean-reversion)
-
-        Args:
-            pair_data: Dictionary of pair market data
-            blacklisted_symbols: List of symbols on cooldown (skip these)
-            regime_data: DEPRECATED - not used
-            volatility_tracker: DEPRECATED - not used
         """
         if blacklisted_symbols is None:
             blacklisted_symbols = []

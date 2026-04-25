@@ -57,10 +57,10 @@ QUOTE_ASSET = "USDT"
 COOLDOWN_CANDLES = 4          # Number of candles to block a pair after loss
 COOLDOWN_DURATION_SECS = COOLDOWN_CANDLES * SCAN_INTERVAL_SECS  # 4 * 150sec = 600 seconds (10 min)
 
-# SMA Trend Filter
-SMA_PERIOD = 50                  # 50-period SMA for trend detection
-SMA_SLOPE_LOOKBACK = 10          # Calculate slope over last 10 candles
-SMA_SLOPE_THRESHOLD = 0.3        # Only block if slope magnitude > 0.3% (strong trend)
+# SMA Trend Filter (vars kept for reference; SMA computation removed from pair_scanner)
+SMA_PERIOD = 50
+SMA_SLOPE_LOOKBACK = 10
+SMA_SLOPE_THRESHOLD = 0.3
 
 # Signal scorer weights (volume-first, hardcoded in signal_scorer.py)
 # Volume: 40%, RSI: 25%, BB: 20%, Z-score: 15%

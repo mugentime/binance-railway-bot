@@ -374,17 +374,6 @@ async def main_loop():
             sl_price=manager.sl_price(),
             quantity=manager.entry_quantity
         )
-        # Check if position was closed while offline
-        if float(all_open_startup[0].get('positionAmt', 0)) == 0:
-            log(f"STARTUP: Position {manager.current_symbol} was closed while offline")
-            outcome = check_position_closed(executor, manager)
-            last_trade = executor.get_last_trade(manager.current_symbol)
-            exit_price = float(last_trade["price"]) if last_trade else manager.entry_price
-            if outcome == "WIN":
-                manager.close_win(exit_price)
-            else:
-                manager.close_loss(exit_price)
-            save_state(manager)
 
     try:
         while True:
