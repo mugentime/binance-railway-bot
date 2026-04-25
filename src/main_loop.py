@@ -607,8 +607,10 @@ async def main_loop():
             log(f"BEST SIGNAL: {best.symbol} {best.direction} | Score={best.score:.2f} | "
                 f"RSI={best.rsi:.1f} BB={best.bb_pct_b:.2f} Z={best.zscore:.2f}")
 
-            # Update balance for dynamic position sizing (cache for full Martingale chain)
-            manager.update_chain_start_balance()
+            # Update balance for dynamic position sizing
+            # Only lock in balance at chain start (level 0) — keep it constant throughout chain
+            if manager.level == 0:
+                manager.update_chain_start_balance()
 
             # Enter position
             try:

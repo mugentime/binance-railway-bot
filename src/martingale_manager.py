@@ -278,18 +278,9 @@ class MartingaleManager:
         # Increment level
         self.level += 1
 
-        # Track consecutive losses for regime switching
+        # Track consecutive losses (informational only)
         self.consecutive_losses += 1
         log(f"Consecutive losses: {self.consecutive_losses}")
-
-        if self.consecutive_losses >= 3 and not self.regime_flipped:
-            self.regime_flipped = True
-            self.consecutive_losses = 0  # Reset counter after flip
-            log("🔄 REGIME FLIPPED: 3 consecutive losses - inverting strategy", "warning")
-        elif self.consecutive_losses >= 3 and self.regime_flipped:
-            self.regime_flipped = False
-            self.consecutive_losses = 0  # Reset counter after flip back
-            log("🔄 REGIME RESTORED: 3 consecutive losses - returning to normal", "warning")
 
         # Check if max level exceeded
         if self.level > config.MAX_LEVEL:

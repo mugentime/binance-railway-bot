@@ -400,7 +400,7 @@ if __name__ == "__main__":
 
             for i, sig in enumerate(signals[:10], 1):
                 print(f"{i:<6} {sig.symbol:<15} {sig.direction:<6} {sig.score:<8.1f} "
-                      f"{sig.volume_score:<6.1f} {sig.slope_score:<6.1f} {sig.momentum_score:<6.1f}")
+                      f"{sig.volume_score:<6.1f} {sig.rsi_score:<6.1f} {sig.bb_score:<6.1f}")
 
         finally:
             await scanner.close()
