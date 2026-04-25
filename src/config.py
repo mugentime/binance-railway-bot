@@ -25,9 +25,8 @@ MAKER_FEE = 0.0002            # 0.02%
 TP_PCT = 0.10                 # 10.0% gross take profit
 SL_PCT = 0.04                 # 4.0% price-based stop loss (prevents catastrophes)
 
-# Strategy mode
-STRATEGY_MODE = "MEAN_REVERSION"  # "MEAN_REVERSION" or "TREND_FOLLOWING"
-SIGNAL_DIRECTION = "inverted"  # "normal" or "inverted" - oversold → SHORT, overbought → LONG
+# Strategy: inverted momentum / mean-reversion
+# SHORT on overbought (RSI>65, BB>0.8), LONG on oversold (RSI<35, BB<0.2)
 
 # Martingale parameters
 BASE_SIZE_PCT = 0.03          # 3% of account balance per trade at level 0 (dynamic sizing)
@@ -63,30 +62,9 @@ SMA_PERIOD = 50                  # 50-period SMA for trend detection
 SMA_SLOPE_LOOKBACK = 10          # Calculate slope over last 10 candles
 SMA_SLOPE_THRESHOLD = 0.3        # Only block if slope magnitude > 0.3% (strong trend)
 
-# Signal scorer weights (must sum to 1.0)
-WEIGHTS = {
-    "rsi": 0.30,
-    "bollinger": 0.20,
-    "zscore": 0.15,           # Reduced from 0.20
-    "volume": 0.15,
-    "spread": 0.15,           # Increased from 0.10
-    "funding": 0.05,
-}
-ENTRY_THRESHOLD = 0           # No threshold - volume_ratio > 1.5 gate is the only filter, score is for ranking
-
-# Volatility bonus (10%+ hourly moves in last 7 days)
-VOLATILITY_WEIGHT = 0.3       # Multiplier for volatility score bonus
-VOLATILITY_REFRESH_HOURS = 24 # Refresh volatility scores every 24 hours
-MIN_VOLATILITY_INSTANCES = 50   # Exclude pairs with fewer than 50 ten-percent hourly moves in 7 days (too slow)
-MAX_VOLATILITY_INSTANCES = 2000 # Exclude pairs with more than 2000 instances (too chaotic, likely junk tokens)
-
-# Z-score extreme filter
-FILTER_ZSCORE_EXTREME = True  # Skip entries where |Z| > threshold
-ZSCORE_EXTREME_THRESHOLD = 2.5  # Skip if absolute Z-score exceeds this value
-
-# RSI thresholds (for inverted momentum)
-RSI_LONG_THRESHOLD = 25       # Only enter on RSI < 25 (oversold → SHORT in inverted mode)
-RSI_SHORT_THRESHOLD = 75      # Only enter on RSI > 75 (overbought → LONG in inverted mode)
+# Signal scorer weights (volume-first, hardcoded in signal_scorer.py)
+# Volume: 40%, RSI: 25%, BB: 20%, Z-score: 15%
+ENTRY_THRESHOLD = 0           # No threshold - volume_ratio > 1.5 is the only gate, score ranks pairs
 
 # Safety
 BTC_DUMP_THRESHOLD_4H = -0.05  # Pause longs if BTC down >5% in 4h
@@ -138,7 +116,3 @@ EXCLUDED_SYMBOLS = [
     "AIOTUSDT",  # Low liquidity - 2.28% slippage on SL execution (2026-04-12)
 ]
 
-# Validate config on import
-assert abs(sum(WEIGHTS.values()) - 1.0) < 0.001, "Weights must sum to 1.0"
-assert BINANCE_API_KEY, "BINANCE_API_KEY environment variable not set"
-assert BINANCE_API_SECRET, "BINANCE_API_SECRET environment variable not set"

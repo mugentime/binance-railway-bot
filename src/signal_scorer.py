@@ -230,10 +230,9 @@ class SignalScorer:
         if blacklisted_symbols is None:
             blacklisted_symbols = []
 
-        all_scores = []  # Store ALL scores (even below threshold)
-        signals = []     # Store only above-threshold signals
-        skipped_blacklist = []  # Track skipped symbols
-        skipped_volume = []  # Track volume-blocked symbols
+        all_scores = []  # All pairs passing volume gate, sorted by score
+        skipped_blacklist = []
+        skipped_volume = []
 
         for symbol, data in pair_data.items():
             # Skip blacklisted symbols
@@ -285,15 +284,12 @@ class SignalScorer:
                 directional_votes.append((zscore_direction, zscore_score))
 
             # Determine final direction by weighted vote
-            if not directional_votes:
-                # No directional signals - skip this pair
-                continue
-
             # Sum scores for LONG and SHORT
             long_score = sum(score for direction, score in directional_votes if direction == "LONG")
             short_score = sum(score for direction, score in directional_votes if direction == "SHORT")
 
-            # Direction with higher total score wins
+            # If no directional signals, default SHORT (ranging regime favors SHORT)
+            # If tied or both zero, SHORT wins (same reasoning)
             final_direction = "LONG" if long_score > short_score else "SHORT"
 
             # Create signal result
@@ -317,15 +313,8 @@ class SignalScorer:
 
             all_scores.append(result)
 
-            # Add to signals list if above threshold
-            if total_score >= config.ENTRY_THRESHOLD:
-                signals.append(result)
-
-        # Sort all scores by score (highest first)
+        # Sort by score descending
         all_scores.sort(key=lambda x: x.score, reverse=True)
-
-        # Sort filtered signals by score (highest first)
-        signals.sort(key=lambda x: x.score, reverse=True)
 
         # Log detailed output
         log("=" * 140)
@@ -373,20 +362,13 @@ class SignalScorer:
 
         log("=" * 140)
 
-        if signals:
-            sig = signals[0]
-            log(f"> ENTERING HIGHEST SCORE: {sig.symbol} {sig.direction} @ {sig.score:.1f} points")
-            log(f"  Breakdown: Vol={sig.volume_score:.1f} + RSI={sig.rsi_score:.1f} + "
-                f"BB={sig.bb_score:.1f} + Z={sig.zscore_score:.1f}")
-            log(f"  Indicators: RSI={sig.rsi:.1f}, BB%B={sig.bb_pct_b:.2f}, Z={sig.zscore:.2f}, VolRatio={sig.volume_ratio:.2f}x")
-            if sig.score < 50:
-                log(f"  [!] WARNING: Score is weak (<50). Higher risk.")
-            elif sig.score < config.ENTRY_THRESHOLD:
-                log(f"  [!] CAUTION: Score below threshold ({config.ENTRY_THRESHOLD}).")
-            else:
-                log(f"  [OK] Score is solid (>={config.ENTRY_THRESHOLD}). Good opportunity.")
+        if all_scores:
+            sig = all_scores[0]
+            log(f"> TOP SIGNAL: {sig.symbol} {sig.direction} @ {sig.score:.1f} pts | "
+                f"Vol={sig.volume_score:.1f} RSI={sig.rsi_score:.1f} BB={sig.bb_score:.1f} Z={sig.zscore_score:.1f}")
+            log(f"  RSI={sig.rsi:.1f} BB%B={sig.bb_pct_b:.2f} Z={sig.zscore:.2f} VolRatio={sig.volume_ratio:.2f}x")
         else:
-            log(f"[X] NO SIGNALS ABOVE THRESHOLD ({config.ENTRY_THRESHOLD} points)")
+            log("[X] NO SIGNALS: No pairs passed volume_ratio > 1.5 gate")
 
         log("=" * 140)
 

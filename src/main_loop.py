@@ -13,8 +13,6 @@ from signal_scorer import SignalScorer
 from martingale_manager import MartingaleManager
 from order_executor import OrderExecutor
 from safety_checks import SafetyChecker
-from volatility_tracker import VolatilityTracker
-import numpy as np
 import httpx
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -72,75 +70,6 @@ def retry_with_backoff(func: Callable, max_retries: int = 3, initial_delay: floa
                 raise last_exception
 
     raise last_exception
-
-def detect_market_regime(executor) -> dict:
-    """
-    Detect market regime based on BTC's last 24 hours
-    Returns: dict with 'regime' ('trending' or 'ranging'), 'slope_pct', 'atr_pct'
-    """
-    try:
-        # Fetch 24 1h candles for BTCUSDT
-        import httpx
-        resp = httpx.get(
-            f"{config.BINANCE_BASE_URL}/fapi/v1/klines",
-            params={
-                "symbol": "BTCUSDT",
-                "interval": "1h",
-                "limit": 24
-            },
-            timeout=10.0
-        )
-        resp.raise_for_status()
-        candles = resp.json()
-
-        # Extract closes and highs/lows
-        closes = np.array([float(c[4]) for c in candles])  # Close prices
-        highs = np.array([float(c[2]) for c in candles])   # High prices
-        lows = np.array([float(c[3]) for c in candles])    # Low prices
-
-        # Calculate ATR (Average True Range)
-        high_low = highs - lows
-        high_close = np.abs(highs[1:] - closes[:-1])
-        low_close = np.abs(lows[1:] - closes[:-1])
-        true_ranges = np.maximum(high_low[1:], np.maximum(high_close, low_close))
-        atr = np.mean(true_ranges)
-        current_price = closes[-1]
-        atr_pct = (atr / current_price) * 100
-
-        # Calculate SMA slope
-        sma = np.mean(closes)
-        # Linear regression slope over 24 periods
-        x = np.arange(len(closes))
-        slope, _ = np.polyfit(x, closes, 1)
-        slope_pct = (slope / current_price) * 100  # Slope as % per candle
-
-        # UPDATED THRESHOLDS - adjusted for current market volatility
-        ATR_THRESHOLD = 0.65  # Adjusted from 0.5% to 0.65%
-        SLOPE_THRESHOLD = 0.08  # Adjusted from 0.1% to 0.08%
-
-        # Regime detection (original logic - no directional bias)
-        if atr_pct > ATR_THRESHOLD and abs(slope_pct) > SLOPE_THRESHOLD:
-            regime = "trending"
-            reason = f"TRENDING (ATR={atr_pct:.2f}% > {ATR_THRESHOLD}%, |Slope|={abs(slope_pct):.4f}% > {SLOPE_THRESHOLD}%)"
-        else:
-            regime = "ranging"
-            reason = f"RANGING (ATR={atr_pct:.2f}%, |Slope|={abs(slope_pct):.4f}%)"
-
-        log(f"REGIME DETECTED: {regime.upper()} - {reason}")
-
-        return {
-            'regime': regime,
-            'slope_pct': slope_pct,
-            'atr_pct': atr_pct
-        }
-
-    except Exception as e:
-        log(f"Error detecting regime: {e} - defaulting to 'ranging'", "warning")
-        return {
-            'regime': 'ranging',
-            'slope_pct': 0.0,
-            'atr_pct': 0.0
-        }
 
 def wait_until_next_candle(interval_secs: int = 300):
     """Wait until next candle boundary (5m by default)"""
@@ -345,13 +274,20 @@ async def main_loop():
     manager = MartingaleManager()
     executor = OrderExecutor()
     safety_checker = SafetyChecker()
-    volatility_tracker = VolatilityTracker(executor)
 
     # Set executor reference for dynamic balance fetching
     manager.set_executor(executor)
 
     # Setup graceful shutdown handlers
     setup_signal_handlers(manager)
+
+    # STARTUP: Always check for orphaned positions on exchange regardless of state
+    all_open_startup = executor.get_all_open_positions()
+    if all_open_startup and len(all_open_startup) > 1:
+        symbols = [f"{p['symbol']} ({p['positionAmt']})" for p in all_open_startup]
+        log(f"CRITICAL: Multiple positions on exchange at startup: {', '.join(symbols)}", "error")
+        log("Please manually close all but one before restarting.", "error")
+        return
 
     # Load existing state (crash recovery)
     saved_state = load_state()
@@ -466,11 +402,6 @@ async def main_loop():
             except Exception as e:
                 log(f"Error checking position on startup: {e}", "error")
 
-    # Calculate initial volatility scores (7 days of 10%+ hourly moves)
-    log("")
-    all_symbols = await scanner.get_all_symbols()
-    volatility_tracker.calculate_volatility_scores(all_symbols)
-    log("")
 
     try:
         while True:
@@ -500,12 +431,6 @@ async def main_loop():
 
             # Clean expired blacklist entries
             manager.clean_expired_blacklist()
-
-            # Refresh volatility scores if needed (every 24 hours)
-            if volatility_tracker.should_refresh():
-                log("Refreshing volatility scores (24h elapsed)...")
-                all_symbols = await scanner.get_all_symbols()
-                volatility_tracker.calculate_volatility_scores(all_symbols)
 
             # If in position, check for timeout first
             if manager.in_position:
@@ -656,68 +581,14 @@ async def main_loop():
                 log(f"BLOCKED: {safety.reason}")
                 continue
 
-            # Detect market regime
-            regime_data = detect_market_regime(executor)
-
             # Scan and score pairs
             log("Scanning pairs...")
             pair_data = await scanner.scan_all_pairs()
 
-            # Filter by volatility band (exclude too slow/chaotic symbols)
-            original_count = len(pair_data)
-            original_symbols = set(pair_data.keys())
-            pair_data = {
-                symbol: data for symbol, data in pair_data.items()
-                if volatility_tracker.is_valid_symbol(symbol)
-            }
-            filtered_count = original_count - len(pair_data)
-
-            # DIAGNOSTIC: Show volatility filter impact
-            log("="*80)
-            log("VOLATILITY FILTER DIAGNOSTIC")
-            log(f"Total symbols scanned: {original_count}")
-            log(f"Symbols in tradeable pool (passed filter): {len(pair_data)}")
-            log(f"Symbols excluded by volatility filter: {filtered_count}")
-
-            if filtered_count > 0:
-                excluded_symbols = original_symbols - set(pair_data.keys())
-                excluded_list = sorted(list(excluded_symbols))[:10]  # Show first 10
-                log(f"Sample excluded symbols: {', '.join(excluded_list)}")
-            log("="*80)
-
+            log(f"Scanning {len(pair_data)} pairs...")
             log("Scoring signals...")
             blacklisted = manager.get_blacklisted_symbols()
-
-            # NOTE: New scorer doesn't use regime_data (no regime penalty)
-            # Regime flip will be applied to signal DIRECTION after scoring
-            signals = scorer.score_all_pairs(pair_data, blacklisted, regime_data, volatility_tracker)
-
-            # DIAGNOSTIC: Show scoring results
-            log("="*80)
-            log("SCORING DIAGNOSTIC")
-            if signals:
-                top = signals[0]
-                log(f"TOP SIGNAL (from tradeable pool): {top.symbol} {top.direction} @ {top.score:.2f}")
-                log(f"  RSI: {top.rsi:.1f} | BB%B: {top.bb_pct_b:.2f} | Z-Score: {top.zscore:.2f}")
-                log(f"  Volume Ratio: {top.volume_ratio:.2f} | Spread: {top.spread_pct*100:.4f}%")
-
-                # Show volatility info for this symbol
-                raw_count = volatility_tracker.raw_scores.get(top.symbol, 0)
-                vol_bonus_points = volatility_tracker.get_volatility_bonus_points(top.symbol)
-                log(f"  Volatility: {raw_count} hours with 10%+ moves | bonus={vol_bonus_points:.0f} points")
-
-                # Entry decision
-                if top.score >= config.ENTRY_THRESHOLD:
-                    log(f"  ✓ WILL ENTER: Score {top.score:.2f} >= threshold {config.ENTRY_THRESHOLD}")
-                else:
-                    log(f"  ✗ NO ENTRY: Score {top.score:.2f} < threshold {config.ENTRY_THRESHOLD}")
-            else:
-                log("NO SIGNALS - No symbols met the scoring threshold after all filters")
-
-            log(f"Total signals generated: {len(signals)}")
-            log(f"Entry threshold: {config.ENTRY_THRESHOLD}")
-            log(f"NOTE: Excluded symbols ({filtered_count}) are not scored, so we cannot compare their potential scores")
-            log("="*80)
+            signals = scorer.score_all_pairs(pair_data, blacklisted)
 
             # Filter by safety blocks
             if safety.block_longs:
@@ -732,12 +603,6 @@ async def main_loop():
             # Get best signal
             best = signals[0]
 
-            # Apply regime flip if triggered by consecutive losses
-            # NEW: Flip the DIRECTION instead of the regime (new scorer has no regime penalty)
-            if manager.regime_flipped:
-                original_direction = best.direction
-                best.direction = "SHORT" if original_direction == "LONG" else "LONG"
-                log(f"🔄 REGIME FLIP APPLIED: {original_direction} → {best.direction} (inverting due to 3 consecutive losses)")
 
             log(f"BEST SIGNAL: {best.symbol} {best.direction} | Score={best.score:.2f} | "
                 f"RSI={best.rsi:.1f} BB={best.bb_pct_b:.2f} Z={best.zscore:.2f}")
