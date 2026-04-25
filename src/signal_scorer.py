@@ -390,7 +390,7 @@ class SignalScorer:
 
         log("=" * 140)
 
-        return signals
+        return all_scores
 
 # Test with scanner output
 if __name__ == "__main__":
