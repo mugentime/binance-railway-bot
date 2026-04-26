@@ -576,8 +576,8 @@ async def main_loop():
                 f"RSI={best.rsi:.1f} BB={best.bb_pct_b:.2f} Z={best.zscore:.2f}")
 
             # Update balance for dynamic position sizing
-            # Only lock in balance at chain start (level 0) — keep it constant throughout chain
-            if manager.level == 0:
+            # Lock in balance at chain start (level 0), but also fetch if balance is missing
+            if manager.level == 0 or manager.chain_start_balance == 0.0:
                 manager.update_chain_start_balance()
 
             # Enter position
