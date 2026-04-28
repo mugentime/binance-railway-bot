@@ -607,10 +607,11 @@ class OrderExecutor:
             )
             resp.raise_for_status()
             log(f"Cancelled algo orders for {symbol}")
-        except Exception as e:
-            # Some symbols may not have algo orders, this is OK
+        except httpx.HTTPStatusError as e:
             if e.response.status_code != 404:
                 log(f"Error cancelling algo orders for {symbol}: {e}", "warning")
+        except Exception as e:
+            log(f"Error cancelling algo orders for {symbol}: {e}", "warning")
 
     def get_position(self, symbol: str) -> Optional[dict]:
         """Get position info for symbol"""
@@ -655,7 +656,7 @@ class OrderExecutor:
             return open_positions
         except Exception as e:
             log(f"Error getting all positions: {e}", "error")
-            return []
+            raise  # CRITICAL: never return [] — empty list looks like "no positions" and triggers false auto-recovery
 
     def get_open_orders(self, symbol: str) -> list:
         """Get all open orders for symbol"""

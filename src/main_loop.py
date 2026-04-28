@@ -44,11 +44,11 @@ def start_health_server():
 
 def retry_with_backoff(func: Callable, max_retries: int = 3, initial_delay: float = 10.0) -> Any:
     """
-    Retry function with exponential backoff for network errors
+    Retry function with exponential backoff for network errors and rate limits
     Args:
         func: Function to retry
         max_retries: Maximum retry attempts (default 3)
-        initial_delay: Initial delay in seconds (default 5s)
+        initial_delay: Initial delay in seconds (default 10s)
     Returns: Function result or raises last exception
     """
     delay = initial_delay
@@ -57,6 +57,32 @@ def retry_with_backoff(func: Callable, max_retries: int = 3, initial_delay: floa
     for attempt in range(max_retries):
         try:
             return func()
+        except httpx.HTTPStatusError as e:
+            status = e.response.status_code
+            if status == 418:
+                # IP banned - wait at least 5 minutes
+                wait_time = max(delay, 300.0)
+                last_exception = e
+                if attempt < max_retries - 1:
+                    log(f"IP banned (418) - waiting {wait_time:.0f}s before retry ({attempt + 1}/{max_retries})...", "warning")
+                    time.sleep(wait_time)
+                    delay *= 2
+                else:
+                    log(f"IP banned (418) after {max_retries} attempts: {e}", "error")
+                    raise last_exception
+            elif status == 429:
+                # Rate limited - wait at least 60 seconds
+                wait_time = max(delay, 60.0)
+                last_exception = e
+                if attempt < max_retries - 1:
+                    log(f"Rate limited (429) - waiting {wait_time:.0f}s before retry ({attempt + 1}/{max_retries})...", "warning")
+                    time.sleep(wait_time)
+                    delay *= 2
+                else:
+                    log(f"Rate limited (429) after {max_retries} attempts: {e}", "error")
+                    raise last_exception
+            else:
+                raise  # Non-rate-limit HTTP errors propagate immediately
         except (httpx.ConnectError, httpx.TimeoutException, httpx.ReadTimeout,
                 OSError, ConnectionError) as e:
             last_exception = e
@@ -64,7 +90,7 @@ def retry_with_backoff(func: Callable, max_retries: int = 3, initial_delay: floa
                 log(f"Network error (attempt {attempt + 1}/{max_retries}): {type(e).__name__} - {e}", "warning")
                 log(f"Retrying in {delay}s...", "warning")
                 time.sleep(delay)
-                delay *= 2  # Exponential backoff: 5s, 10s, 20s
+                delay *= 2  # Exponential backoff: 10s, 20s, 40s
             else:
                 log(f"Network error after {max_retries} attempts: {type(e).__name__} - {e}", "error")
                 raise last_exception
@@ -225,13 +251,15 @@ def verify_and_sync_state(executor: OrderExecutor, manager: MartingaleManager) -
         log(f"Error during state verification: {e}", "error")
         return False
 
-def check_position_closed(executor: OrderExecutor, manager: MartingaleManager) -> Optional[str]:
+def check_position_closed(executor: OrderExecutor, manager: MartingaleManager, position: Optional[dict] = None) -> Optional[str]:
     """
-    Check if position is closed and determine outcome
+    Check if position is closed and determine outcome.
+    Accepts pre-fetched position to avoid duplicate API calls.
     Returns: "WIN", "LOSS", or None if still open
     """
     try:
-        position = executor.get_position(manager.current_symbol)
+        if position is None:
+            position = executor.get_position(manager.current_symbol)
 
         if position is None:
             log(f"WARNING: Could not fetch position for {manager.current_symbol}", "warning")
@@ -441,7 +469,9 @@ async def main_loop():
                     continue
 
                 # Check if position closed normally (TP/SL hit)
-                outcome = check_position_closed(executor, manager)
+                # Get position ONCE and reuse for both closed-check and holding display
+                position = executor.get_position(manager.current_symbol)
+                outcome = check_position_closed(executor, manager, position=position)
 
                 if outcome:
                     # Position closed
@@ -465,9 +495,7 @@ async def main_loop():
                         f"Level: {stats['current_level']}")
 
                 else:
-                    # Still in position
-                    position = executor.get_position(manager.current_symbol)
-
+                    # Still in position - reuse position already fetched above
                     if position is None:
                         log(f"ERROR: Failed to fetch position for {manager.current_symbol}, skipping cycle", "error")
                         continue
