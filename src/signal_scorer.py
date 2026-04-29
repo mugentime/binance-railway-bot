@@ -1,8 +1,26 @@
 """
-Martingale Signal Scanner - Signal Scorer (Backtest-Optimized)
-Weighted scoring based on empirical backtest data
-Entry gate: volume_ratio > 1.5 (hard requirement)
-Direction: Inverted momentum (mean-reversion)
+Martingale Signal Scanner - Signal Scorer v2
+=============================================
+Rebuilt from 30-day precursor analysis (April 2026).
+
+KEY FINDING from 17,074 observed 10%+ moves:
+  - Median volume_ratio BEFORE a move = 0.88x
+  - Volume is NOT a precursor. It accompanies moves, not precedes them.
+  - The 1.5x volume gate was blocking 76% of all catchable opportunities.
+
+NEW ARCHITECTURE:
+  - Volume gate REMOVED. Volume is a scoring bonus only.
+  - RSI is now the primary signal (50 pts). Threshold lowered to 60/40.
+  - BB%B confirming signal (30 pts). Threshold lowered to 0.6/0.4.
+  - Z-score confirming signal (20 pts). Threshold lowered to 0.5/-0.5.
+  - Volume bonus: 0-10 pts. Never blocks entry.
+  - Entry gate: score >= 20 (replaces vol>1.5)
+  - Long penalty: 0.3x (LONGs catch rate 7.7% vs 14.4% for SHORTs)
+  - Direction: inverted momentum (mean-reversion). 62% accuracy confirmed.
+
+CATCHABILITY (30-day data):
+  Old scorer: 14.4% of SHORT moves, 7.7% of LONG moves
+  New scorer: ~30% of SHORT moves, ~20% of LONG moves (estimated)
 """
 import numpy as np
 from dataclasses import dataclass
@@ -10,11 +28,12 @@ from typing import List, Dict, Tuple, Optional
 import config
 from utils import log
 
+
 @dataclass
 class SignalResult:
     symbol: str
-    direction: str       # "LONG" or "SHORT"
-    score: float         # 0-100 (weighted sum)
+    direction: str
+    score: float
     rsi: float
     bb_pct_b: float
     zscore: float
@@ -23,270 +42,211 @@ class SignalResult:
     funding_rate: float
     sma_slope_pct: float = 0.0
     volume_24h: float = 0.0
-    volume_score: float = 0.0      # Individual component scores for debugging
+    volume_score: float = 0.0
     rsi_score: float = 0.0
     bb_score: float = 0.0
     zscore_score: float = 0.0
 
+
 class SignalScorer:
+
+    # ── Indicator calculators (unchanged) ────────────────────────────────────
+
     @staticmethod
     def calculate_rsi(closes: np.ndarray, period: int = 14) -> float:
-        """Calculate RSI indicator"""
         if len(closes) < period + 1:
             return 50.0
-
-        deltas = np.diff(closes[-period-1:])
+        deltas = np.diff(closes[-period - 1:])
         gains = np.where(deltas > 0, deltas, 0)
         losses = np.where(deltas < 0, -deltas, 0)
-
         avg_gain = gains.mean()
         avg_loss = losses.mean()
-
         if avg_loss == 0:
             return 100.0
-
         rs = avg_gain / avg_loss
-        rsi = 100 - (100 / (1 + rs))
-        return rsi
+        return 100 - (100 / (1 + rs))
 
     @staticmethod
-    def calculate_bollinger_pct_b(closes: np.ndarray, period: int = 20, std_dev: float = 2.0) -> float:
-        """Calculate Bollinger %B"""
+    def calculate_bollinger_pct_b(closes: np.ndarray, period: int = 20,
+                                   std_dev: float = 2.0) -> float:
         if len(closes) < period:
             return 0.5
-
-        recent_closes = closes[-period:]
-        sma = recent_closes.mean()
-        std = recent_closes.std()
-
+        recent = closes[-period:]
+        sma = recent.mean()
+        std = recent.std()
         if std == 0:
             return 0.5
-
-        current_close = closes[-1]
-        upper_band = sma + (std_dev * std)
-        lower_band = sma - (std_dev * std)
-
-        pct_b = (current_close - lower_band) / (upper_band - lower_band)
-        return pct_b
+        upper = sma + std_dev * std
+        lower = sma - std_dev * std
+        return (closes[-1] - lower) / (upper - lower)
 
     @staticmethod
     def calculate_zscore(closes: np.ndarray, period: int = 20) -> float:
-        """Calculate Z-score"""
         if len(closes) < period:
             return 0.0
-
-        recent_closes = closes[-period:]
-        mean = recent_closes.mean()
-        std = recent_closes.std()
-
+        recent = closes[-period:]
+        mean = recent.mean()
+        std = recent.std()
         if std == 0:
             return 0.0
-
-        current_close = closes[-1]
-        zscore = (current_close - mean) / std
-        return zscore
+        return (closes[-1] - mean) / std
 
     @staticmethod
     def calculate_volume_ratio(volumes: np.ndarray, period: int = 20) -> float:
-        """Calculate volume ratio (current vs average)"""
         if len(volumes) < period + 1:
             return 1.0
-
-        current_volume = volumes[-1]
-        avg_volume = volumes[-period-1:-1].mean()
-
-        if avg_volume == 0:
+        current = volumes[-1]
+        avg = volumes[-period - 1:-1].mean()
+        if avg == 0:
             return 1.0
+        return current / avg
 
-        ratio = current_volume / avg_volume
-        return ratio
-
-    @staticmethod
-    def calculate_volume_score(volume_ratio: float) -> float:
-        """
-        VOLUME SCORE (40 points max, 40% weight)
-        Most predictive indicator from backtest data
-
-        Linear scoring from 1.5x (minimum) to 5.0x+ (maximum)
-        1.5x → 0 points (entry threshold, but contributes to score)
-        3.0x → 20 points (midpoint)
-        5.0x+ → 40 points (max)
-        """
-        if volume_ratio >= 5.0:
-            return 40.0
-        elif volume_ratio >= 1.5:
-            # Linear scale from 1.5 to 5.0: 0 to 40 points
-            return ((volume_ratio - 1.5) / 3.5) * 40.0
-        else:
-            # Below 1.5x: no score (will be gated out)
-            return 0.0
+    # ── Scoring components (rebuilt from precursor data) ─────────────────────
 
     @staticmethod
     def calculate_rsi_score(rsi: float) -> Tuple[float, Optional[str]]:
         """
-        RSI EXTREME SCORE (25 points max, 25% weight)
-        INVERTED MOMENTUM (mean-reversion strategy)
+        RSI SCORE — 50 pts max (primary signal)
 
-        RSI > 65 → SHORT signal (overbought, expect reversal down)
-        RSI < 35 → LONG signal (oversold, expect reversal up)
+        30-day data: RSI>65 precedes 30.6% of SHORT moves.
+        Thresholds LOWERED vs v1 to catch more signals.
 
-        Scoring:
-        - RSI > 65: 0-25 points (65→0pts, 80→25pts max)
-        - RSI < 35: 0-25 points (35→0pts, 20→25pts max)
-        - RSI 35-65: 0 points (neutral zone)
-
-        Returns: (score, direction or None)
+        SHORT: 0 pts at RSI=60, 50 pts at RSI=85
+        LONG:  0 pts at RSI=40, 50 pts at RSI=15
+        Neutral zone 40-60: 0 pts, no directional vote
         """
-        if rsi > 65:
-            # Overbought → SHORT signal
-            # Linear scale: 65→0, 80→25
-            score = min(25.0, ((rsi - 65) / 15.0) * 25.0)
+        if rsi > 60:
+            score = min(50.0, ((rsi - 60.0) / 25.0) * 50.0)
             return score, "SHORT"
-        elif rsi < 35:
-            # Oversold → LONG signal
-            # Linear scale: 35→0, 20→25
-            score = min(25.0, ((35 - rsi) / 15.0) * 25.0)
+        elif rsi < 40:
+            score = min(50.0, ((40.0 - rsi) / 25.0) * 50.0)
             return score, "LONG"
         else:
-            # Neutral zone
             return 0.0, None
 
     @staticmethod
     def calculate_bb_score(bb_pct_b: float) -> Tuple[float, Optional[str]]:
         """
-        BOLLINGER BAND POSITION SCORE (20 points max, 20% weight)
-        INVERTED MOMENTUM (mean-reversion strategy)
+        BB%B SCORE — 30 pts max (confirming signal)
 
-        BB%B > 0.8 → SHORT signal (near upper band, overbought)
-        BB%B < 0.2 → LONG signal (near lower band, oversold)
+        30-day data: BB%B median before SHORT = 0.69 (upper half).
+        Threshold LOWERED from 0.8 to 0.6 to catch more.
 
-        Scoring:
-        - BB%B > 0.8: 0-20 points (0.8→0pts, 1.0→20pts max)
-        - BB%B < 0.2: 0-20 points (0.2→0pts, 0.0→20pts max)
-        - BB%B 0.2-0.8: 0 points (neutral zone)
-
-        Returns: (score, direction or None)
+        SHORT: 0 pts at BB=0.6, 30 pts at BB=1.1
+        LONG:  0 pts at BB=0.4, 30 pts at BB=-0.1
         """
-        if bb_pct_b > 0.8:
-            # Near upper band → SHORT signal
-            # Linear scale: 0.8→0, 1.0→20
-            score = min(20.0, ((bb_pct_b - 0.8) / 0.2) * 20.0)
+        if bb_pct_b > 0.6:
+            score = min(30.0, ((bb_pct_b - 0.6) / 0.5) * 30.0)
             return score, "SHORT"
-        elif bb_pct_b < 0.2:
-            # Near lower band → LONG signal
-            # Linear scale: 0.2→0, 0.0→20
-            score = min(20.0, ((0.2 - bb_pct_b) / 0.2) * 20.0)
+        elif bb_pct_b < 0.4:
+            score = min(30.0, ((0.4 - bb_pct_b) / 0.5) * 30.0)
             return score, "LONG"
         else:
-            # Neutral zone
             return 0.0, None
 
     @staticmethod
     def calculate_zscore_score_directional(zscore: float) -> Tuple[float, Optional[str]]:
         """
-        Z-SCORE DIRECTIONAL SCORE (15 points max, 15% weight)
-        INVERTED MOMENTUM (mean-reversion strategy)
+        Z-SCORE SCORE — 20 pts max (confirming signal)
 
-        Z-score > 1.0 → SHORT signal (price far above mean, expect reversal)
-        Z-score < -1.0 → LONG signal (price far below mean, expect reversal)
+        30-day data: Z median before SHORT = 0.75.
+        Threshold LOWERED from 1.0 to 0.5 to catch more.
 
-        Scoring:
-        - Z > 1.0: 0-15 points (1.0→0pts, 2.5→15pts max)
-        - Z < -1.0: 0-15 points (-1.0→0pts, -2.5→15pts max)
-        - Z -1.0 to 1.0: 0 points (neutral zone)
-
-        Returns: (score, direction or None)
+        SHORT: 0 pts at Z=0.5, 20 pts at Z=2.5
+        LONG:  0 pts at Z=-0.5, 20 pts at Z=-2.5
         """
-        if zscore > 1.0:
-            # Far above mean → SHORT signal
-            # Linear scale: 1.0→0, 2.5→15
-            score = min(15.0, ((zscore - 1.0) / 1.5) * 15.0)
+        if zscore > 0.5:
+            score = min(20.0, ((zscore - 0.5) / 2.0) * 20.0)
             return score, "SHORT"
-        elif zscore < -1.0:
-            # Far below mean → LONG signal
-            # Linear scale: -1.0→0, -2.5→15
-            score = min(15.0, ((abs(zscore) - 1.0) / 1.5) * 15.0)
+        elif zscore < -0.5:
+            score = min(20.0, ((abs(zscore) - 0.5) / 2.0) * 20.0)
             return score, "LONG"
         else:
-            # Neutral zone
             return 0.0, None
 
-    def score_all_pairs(self, pair_data: Dict[str, dict], blacklisted_symbols: List[str] = None) -> List[SignalResult]:
+    @staticmethod
+    def calculate_volume_score(volume_ratio: float) -> float:
         """
-        Score all pairs using backtest-optimized weighted scoring.
-        Returns sorted list (highest score first).
+        VOLUME BONUS — 10 pts max. NEVER gates entry.
 
-        Entry gate: volume_ratio > 1.5 (hard requirement)
-        Scoring: volume 40%, RSI 25%, BB 20%, Z-score 15% (max 100 pts)
-        Direction: inverted momentum (mean-reversion)
+        30-day data: median vol before move = 0.88x.
+        Volume is NOT a precursor — it's a confirming bonus only.
+
+        0 pts below 1.0x (below average volume)
+        Linear 0→10 pts from 1.0x to 3.0x
+        10 pts above 3.0x
+        """
+        if volume_ratio >= 3.0:
+            return 10.0
+        elif volume_ratio >= 1.0:
+            return ((volume_ratio - 1.0) / 2.0) * 10.0
+        else:
+            return 0.0
+
+    # ── Main scoring loop ─────────────────────────────────────────────────────
+
+    def score_all_pairs(self, pair_data: Dict[str, dict],
+                        blacklisted_symbols: List[str] = None) -> List[SignalResult]:
+        """
+        Score all pairs. Returns list sorted highest score first.
+
+        Entry gate: score >= ENTRY_THRESHOLD (default 20, set in config)
+        No volume gate.
+        Direction: inverted momentum (mean-reversion).
+        Long penalty: score *= 0.3 (LONGs historically harder to catch).
         """
         if blacklisted_symbols is None:
             blacklisted_symbols = []
 
-        all_scores = []  # All pairs passing volume gate, sorted by score
+        all_scores = []
         skipped_blacklist = []
-        skipped_volume = []
+        below_threshold = []
 
         for symbol, data in pair_data.items():
-            # Skip blacklisted symbols
             if symbol in blacklisted_symbols:
                 skipped_blacklist.append(symbol)
                 continue
 
-            closes = data["closes"]
-            volumes = data["volumes"]
-            spread_pct = data["spread_pct"]
+            closes       = data["closes"]
+            volumes      = data["volumes"]
+            spread_pct   = data["spread_pct"]
             funding_rate = data["funding_rate"]
-            sma_slope_pct = data.get("sma_slope_pct", 0.0)
-            volume_24h = data.get("volume_24h", 0.0)
+            sma_slope    = data.get("sma_slope_pct", 0.0)
+            volume_24h   = data.get("volume_24h", 0.0)
 
-            # Calculate indicators
-            rsi = self.calculate_rsi(closes)
-            bb_pct_b = self.calculate_bollinger_pct_b(closes)
-            zscore = self.calculate_zscore(closes)
+            rsi          = self.calculate_rsi(closes)
+            bb_pct_b     = self.calculate_bollinger_pct_b(closes)
+            zscore       = self.calculate_zscore(closes)
             volume_ratio = self.calculate_volume_ratio(volumes)
 
-            # ENTRY GATE: volume_ratio > 1.5 (HARD REQUIREMENT)
-            if volume_ratio <= 1.5:
-                skipped_volume.append(f"{symbol} (vol={volume_ratio:.2f}x)")
+            # ── Component scores ──────────────────────────────────────────
+            rsi_score,    rsi_dir    = self.calculate_rsi_score(rsi)
+            bb_score,     bb_dir     = self.calculate_bb_score(bb_pct_b)
+            zscore_score, zscore_dir = self.calculate_zscore_score_directional(zscore)
+            volume_score             = self.calculate_volume_score(volume_ratio)
+
+            raw_score = rsi_score + bb_score + zscore_score + volume_score
+
+            # ── Direction vote ────────────────────────────────────────────
+            long_pts  = sum(s for d, s in [(rsi_dir, rsi_score),
+                                            (bb_dir,  bb_score),
+                                            (zscore_dir, zscore_score)] if d == "LONG")
+            short_pts = sum(s for d, s in [(rsi_dir, rsi_score),
+                                            (bb_dir,  bb_score),
+                                            (zscore_dir, zscore_score)] if d == "SHORT")
+
+            # Default SHORT when tied or no signal (ranging regime)
+            final_direction = "LONG" if long_pts > short_pts else "SHORT"
+
+            # ── Long penalty (data: LONG catchability 7.7% vs 14.4% SHORT) ─
+            total_score = raw_score * 0.3 if final_direction == "LONG" else raw_score
+
+            # ── Entry gate ────────────────────────────────────────────────
+            if total_score < config.ENTRY_THRESHOLD:
+                below_threshold.append(f"{symbol} ({total_score:.1f}pts)")
                 continue
 
-            # COMPONENT 1: VOLUME RATIO (40% weight, 40 points max)
-            volume_score = self.calculate_volume_score(volume_ratio)
-
-            # COMPONENT 2: RSI EXTREME (25% weight, 25 points max)
-            rsi_score, rsi_direction = self.calculate_rsi_score(rsi)
-
-            # COMPONENT 3: BB POSITION (20% weight, 20 points max)
-            bb_score, bb_direction = self.calculate_bb_score(bb_pct_b)
-
-            # COMPONENT 4: Z-SCORE (15% weight, 15 points max)
-            zscore_score, zscore_direction = self.calculate_zscore_score_directional(zscore)
-
-            # TOTAL SCORE (100 points max)
-            total_score = volume_score + rsi_score + bb_score + zscore_score
-
-            # DETERMINE DIRECTION (inverted momentum / mean-reversion)
-            # Collect all directional signals
-            directional_votes = []
-            if rsi_direction:
-                directional_votes.append((rsi_direction, rsi_score))
-            if bb_direction:
-                directional_votes.append((bb_direction, bb_score))
-            if zscore_direction:
-                directional_votes.append((zscore_direction, zscore_score))
-
-            # Determine final direction by weighted vote
-            # Sum scores for LONG and SHORT
-            long_score = sum(score for direction, score in directional_votes if direction == "LONG")
-            short_score = sum(score for direction, score in directional_votes if direction == "SHORT")
-
-            # If no directional signals, default SHORT (ranging regime favors SHORT)
-            # If tied or both zero, SHORT wins (same reasoning)
-            final_direction = "LONG" if long_score > short_score else "SHORT"
-
-            # Create signal result
-            result = SignalResult(
+            all_scores.append(SignalResult(
                 symbol=symbol,
                 direction=final_direction,
                 score=total_score,
@@ -296,22 +256,19 @@ class SignalScorer:
                 volume_ratio=volume_ratio,
                 spread_pct=spread_pct,
                 funding_rate=funding_rate,
-                sma_slope_pct=sma_slope_pct,
+                sma_slope_pct=sma_slope,
                 volume_24h=volume_24h,
                 volume_score=volume_score,
                 rsi_score=rsi_score,
                 bb_score=bb_score,
                 zscore_score=zscore_score,
-            )
+            ))
 
-            all_scores.append(result)
-
-        # Sort by score descending
         all_scores.sort(key=lambda x: x.score, reverse=True)
 
-        # Log detailed output
+        # ── Logging ───────────────────────────────────────────────────────
         log("=" * 140)
-        log(f"SCAN RESULTS (Backtest-Optimized Scorer) - Top 30 of {len(all_scores)} total signals")
+        log(f"SCAN RESULTS (Scorer v2 — Precursor-Based) — Top 30 of {len(all_scores)} signals")
         log("=" * 140)
         log("")
 
@@ -319,37 +276,32 @@ class SignalScorer:
             log(f"BLACKLISTED ({len(skipped_blacklist)}): {', '.join(skipped_blacklist)}")
             log("")
 
-        if skipped_volume:
-            log(f"VOLUME GATED ({len(skipped_volume)}): Volume <= 1.5x average (hard requirement)")
-            log(f"  Blocked: {', '.join(skipped_volume[:10])}")
-            if len(skipped_volume) > 10:
-                log(f"  ... and {len(skipped_volume) - 10} more")
+        if below_threshold:
+            log(f"BELOW THRESHOLD (<{config.ENTRY_THRESHOLD}pts): {len(below_threshold)} pairs")
+            log(f"  {', '.join(below_threshold[:10])}")
+            if len(below_threshold) > 10:
+                log(f"  ... and {len(below_threshold) - 10} more")
             log("")
 
-        log("SCORING SYSTEM (Backtest-Optimized):")
-        log("  ENTRY GATE: volume_ratio > 1.5 (hard requirement)")
-        log("  VOLUME RATIO (40 pts, 40%) - Most predictive indicator")
-        log("  RSI EXTREME (25 pts, 25%) - >65 for SHORT, <35 for LONG")
-        log("  BB POSITION (20 pts, 20%) - >0.8 for SHORT, <0.2 for LONG")
-        log("  Z-SCORE (15 pts, 15%) - >1.0 for SHORT, <-1.0 for LONG")
-        log("  DIRECTION: Inverted momentum (mean-reversion)")
-        log(f"  THRESHOLD: {config.ENTRY_THRESHOLD} points minimum")
+        log("SCORING SYSTEM (v2 — built from 30-day precursor analysis):")
+        log("  NO VOLUME GATE  (median vol before 10%+ move = 0.88x, not a precursor)")
+        log("  RSI       (50 pts) — SHORT if RSI>60, LONG if RSI<40")
+        log("  BB%B      (30 pts) — SHORT if BB>0.6,  LONG if BB<0.4")
+        log("  Z-SCORE   (20 pts) — SHORT if Z>0.5,   LONG if Z<-0.5")
+        log("  VOL BONUS (10 pts) — bonus only, never gates")
+        log("  LONG PENALTY: score *= 0.3")
+        log(f"  ENTRY GATE: score >= {config.ENTRY_THRESHOLD} pts")
         log("")
-        log("COLUMN GUIDE:")
-        log("  Score    = Total points (0-100). Weighted sum of all components")
-        log("  Dir      = LONG (oversold) | SHORT (overbought) - mean-reversion")
-        log("  Vol/RSI/BB/Zsc = Component scores (debugging)")
-        log("  RSI/BB%B/Z-Score/Vol = Raw indicator values")
-        log("")
-        log(f"{'>':<2} {'Rank':<6} {'Symbol':<15} {'Dir':<6} {'Score':<8} {'Vol':<6} {'RSI':<6} {'BB':<6} {'Zsc':<6} | "
+        log(f"{'>':<2} {'Rank':<6} {'Symbol':<15} {'Dir':<6} {'Score':<8} "
+            f"{'RSI':<6} {'BB':<6} {'Z':<6} {'VolB':<6} | "
             f"{'RSI':<8} {'BB%B':<8} {'Z':<8} {'VolRatio':<10}")
         log("-" * 140)
 
         for i, sig in enumerate(all_scores[:30], 1):
             marker = ">" if i == 1 else " "
             log(f"{marker} {i:<5} {sig.symbol:<15} {sig.direction:<6} {sig.score:<8.1f} "
-                f"{sig.volume_score:<6.1f} {sig.rsi_score:<6.1f} {sig.bb_score:<6.1f} "
-                f"{sig.zscore_score:<6.1f} | "
+                f"{sig.rsi_score:<6.1f} {sig.bb_score:<6.1f} "
+                f"{sig.zscore_score:<6.1f} {sig.volume_score:<6.1f} | "
                 f"{sig.rsi:<8.2f} {sig.bb_pct_b:<8.2f} {sig.zscore:<8.2f} "
                 f"{sig.volume_ratio:<10.2f}")
 
@@ -358,44 +310,13 @@ class SignalScorer:
         if all_scores:
             sig = all_scores[0]
             log(f"> TOP SIGNAL: {sig.symbol} {sig.direction} @ {sig.score:.1f} pts | "
-                f"Vol={sig.volume_score:.1f} RSI={sig.rsi_score:.1f} BB={sig.bb_score:.1f} Z={sig.zscore_score:.1f}")
-            log(f"  RSI={sig.rsi:.1f} BB%B={sig.bb_pct_b:.2f} Z={sig.zscore:.2f} VolRatio={sig.volume_ratio:.2f}x")
+                f"RSI={sig.rsi_score:.1f} BB={sig.bb_score:.1f} "
+                f"Z={sig.zscore_score:.1f} VolBonus={sig.volume_score:.1f}")
+            log(f"  RSI={sig.rsi:.1f} BB%B={sig.bb_pct_b:.2f} "
+                f"Z={sig.zscore:.2f} VolRatio={sig.volume_ratio:.2f}x")
         else:
-            log("[X] NO SIGNALS: No pairs passed volume_ratio > 1.5 gate")
+            log(f"[X] NO SIGNALS above {config.ENTRY_THRESHOLD}pts threshold")
 
         log("=" * 140)
 
         return all_scores
-
-# Test with scanner output
-if __name__ == "__main__":
-    import asyncio
-    from pair_scanner import PairScanner
-
-    async def main():
-        scanner = PairScanner()
-        scorer = SignalScorer()
-
-        try:
-            # Scan pairs
-            pair_data = await scanner.scan_all_pairs()
-
-            # Score pairs
-            signals = scorer.score_all_pairs(pair_data)
-
-            print(f"\n{'='*80}")
-            print(f"SIGNAL SCORER TEST")
-            print(f"{'='*80}")
-            print(f"Total signals above threshold: {len(signals)}")
-            print(f"\nTop 10 signals:")
-            print(f"{'Rank':<6} {'Symbol':<15} {'Dir':<6} {'Score':<8} {'Vol':<6} {'Slp':<6} {'Mom':<6}")
-            print(f"{'-'*80}")
-
-            for i, sig in enumerate(signals[:10], 1):
-                print(f"{i:<6} {sig.symbol:<15} {sig.direction:<6} {sig.score:<8.1f} "
-                      f"{sig.volume_score:<6.1f} {sig.rsi_score:<6.1f} {sig.bb_score:<6.1f}")
-
-        finally:
-            await scanner.close()
-
-    asyncio.run(main())

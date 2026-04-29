@@ -64,7 +64,7 @@ SMA_SLOPE_THRESHOLD = 0.3
 
 # Signal scorer weights (volume-first, hardcoded in signal_scorer.py)
 # Volume: 40%, RSI: 25%, BB: 20%, Z-score: 15%
-ENTRY_THRESHOLD = 0           # No threshold - volume_ratio > 1.5 is the only gate, score ranks pairs
+ENTRY_THRESHOLD = 20          # Minimum score to enter — replaces vol>1.5 gate
 
 # Safety
 BTC_DUMP_THRESHOLD_4H = -0.05  # Pause longs if BTC down >5% in 4h
@@ -79,7 +79,7 @@ CURATED_PAIR_LIST = [
     "RAVEUSDT", "SIRENUSDT", "ARIAUSDT", "BULLAUSDT", "STOUSDT",
     "BLESSUSDT", "BASUSDT", "ONUSDT", "NOMUSDT", "TRADOORUSDT",
     "BRUSDT", "AKEUSDT", "DUSDT", "PIPPINUSDT", "PLAYUSDT",
-    "BSBUSDT", "BASEDUSDT", "CYSUSDT", "AGTUSDT", "HIGHUSDT",
+    "BASEDUSDT", "CYSUSDT", "AGTUSDT", "HIGHUSDT",
     "TAKEUSDT", "DRIFTUSDT", "QUSDT", "CHIPUSDT", "ORDIUSDT",
     "SKYAIUSDT", "MAGMAUSDT", "KOMAUSDT", "XNYUSDT", "UBUSDT",
     "LABUSDT", "JCTUSDT", "PIEVERSEUSDT", "ENJUSDT", "PTBUSDT",
@@ -88,14 +88,14 @@ CURATED_PAIR_LIST = [
     "MYXUSDT", "PROMUSDT", "AINUSDT", "BLUAIUSDT", "ONTUSDT",
     "PORTALUSDT", "GTCUSDT", "PHBUSDT", "MUSDT", "LYNUSDT",
     "CLOUSDT", "RIVERUSDT", "PRLUSDT", "TSTUSDT", "BIOUSDT",
-    "BANKUSDT", "SWARMSUSDT", "REDUSDT", "GUAUSDT", "1000SATSUSDT",
+    "BANKUSDT", "REDUSDT", "GUAUSDT", "1000SATSUSDT",
     "ZEREBROUSDT", "SPKUSDT", "BTRUSDT", "UAIUSDT", "NEIROUSDT",
     "FIDAUSDT", "GUNUSDT", "GIGGLEUSDT", "ALICEUSDT", "STABLEUSDT",
     "IRYSUSDT", "INXUSDT", "EDGEUSDT", "JOEUSDT", "BANUSDT",
     "SOONUSDT", "CUSDT", "HEMIUSDT", "EDUUSDT", "PNUTUSDT",
     "FIGHTUSDT", "TAUSDT", "GRIFFAINUSDT", "BROCCOLIF3BUSDT",
     "TAGUSDT", "AIOUSDT", "FOLKSUSDT", "USUSDT", "MEGAUSDT",
-    "ONGUSDT", "KERNELUSDT", "PUMPBTCUSDT", "EVAAUSDT"
+    "ONGUSDT", "KERNELUSDT", "EVAAUSDT"
 ]
 
 # Excluded pairs (stablecoins and slow-moving pairs)
@@ -114,5 +114,9 @@ EXCLUDED_SYMBOLS = [
     "DEGOUSDT",  # Leverage restrictions - causes 400 errors
     # Low liquidity pairs with excessive slippage
     "AIOTUSDT",  # Low liquidity - 2.28% slippage on SL execution (2026-04-12)
+    # Chaotic pairs: massive moves with zero volume signal (undetectable + untradeable)
+    "BSBUSDT",   # Makes 40-63% moves at 0.65x avg volume — pure noise, undetectable
+    "SWARMSUSDT", # Makes 35-37% moves at sub-1x volume — same pattern
+    "PUMPBTCUSDT", # Makes 34-35% SHORT moves at 0.08-0.5x volume — untradeable
 ]
 
