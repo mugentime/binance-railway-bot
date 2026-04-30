@@ -319,7 +319,7 @@ async def run_audit(lookback_hours: int, move_threshold: float, top_n: int, expo
     for m in missed[:top_n]:
         reason = []
         if not m.volume_gated:
-            reason.append(f"vol={m.volume_ratio:.2f}x<1.5")
+            reason.append(f"score={m.score:.1f}<{config.ENTRY_THRESHOLD}")
         if m.volume_gated and not m.direction_correct:
             reason.append(f"predicted {m.predicted_direction} was {m.direction}")
         ts = datetime.utcfromtimestamp(m.start_ts / 1000).strftime("%H:%M")
@@ -378,13 +378,17 @@ async def run_audit(lookback_hours: int, move_threshold: float, top_n: int, expo
     print(f"  OPTIMIZATION HINTS")
     print(f"{'='*70}")
 
-    if vol_gated_pct < 40:
-        print(f"  ⚠  Volume gate (<1.5x) blocking {100-vol_gated_pct:.0f}% of moves.")
-        print(f"     Consider lowering volume gate to 1.2x to capture more opportunities.")
+    below_pct = len(not_vol_gated) / total * 100
+    if below_pct > 60:
+        print(f"  ⚠  {below_pct:.0f}% of moves had no detectable signal (score<{config.ENTRY_THRESHOLD}).")
+        print(f"     These moves start with RSI/BB/Z in neutral territory.")
+        print(f"     They are genuinely unpredictable with mean-reversion indicators.")
+    else:
+        print(f"  ✓  {100-below_pct:.0f}% of moves had detectable signal (score>={config.ENTRY_THRESHOLD}).")
 
     if dir_pct < 45 and vol_gated:
-        print(f"  ⚠  Direction accuracy {dir_pct:.0f}% — inverted momentum working BELOW chance.")
-        print(f"     Market may be trending. Consider reducing long_penalty or adjusting regime detection.")
+        print(f"  ⚠  Direction accuracy {dir_pct:.0f}% — inverted momentum BELOW chance.")
+        print(f"     Market may be trending. Consider regime filter.")
 
     if dir_pct >= 55 and vol_gated:
         print(f"  ✓  Direction accuracy {dir_pct:.0f}% — inverted momentum working well.")
@@ -392,7 +396,7 @@ async def run_audit(lookback_hours: int, move_threshold: float, top_n: int, expo
     avg_score_hits = np.mean([m.score for m in full_hit]) if full_hit else 0
     avg_score_miss_vol = np.mean([m.score for m in vol_gated if not m.direction_correct]) if [m for m in vol_gated if not m.direction_correct] else 0
     print(f"  Avg score of CAUGHT moves        : {avg_score_hits:.1f}")
-    print(f"  Avg score of vol-gated MISSES    : {avg_score_miss_vol:.1f}")
+    print(f"  Avg score of above-threshold MISSES : {avg_score_miss_vol:.1f}")
 
     longs_caught = [m for m in full_hit if m.direction == "LONG"]
     shorts_caught = [m for m in full_hit if m.direction == "SHORT"]
