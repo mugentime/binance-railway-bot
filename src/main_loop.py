@@ -456,8 +456,18 @@ async def main_loop():
                         else:
                             log(f"TIMEOUT CLOSE: {manager.current_symbol} @ {exit_price:.6f}")
 
-                        # Record as loss (timeout = failed trade)
-                        manager.close_loss(exit_price)
+                        # Record win or loss based on actual exit price vs entry
+                        direction = manager.current_direction
+                        entry = manager.entry_price
+                        timed_out_profitably = (
+                            exit_price > entry if direction == "LONG"
+                            else exit_price < entry
+                        )
+                        if timed_out_profitably:
+                            log(f"TIMEOUT WIN: Closed at profit (entry={entry:.6f} exit={exit_price:.6f})")
+                            manager.close_win(exit_price)
+                        else:
+                            manager.close_loss(exit_price)
                         save_state(manager)
 
                     except Exception as e:
@@ -548,7 +558,7 @@ async def main_loop():
                             if close_order.get("alreadyClosed"):
                                 log(f"ALREADY CLOSED: {manager.current_symbol} @ {exit_price:.6f} (SL algo order likely triggered)")
 
-                            # Record as loss
+                            # Break-even: already confirmed PnL < 0 above, so this is always a loss
                             manager.close_loss(exit_price)
                             save_state(manager)
 
