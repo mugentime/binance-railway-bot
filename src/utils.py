@@ -33,24 +33,8 @@ def save_state(manager, filepath="state.json"):
     import shutil
     import tempfile
 
-    state = {
-        "level": manager.level,
-        "in_position": manager.in_position,
-        "current_symbol": manager.current_symbol,
-        "current_direction": manager.current_direction,
-        "entry_price": manager.entry_price,
-        "entry_quantity": manager.entry_quantity,
-        "current_size_usd": manager.current_size_usd,
-        "entry_candle_time": manager.entry_candle_time,
-        "last_max_loss_time": manager.last_max_loss_time,
-        "cooldown_blacklist": manager.cooldown_blacklist,
-        "max_adverse_excursion_pct": manager.max_adverse_excursion_pct,
-        "mae_candle": manager.mae_candle,
-        "consecutive_losses": manager.consecutive_losses,
-        "regime_flipped": manager.regime_flipped,
-        "chain_pnl_history": manager.chain_pnl_history,
-        "saved_at": datetime.utcnow().isoformat(),
-    }
+    state = manager.to_dict()
+    state["saved_at"] = datetime.utcnow().isoformat()
 
     try:
         # Create backup of current state file (if exists)
@@ -66,7 +50,7 @@ def save_state(manager, filepath="state.json"):
 
             # Atomic move (overwrites target safely)
             shutil.move(temp_path, filepath)
-            log(f"State saved: level={manager.level}, in_position={manager.in_position}")
+            log(f"State saved: {manager.num_open} open positions")
 
         except Exception as e:
             # Clean up temp file if move failed
@@ -87,7 +71,10 @@ def load_state(filepath="state.json"):
     try:
         with open(filepath) as f:
             state = json.load(f)
-            log(f"State loaded: level={state.get('level')}, in_position={state.get('in_position')}")
+            if "positions" in state:
+                log(f"State loaded: {len(state['positions'])} positions")
+            else:
+                log(f"Old state format loaded (will reconcile from exchange)")
             return state
     except FileNotFoundError:
         log("No existing state file found, starting fresh")

@@ -28,15 +28,13 @@ SL_PCT = 0.04                 # 4.0% price-based stop loss (prevents catastrophe
 # Strategy: inverted momentum / mean-reversion
 # SHORT on overbought (RSI>65, BB>0.8), LONG on oversold (RSI<35, BB<0.2)
 
-# Martingale parameters
-BASE_SIZE_PCT = 0.03          # 3% of account balance per trade at level 0 (dynamic sizing)
-MARTINGALE_MULTIPLIER = 1.5   # Position size multiplier per level (1.5x = 50% increase)
-MAX_LEVEL = 10                # Max 10 levels
+# Position sizing — flat, no Martingale
+BASE_SIZE_PCT = 0.03          # 3% of account balance per trade (dynamic sizing)
 LEVERAGE = 20                 # 20x leverage
-COOLDOWN_AFTER_MAX_LOSS = 0  # 1 hour cooldown after blowing a full chain
+MAX_POSITIONS = 0             # 0 = unlimited simultaneous positions
 MAX_POSITION_PCT = 0.25       # EMERGENCY BRAKE: Never risk more than 25% of account in one position
 DAILY_LOSS_LIMIT_USD = 1000.0   # Effectively disabled - high limit
-MAX_HOLD_CANDLES = 54         # Maximum candles to hold position before timeout close (2.25 hours at 2.5m)
+MAX_HOLD_CANDLES = 144        # Maximum candles to hold position before timeout close (6 hours at 2.5m)
 
 # Scanner parameters
 SCAN_INTERVAL_SECS = 150      # 2.5 minutes (150 seconds)
