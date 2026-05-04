@@ -201,14 +201,48 @@ async def main_loop():
     except Exception as e:
         log(f"Initial sync failed: {e}", "error")
 
-    # Verify SL on all tracked positions at startup
+    # Force re-place ALL SL orders at startup with current buffer settings
+    # Old SLs may have stale 0.5% buffer — cancel and re-place with 3% buffer
+    log(f"Re-placing SL orders for {manager.num_open} positions with {config.SL_LIMIT_BUFFER_PCT*100:.1f}% buffer...")
     for sym, pos in list(manager.positions.items()):
-        executor.verify_and_place_missing_sl(
-            symbol=sym, direction=pos.direction,
-            tp_price=manager.tp_price(sym),
-            sl_price=manager.sl_price(sym),
-            quantity=pos.entry_quantity,
-        )
+        try:
+            # Cancel existing algo orders (old SLs)
+            try:
+                algo_orders = executor.get_algo_open_orders(sym)
+                if algo_orders:
+                    for order in algo_orders:
+                        if order.get('algoType') == 'CONDITIONAL':
+                            log(f"Cancelling old SL for {sym} (algoId: {order.get('algoId')})")
+                    # Cancel all algo orders for this symbol
+                    params = {"symbol": sym}
+                    params = executor._sign_params(params)
+                    executor.client.delete(
+                        f"{config.BINANCE_BASE_URL}/fapi/v1/algoOpenOrders",
+                        params=params,
+                        headers=executor._headers()
+                    )
+            except Exception as cancel_err:
+                log(f"Error cancelling old SL for {sym}: {cancel_err}", "warning")
+
+            # Place fresh SL with current buffer
+            sl_ok = executor.verify_and_place_missing_sl(
+                symbol=sym, direction=pos.direction,
+                tp_price=manager.tp_price(sym),
+                sl_price=manager.sl_price(sym),
+                quantity=pos.entry_quantity,
+            )
+            if not sl_ok:
+                log(f"CRITICAL: Cannot place SL for {sym} at startup — closing position", "error")
+                executor.cancel_all_orders(sym)
+                try:
+                    close_order = executor.close_position_market(sym, pos.direction, pos.entry_quantity)
+                    exit_price = float(close_order["avgPrice"])
+                    manager.close_loss(sym, exit_price)
+                    save_state(manager)
+                except Exception as close_err:
+                    log(f"CRITICAL: Cannot close unprotected {sym}: {close_err}", "error")
+        except Exception as e:
+            log(f"Error re-placing SL for {sym}: {e}", "error")
 
     try:
         while True:
@@ -284,7 +318,7 @@ async def main_loop():
                         f"PnL: {format_usd(stats['total_pnl'])} | Open: {stats['open_positions']}")
                     continue
 
-                # 3. Still holding — log status
+                # 3. Still holding — log status and enforce SL
                 if position:
                     unrealized_pnl = float(position["unRealizedProfit"])
                     mark_price = float(position["markPrice"])
@@ -294,14 +328,49 @@ async def main_loop():
                         f"PnL: {format_usd(unrealized_pnl)} | Drawdown: {drawdown:.2f}% | "
                         f"MAE: {pos.max_adverse_excursion_pct:.2f}%")
 
-                    # Periodic SL verification every 5 candles
-                    if candles % 5 == 0 and candles > 0:
-                        executor.verify_and_place_missing_sl(
-                            symbol=sym, direction=pos.direction,
-                            tp_price=manager.tp_price(sym),
-                            sl_price=manager.sl_price(sym),
-                            quantity=pos.entry_quantity,
-                        )
+                    # EMERGENCY SL ENFORCEMENT: If price has blown past SL by 2x, force close at market
+                    sl_price = manager.sl_price(sym)
+                    sl_distance = abs(pos.entry_price - sl_price)
+                    emergency_distance = sl_distance * config.SL_EMERGENCY_CLOSE_MULT
+
+                    if pos.direction == "LONG":
+                        adverse_move = pos.entry_price - mark_price
+                    else:
+                        adverse_move = mark_price - pos.entry_price
+
+                    if adverse_move > emergency_distance:
+                        adverse_pct = (adverse_move / pos.entry_price) * 100
+                        log(f"EMERGENCY CLOSE: {sym} {pos.direction} | Price moved {adverse_pct:.1f}% against — "
+                            f"past {config.SL_EMERGENCY_CLOSE_MULT:.0f}x SL distance. SL failed to execute!", "error")
+                        executor.cancel_all_orders(sym)
+                        try:
+                            close_order = executor.close_position_market(sym, pos.direction, pos.entry_quantity)
+                            exit_price = float(close_order["avgPrice"])
+                            manager.close_loss(sym, exit_price)
+                            save_state(manager)
+                            log(f"EMERGENCY CLOSED: {sym} @ {exit_price}", "error")
+                        except Exception as e:
+                            log(f"CRITICAL: Emergency close FAILED for {sym}: {e}", "error")
+                        continue
+
+                    # SL verification EVERY cycle (not just every 5 candles)
+                    sl_ok = executor.verify_and_place_missing_sl(
+                        symbol=sym, direction=pos.direction,
+                        tp_price=manager.tp_price(sym),
+                        sl_price=manager.sl_price(sym),
+                        quantity=pos.entry_quantity,
+                    )
+                    if not sl_ok:
+                        log(f"CRITICAL: Cannot place SL for {sym} — closing position", "error")
+                        executor.cancel_all_orders(sym)
+                        try:
+                            close_order = executor.close_position_market(sym, pos.direction, pos.entry_quantity)
+                            exit_price = float(close_order["avgPrice"])
+                            manager.close_loss(sym, exit_price)
+                            save_state(manager)
+                        except Exception as e:
+                            log(f"CRITICAL: Cannot close unprotected {sym}: {e}", "error")
+                        continue
 
                     # Break-even protection at 36 candles
                     if candles >= 36 and unrealized_pnl < 0:
