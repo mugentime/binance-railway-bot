@@ -112,6 +112,7 @@ def verify_and_sync_state(executor: OrderExecutor, manager: MartingaleManager) -
     """
     Verify bot state matches Binance reality and auto-correct discrepancies
     Returns: True if state is synchronized, False if critical error
+    Raises: httpx.HTTPStatusError for 418/429 so retry_with_backoff can handle them
     """
     try:
         all_open = executor.get_all_open_positions()
@@ -247,6 +248,19 @@ def verify_and_sync_state(executor: OrderExecutor, manager: MartingaleManager) -
         # Case 4: Both agree - no sync needed
         return True
 
+    except httpx.HTTPStatusError as e:
+        # Let retryable HTTP errors (418/429) propagate to retry_with_backoff
+        status = e.response.status_code
+        if status in (418, 429):
+            log(f"Retryable HTTP error during state verification: {status}", "warning")
+            raise
+        log(f"HTTP error during state verification: {e}", "error")
+        return False
+    except (httpx.ConnectError, httpx.TimeoutException, httpx.ReadTimeout,
+            OSError, ConnectionError) as e:
+        # Let network errors propagate to retry_with_backoff
+        log(f"Network error during state verification: {type(e).__name__}", "warning")
+        raise
     except Exception as e:
         log(f"Error during state verification: {e}", "error")
         return False
@@ -422,11 +436,11 @@ async def main_loop():
             try:
                 state_ok = retry_with_backoff(lambda: verify_and_sync_state(executor, manager))
                 if not state_ok:
-                    log("State verification failed - stopping bot for safety", "error")
+                    log("State verification returned critical error - stopping bot for safety", "error")
                     return
             except Exception as e:
-                log(f"Failed to verify state after retries: {e}", "error")
-                log("Skipping this cycle for safety", "warning")
+                log(f"State verification failed after retries: {e}", "error")
+                log("Skipping this cycle — will retry next candle", "warning")
                 continue
 
             # Clean expired blacklist entries
