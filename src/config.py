@@ -28,14 +28,15 @@ SL_PCT = 0.04                 # 4.0% price-based stop loss (prevents catastrophe
 # Strategy: inverted momentum / mean-reversion
 # SHORT on overbought (RSI>65, BB>0.8), LONG on oversold (RSI<35, BB<0.2)
 
-# Position sizing — flat, no Martingale
-BASE_SIZE_PCT = 0.03          # 3% of account balance per trade (dynamic sizing)
+# Martingale parameters
+BASE_SIZE_PCT = 0.03          # 3% of account balance per trade at level 0 (dynamic sizing)
+MARTINGALE_MULTIPLIER = 1.5   # Position size multiplier per level (1.5x = 50% increase)
+MAX_LEVEL = 10                # Max 10 levels
 LEVERAGE = 20                 # 20x leverage
-MAX_POSITIONS = 0             # 0 = unlimited simultaneous positions
+COOLDOWN_AFTER_MAX_LOSS = 0  # 1 hour cooldown after blowing a full chain
 MAX_POSITION_PCT = 0.25       # EMERGENCY BRAKE: Never risk more than 25% of account in one position
-SL_EMERGENCY_CLOSE_MULT = 2.0 # Force market close if price exceeds SL by this multiple (2x SL = 8% adverse)
 DAILY_LOSS_LIMIT_USD = 1000.0   # Effectively disabled - high limit
-MAX_HOLD_CANDLES = 144        # Maximum candles to hold position before timeout close (6 hours at 2.5m)
+MAX_HOLD_CANDLES = 54         # Maximum candles to hold position before timeout close (2.25 hours at 2.5m)
 
 # Scanner parameters
 SCAN_INTERVAL_SECS = 150      # 2.5 minutes (150 seconds)
@@ -45,7 +46,7 @@ MIN_24H_VOLUME_USD = 10_000_000  # $10M+ required to filter out low-liquidity me
 LOW_VOLUME_THRESHOLD = 500_000    # $500k - if 24h volume below this, widen SL by 1.5x
 ORDERBOOK_DEPTH_MIN_USD = 1000    # Minimum $1k orderbook depth within 1% of mid price
 ORDERBOOK_DEPTH_PCT = 0.01        # Check depth within 1% of mid price
-SL_LIMIT_BUFFER_PCT = 0.03        # 3% buffer below trigger for STOP_LIMIT orders (was 0.5% — too tight for memecoins)
+SL_LIMIT_BUFFER_PCT = 0.005       # 0.5% buffer below trigger for STOP_LIMIT orders
 MAX_SPREAD_PCT = 0.05            # Reject pairs with spread > 0.05%
 MAX_SLIPPAGE_PCT = 0.1           # Reject pairs with estimated slippage > 0.1%
 MIN_ATR_PCT = 0.3                # Minimum ATR% (volatility filter) - 0.3% for 1m candles (was 1.5% for 5m)
