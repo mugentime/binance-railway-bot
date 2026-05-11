@@ -46,6 +46,12 @@ class OrderExecutor:
 
         # Use server-synced time
         params["timestamp"] = int(time.time() * 1000) + self.time_offset
+
+        # Add recvWindow for tolerance (20 seconds to handle network delays)
+        # Binance default is 5000ms, we increase to 20000ms for reliability
+        if "recvWindow" not in params:
+            params["recvWindow"] = 20000
+
         query_string = urllib.parse.urlencode(params)
         signature = hmac.new(
             config.BINANCE_API_SECRET.encode(),
@@ -615,48 +621,87 @@ class OrderExecutor:
 
     def get_position(self, symbol: str) -> Optional[dict]:
         """Get position info for symbol"""
-        params = {"symbol": symbol}
-        params = self._sign_params(params)
+        max_retries = 2
+        for attempt in range(max_retries):
+            params = {"symbol": symbol}
+            params = self._sign_params(params)
 
-        try:
-            resp = self.client.get(
-                f"{config.BINANCE_BASE_URL}/fapi/v2/positionRisk",
-                params=params,
-                headers=self._headers()
-            )
-            resp.raise_for_status()
-            positions = resp.json()
+            try:
+                resp = self.client.get(
+                    f"{config.BINANCE_BASE_URL}/fapi/v2/positionRisk",
+                    params=params,
+                    headers=self._headers()
+                )
+                resp.raise_for_status()
+                positions = resp.json()
 
-            if positions and len(positions) > 0:
-                return positions[0]
-            return None
-        except httpx.HTTPStatusError as e:
-            log(f"HTTP error getting position for {symbol}: {e.response.status_code} - {e.response.text}", "error")
-            return None
-        except Exception as e:
-            log(f"Error getting position for {symbol}: {e}", "error")
-            return None
+                if positions and len(positions) > 0:
+                    return positions[0]
+                return None
+            except httpx.HTTPStatusError as e:
+                # Check for timestamp errors (-1021, -1022)
+                if e.response.status_code == 400 and attempt < max_retries - 1:
+                    try:
+                        error_data = e.response.json()
+                        error_code = error_data.get('code')
+
+                        # -1021: Timestamp outside recvWindow
+                        # -1022: Invalid signature (can be caused by time drift)
+                        if error_code in [-1021, -1022]:
+                            log(f"Timestamp error for {symbol} (code {error_code}): Resyncing time and retrying...", "warning")
+                            self._sync_server_time()  # Force time resync
+                            time.sleep(0.5)  # Brief delay before retry
+                            continue
+                    except ValueError:
+                        pass
+                log(f"HTTP error getting position for {symbol}: {e.response.status_code} - {e.response.text}", "error")
+                return None
+            except Exception as e:
+                log(f"Error getting position for {symbol}: {e}", "error")
+                return None
 
     def get_all_open_positions(self) -> list:
         """Get ALL open positions across all symbols (positionAmt != 0)"""
-        params = {}
-        params = self._sign_params(params)
+        max_retries = 2
+        for attempt in range(max_retries):
+            params = {}
+            params = self._sign_params(params)
 
-        try:
-            resp = self.client.get(
-                f"{config.BINANCE_BASE_URL}/fapi/v2/positionRisk",
-                params=params,
-                headers=self._headers()
-            )
-            resp.raise_for_status()
-            all_positions = resp.json()
+            try:
+                resp = self.client.get(
+                    f"{config.BINANCE_BASE_URL}/fapi/v2/positionRisk",
+                    params=params,
+                    headers=self._headers()
+                )
+                resp.raise_for_status()
+                all_positions = resp.json()
 
-            # Filter only positions with non-zero quantity
-            open_positions = [p for p in all_positions if float(p["positionAmt"]) != 0]
-            return open_positions
-        except Exception as e:
-            log(f"Error getting all positions: {e}", "error")
-            raise  # CRITICAL: never return [] — empty list looks like "no positions" and triggers false auto-recovery
+                # Filter only positions with non-zero quantity
+                open_positions = [p for p in all_positions if float(p["positionAmt"]) != 0]
+                return open_positions
+            except httpx.HTTPStatusError as e:
+                # Check for timestamp errors (-1021, -1022)
+                if e.response.status_code == 400:
+                    try:
+                        error_data = e.response.json()
+                        error_code = error_data.get('code')
+
+                        # -1021: Timestamp outside recvWindow
+                        # -1022: Invalid signature (can be caused by time drift)
+                        if error_code in [-1021, -1022] and attempt < max_retries - 1:
+                            log(f"Timestamp error (code {error_code}): Resyncing time and retrying...", "warning")
+                            self._sync_server_time()  # Force time resync
+                            time.sleep(0.5)  # Brief delay before retry
+                            continue
+                        else:
+                            log(f"Binance API Error {error_code}: {error_data.get('msg', 'unknown')}", "error")
+                    except ValueError:
+                        pass
+                log(f"Error getting all positions: {e}", "error")
+                raise  # CRITICAL: never return [] — empty list looks like "no positions" and triggers false auto-recovery
+            except Exception as e:
+                log(f"Error getting all positions: {e}", "error")
+                raise  # CRITICAL: never return [] — empty list looks like "no positions" and triggers false auto-recovery
 
     def get_open_orders(self, symbol: str) -> list:
         """Get all open orders for symbol"""
