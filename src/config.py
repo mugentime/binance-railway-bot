@@ -70,6 +70,11 @@ ENTRY_THRESHOLD = 20          # Minimum score to enter — replaces vol>1.5 gate
 BTC_DUMP_THRESHOLD_4H = -0.05  # Pause longs if BTC down >5% in 4h
 BTC_PUMP_THRESHOLD_4H = 0.05   # Pause shorts if BTC up >5% in 4h
 
+# Adaptive regime switching
+CONSECUTIVE_LOSS_FLIP_THRESHOLD = 3  # Flip SHORT→LONG bias after this many losses
+LONG_PENALTY_MULTIPLIER = 0.6        # LONG signals get 40% penalty (was 0.3 = 70% penalty)
+SHORT_PENALTY_MULTIPLIER = 0.6       # SHORT signals get 40% penalty when regime flipped
+
 # Top 100 pairs ranked by 30-day move frequency (backtest-derived)
 # How often each pair makes 10%+ moves in under 1 hour
 # Use this curated list for faster scanning instead of dynamic discovery

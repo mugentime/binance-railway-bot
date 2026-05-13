@@ -197,6 +197,11 @@ class MartingaleManager:
         # Reset consecutive loss counter on win
         self.consecutive_losses = 0
 
+        # Reset regime flip on win
+        if self.regime_flipped:
+            self.regime_flipped = False
+            log("✓ REGIME FLIP RESET: Win achieved, returning to normal SHORT bias")
+
         # Add this trade's PnL to chain history
         self.chain_pnl_history.append(net_pnl)
 
@@ -281,6 +286,12 @@ class MartingaleManager:
         # Track consecutive losses (informational only)
         self.consecutive_losses += 1
         log(f"Consecutive losses: {self.consecutive_losses}")
+
+        # ADAPTIVE REGIME SWITCHING: Flip bias after threshold
+        if self.consecutive_losses >= config.CONSECUTIVE_LOSS_FLIP_THRESHOLD and not self.regime_flipped:
+            self.regime_flipped = True
+            log(f"⚠️ REGIME FLIP ACTIVATED: {self.consecutive_losses} consecutive losses → "
+                f"Switching from SHORT bias to LONG bias", "warning")
 
         # Check if max level exceeded
         if self.level > config.MAX_LEVEL:

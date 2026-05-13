@@ -186,11 +186,17 @@ class SignalScorer:
     # ── Main scoring loop ─────────────────────────────────────────────────────
 
     def score_all_pairs(self, pair_data: Dict[str, dict],
-                        blacklisted_symbols: List[str] = None) -> List[SignalResult]:
+                        blacklisted_symbols: List[str] = None,
+                        regime_flipped: bool = False) -> List[SignalResult]:
         """
         Score all pairs. Returns list sorted highest score first.
 
         Entry gate: score >= ENTRY_THRESHOLD (default 20, set in config)
+
+        Args:
+            pair_data: Market data for each symbol
+            blacklisted_symbols: Symbols on cooldown (skip these)
+            regime_flipped: If True, flip from SHORT bias to LONG bias
         No volume gate.
         Direction: inverted momentum (mean-reversion).
         Long penalty: score *= 0.3 (LONGs historically harder to catch).
@@ -235,16 +241,24 @@ class SignalScorer:
                                             (bb_dir,  bb_score),
                                             (zscore_dir, zscore_score)] if d == "SHORT")
 
-            # Default SHORT when tied or no signal (ranging regime)
-            final_direction = "LONG" if long_pts > short_pts else "SHORT"
-
-            # ── Long penalty (data: LONG catchability 7.7% vs 14.4% SHORT) ─
-            total_score = raw_score * 0.3 if final_direction == "LONG" else raw_score
+            # ── Adaptive regime switching ──────────────────────────────────
+            if regime_flipped:
+                # REGIME FLIPPED: Favor LONGS, penalize SHORTS (40% penalty)
+                final_direction = "SHORT" if short_pts > long_pts else "LONG"
+                total_score = raw_score * config.SHORT_PENALTY_MULTIPLIER if final_direction == "SHORT" else raw_score
+            else:
+                # NORMAL: Favor SHORTS, penalize LONGS (40% penalty, was 70%)
+                final_direction = "LONG" if long_pts > short_pts else "SHORT"
+                total_score = raw_score * config.LONG_PENALTY_MULTIPLIER if final_direction == "LONG" else raw_score
 
             # ── Entry gate ────────────────────────────────────────────────
             if total_score < config.ENTRY_THRESHOLD:
                 below_threshold.append(f"{symbol} ({total_score:.1f}pts)")
                 continue
+
+            # Log regime status for first signal
+            if regime_flipped and len(all_scores) == 0:
+                log("🔄 REGIME FLIPPED MODE: Favoring LONGS, penalizing SHORTS (-40%)")
 
             all_scores.append(SignalResult(
                 symbol=symbol,

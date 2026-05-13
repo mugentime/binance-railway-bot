@@ -597,7 +597,7 @@ async def main_loop():
             pair_data = await scanner.scan_all_pairs()
             log("Scoring signals...")
             blacklisted = manager.get_blacklisted_symbols()
-            signals = scorer.score_all_pairs(pair_data, blacklisted)
+            signals = scorer.score_all_pairs(pair_data, blacklisted, regime_flipped=manager.regime_flipped)
 
             # Filter by safety blocks
             if safety.block_longs:
