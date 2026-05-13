@@ -303,7 +303,7 @@ class SignalScorer:
         log("  BB%B      (30 pts) — SHORT if BB>0.6,  LONG if BB<0.4")
         log("  Z-SCORE   (20 pts) — SHORT if Z>0.5,   LONG if Z<-0.5")
         log("  VOL BONUS (10 pts) — bonus only, never gates")
-        log("  LONG PENALTY: score *= 0.3")
+        log("  LONG PENALTY: score *= 0.1")
         log(f"  ENTRY GATE: score >= {config.ENTRY_THRESHOLD} pts")
         log("")
         log(f"{'>':<2} {'Rank':<6} {'Symbol':<15} {'Dir':<6} {'Score':<8} "

@@ -193,6 +193,7 @@ class PairScanner:
         filter_stats = {
             "initial": len(symbols),
             "atr_filtered": 0,
+            "volume_filtered": 0,
             "spread_filtered": 0,
             "slippage_filtered": 0,
             "passed": 0
@@ -251,6 +252,12 @@ class PairScanner:
                     else:
                         # Not enough candles, skip
                         return
+
+                    # Filter: Reject pairs with 24h quote volume below threshold
+                    symbol_24h_volume = volume_24h_data.get(symbol, 0.0)
+                    if symbol_24h_volume < config.MIN_QUOTE_VOLUME_24H:
+                        filter_stats["volume_filtered"] += 1
+                        return  # Skip this pair
 
                     # SMA slope computation removed: KLINE_LIMIT=50, SMA_PERIOD=50
                     # produces only 1 SMA value, slope is always 0.0
@@ -314,15 +321,17 @@ class PairScanner:
         log("=" * 80)
         initial = filter_stats["initial"]
         after_atr = initial - filter_stats["atr_filtered"]
-        after_spread = after_atr - filter_stats["spread_filtered"]
+        after_volume = after_atr - filter_stats["volume_filtered"]
+        after_spread = after_volume - filter_stats["spread_filtered"]
         after_slippage = after_spread - filter_stats["slippage_filtered"]
         final = filter_stats["passed"]
 
-        log(f"Initial pairs:        {initial}")
-        log(f"After ATR filter:     {after_atr} ({initial} → {after_atr}, filtered {filter_stats['atr_filtered']})")
-        log(f"After spread filter:  {after_spread} ({after_atr} → {after_spread}, filtered {filter_stats['spread_filtered']})")
+        log(f"Initial pairs:         {initial}")
+        log(f"After ATR filter:      {after_atr} ({initial} → {after_atr}, filtered {filter_stats['atr_filtered']})")
+        log(f"After volume filter:   {after_volume} ({after_atr} → {after_volume}, filtered {filter_stats['volume_filtered']})")
+        log(f"After spread filter:   {after_spread} ({after_volume} → {after_spread}, filtered {filter_stats['spread_filtered']})")
         log(f"After slippage filter: {after_slippage} ({after_spread} → {after_slippage}, filtered {filter_stats['slippage_filtered']})")
-        log(f"Final pairs passed:   {final}")
+        log(f"Final pairs passed:    {final}")
         log("=" * 80)
 
         return pair_data
