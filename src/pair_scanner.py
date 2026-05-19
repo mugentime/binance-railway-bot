@@ -13,6 +13,7 @@ class PairScanner:
     def __init__(self):
         self.client = httpx.AsyncClient(timeout=30.0)
         self.symbols_cache = None
+        self.ticker_24h_cache = None  # Cache 24h ticker to prevent duplicate requests
 
     async def close(self):
         """Close HTTP client"""
@@ -82,10 +83,12 @@ class PairScanner:
         # Build lookup map for faster access
         exchange_symbols_map = {s["symbol"]: s for s in exchange_info["symbols"]}
 
-        # Get 24h ticker for volume filtering
+        # Get 24h ticker for volume filtering (cache it to prevent duplicate requests)
         resp = await self.client.get(f"{config.BINANCE_BASE_URL}/fapi/v1/ticker/24hr")
         resp.raise_for_status()
-        tickers = {t["symbol"]: float(t["quoteVolume"]) for t in resp.json()}
+        ticker_data = resp.json()
+        tickers = {t["symbol"]: float(t["quoteVolume"]) for t in ticker_data}
+        self.ticker_24h_cache = {t["symbol"]: float(t["quoteVolume"]) for t in ticker_data}  # Cache for scan_all_pairs
 
         # Get current prices for min order size check
         resp = await self.client.get(f"{config.BINANCE_BASE_URL}/fapi/v1/ticker/price")
@@ -174,13 +177,21 @@ class PairScanner:
         Scan all pairs and return market data
         Returns: {symbol: {closes, volumes, spread_pct, funding_rate, volume_24h}}
         """
+        # Clear cache to force fresh data each scan cycle
+        self.ticker_24h_cache = None
+
         symbols = await self.get_all_symbols()
         log(f"Scanning {len(symbols)} pairs...")
 
-        # Get 24h ticker for volume data
-        resp = await self.client.get(f"{config.BINANCE_BASE_URL}/fapi/v1/ticker/24hr")
-        resp.raise_for_status()
-        volume_24h_data = {t["symbol"]: float(t["quoteVolume"]) for t in resp.json()}
+        # Reuse cached 24h ticker data (already fetched in get_all_symbols)
+        # This prevents duplicate requests and saves 40 weight per scan cycle
+        if self.ticker_24h_cache is None:
+            log("WARNING: 24h ticker cache missing, fetching again...", "warning")
+            resp = await self.client.get(f"{config.BINANCE_BASE_URL}/fapi/v1/ticker/24hr")
+            resp.raise_for_status()
+            volume_24h_data = {t["symbol"]: float(t["quoteVolume"]) for t in resp.json()}
+        else:
+            volume_24h_data = self.ticker_24h_cache
 
         # Get funding rates (single request for all symbols)
         resp = await self.client.get(f"{config.BINANCE_BASE_URL}/fapi/v1/premiumIndex")
@@ -198,7 +209,7 @@ class PairScanner:
             "slippage_filtered": 0,
             "passed": 0
         }
-        semaphore = asyncio.Semaphore(20)  # Max 20 concurrent requests
+        semaphore = asyncio.Semaphore(10)  # Max 10 concurrent requests (reduced from 20 to prevent rate limits)
 
         async def fetch_pair_data(symbol: str):
             async with semaphore:
@@ -263,7 +274,7 @@ class PairScanner:
                     # produces only 1 SMA value, slope is always 0.0
                     sma_slope_pct = 0.0
                     # Order book depth (2 weight)
-                    await asyncio.sleep(0.05)  # Rate limit control
+                    await asyncio.sleep(0.1)  # Rate limit control (increased from 0.05s to 0.1s)
                     depth_resp = await self.client.get(
                         f"{config.BINANCE_BASE_URL}/fapi/v1/depth",
                         params={"symbol": symbol, "limit": 5}
