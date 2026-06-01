@@ -30,7 +30,7 @@ SL_PCT = 0.04                 # 4.0% price-based stop loss (prevents catastrophe
 
 # Martingale parameters
 BASE_SIZE_PCT = 0.03          # 3% of account balance per trade at level 0 (dynamic sizing)
-MARTINGALE_MULTIPLIER = 1.5   # Position size multiplier per level (1.5x = 50% increase)
+MARTINGALE_MULTIPLIER = 1.25  # Position size multiplier per level (1.25x = 25% increase)
 MAX_LEVEL = 10                # Max 10 levels
 LEVERAGE = 20                 # 20x leverage
 COOLDOWN_AFTER_MAX_LOSS = 0  # 1 hour cooldown after blowing a full chain
