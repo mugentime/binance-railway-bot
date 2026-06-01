@@ -30,14 +30,13 @@ SL_PCT = 0.04                 # 4.0% price-based stop loss (prevents catastrophe
 
 # Martingale parameters
 BASE_SIZE_PCT = 0.03          # 3% of account balance per trade at level 0 (dynamic sizing)
-MARTINGALE_MULTIPLIER = 1.3   # Position size multiplier per level (1.3x = 30% increase) - REDUCED from 1.5
-MAX_LEVEL = 3                 # Max 3 levels (4 total trades) - CRITICAL FIX: reduced from 10
+MARTINGALE_MULTIPLIER = 1.5   # Position size multiplier per level (1.5x = 50% increase)
+MAX_LEVEL = 10                # Max 10 levels
 LEVERAGE = 20                 # 20x leverage
-COOLDOWN_AFTER_MAX_LOSS = 3600  # 1 hour (3600 sec) cooldown after max loss - CRITICAL FIX: was 0
+COOLDOWN_AFTER_MAX_LOSS = 0  # 1 hour cooldown after blowing a full chain
 MAX_POSITION_PCT = 0.25       # EMERGENCY BRAKE: Never risk more than 25% of account in one position
 DAILY_LOSS_LIMIT_USD = 1000.0   # Effectively disabled - high limit
 MAX_HOLD_CANDLES = 54         # Maximum candles to hold position before timeout close (2.25 hours at 2.5m)
-MAX_CHAIN_LOSS_USD = 10.0     # CIRCUIT BREAKER: Stop chain if total loss exceeds $10
 
 # Scanner parameters
 SCAN_INTERVAL_SECS = 150      # 2.5 minutes (150 seconds)
@@ -85,20 +84,20 @@ USE_CURATED_PAIR_LIST = True  # Set to False to use dynamic pair discovery
 CURATED_PAIR_LIST = [
     "RAVEUSDT", "SIRENUSDT", "ARIAUSDT", "BULLAUSDT", "STOUSDT",
     "BLESSUSDT", "BASUSDT", "ONUSDT", "NOMUSDT", "TRADOORUSDT",
-    "BRUSDT", "AKEUSDT", "DUSDT", "PLAYUSDT",  # REMOVED: PIPPINUSDT (-$10.34 chain)
+    "BRUSDT", "AKEUSDT", "DUSDT", "PIPPINUSDT", "PLAYUSDT",
     "BASEDUSDT", "CYSUSDT", "AGTUSDT", "HIGHUSDT",
-    "TAKEUSDT", "DRIFTUSDT", "QUSDT", "CHIPUSDT",  # REMOVED: ORDIUSDT (-$12.19 chains)
+    "TAKEUSDT", "DRIFTUSDT", "QUSDT", "CHIPUSDT", "ORDIUSDT",
     "SKYAIUSDT", "MAGMAUSDT", "KOMAUSDT", "XNYUSDT", "UBUSDT",
-    "LABUSDT", "JCTUSDT", "ENJUSDT", "PTBUSDT",  # REMOVED: PIEVERSEUSDT (-$8.27 chain)
-    "APRUSDT", "MOVRUSDT", "SOLVUSDT", "AIAUSDT",  # REMOVED: BEATUSDT (-$10.41 total)
-    "CTSIUSDT", "GWEIUSDT", "NAORISUSDT", "COLLECTUSDT",  # REMOVED: GENIUSUSDT (-$18.93 chains)
+    "LABUSDT", "JCTUSDT", "PIEVERSEUSDT", "ENJUSDT", "PTBUSDT",
+    "APRUSDT", "MOVRUSDT", "BEATUSDT", "SOLVUSDT", "AIAUSDT",
+    "CTSIUSDT", "GWEIUSDT", "GENIUSUSDT", "NAORISUSDT", "COLLECTUSDT",
     "MYXUSDT", "PROMUSDT", "AINUSDT", "BLUAIUSDT", "ONTUSDT",
     "PORTALUSDT", "GTCUSDT", "PHBUSDT", "MUSDT", "LYNUSDT",
     "CLOUSDT", "RIVERUSDT", "PRLUSDT", "TSTUSDT", "BIOUSDT",
     "BANKUSDT", "REDUSDT", "GUAUSDT", "1000SATSUSDT",
     "ZEREBROUSDT", "SPKUSDT", "BTRUSDT", "UAIUSDT", "NEIROUSDT",
     "FIDAUSDT", "GUNUSDT", "GIGGLEUSDT", "ALICEUSDT", "STABLEUSDT",
-    "IRYSUSDT", "INXUSDT", "JOEUSDT", "BANUSDT",  # REMOVED: EDGEUSDT (5 chains)
+    "IRYSUSDT", "INXUSDT", "EDGEUSDT", "JOEUSDT", "BANUSDT",
     "SOONUSDT", "CUSDT", "HEMIUSDT", "EDUUSDT", "PNUTUSDT",
     "FIGHTUSDT", "TAUSDT", "GRIFFAINUSDT", "BROCCOLIF3BUSDT",
     "TAGUSDT", "AIOUSDT", "FOLKSUSDT", "USUSDT", "MEGAUSDT",
@@ -125,13 +124,5 @@ EXCLUDED_SYMBOLS = [
     "BSBUSDT",   # Makes 40-63% moves at 0.65x avg volume — pure noise, undetectable
     "SWARMSUSDT", # Makes 35-37% moves at sub-1x volume — same pattern
     "PUMPBTCUSDT", # Makes 34-35% SHORT moves at 0.08-0.5x volume — untradeable
-
-    # CATASTROPHIC LOSING CHAINS (May 2026) - BLACKLIST IMMEDIATELY
-    "GENIUSUSDT",    # -$18.93 total in chain losses (2 chains, 4+5 consecutive losses)
-    "PIPPINUSDT",    # -$10.34 single chain loss (3 consecutive losses in 1.5 hours)
-    "PIEVERSEUSDT",  # -$8.27 single chain loss (6 consecutive losses)
-    "BEATUSDT",      # -$10.41 total losses (7 consecutive losses, 0% win rate)
-    "EDGEUSDT",      # 5 separate losing chains (-$1.79 total chain losses)
-    "ORDIUSDT",      # -$12.19 total in chain losses (2 chains: 9 losses + 6 losses)
 ]
 
