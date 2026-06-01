@@ -43,6 +43,9 @@ class MartingaleManager:
         self.max_adverse_excursion_pct: float = 0.0  # Worst drawdown % from entry
         self.mae_candle: int = 0  # Candle number when MAE occurred
 
+        # Overnight first-candle kill tracking
+        self.overnight_first_candle_checked: bool = False
+
         # History
         self.history: List[TradeRecord] = []
         self.last_max_loss_time: float = 0
@@ -56,6 +59,9 @@ class MartingaleManager:
 
         # Chain PnL tracking - cumulative profit/loss across current chain
         self.chain_pnl_history: List[float] = []  # List of net PnL for each trade in current chain
+
+        # Chain duration tracking (for MAX_CHAIN_DURATION_HOURS check)
+        self.chain_start_time: float = 0.0  # Timestamp when chain started (level 0 → 1)
 
         # Dynamic sizing - balance at chain start
         self.chain_start_balance: float = 0.0
@@ -148,6 +154,9 @@ class MartingaleManager:
         self.max_adverse_excursion_pct = 0.0
         self.mae_candle = 0
 
+        # Reset overnight first-candle check for new position
+        self.overnight_first_candle_checked = False
+
         log(f"ENTERED: {symbol} {direction} @ {entry_price:.4f} | "
             f"Level={self.level} | Size={format_usd(self.current_size_usd)} | "
             f"Qty={entry_quantity:.4f} | Score={score:.2f}")
@@ -215,26 +224,20 @@ class MartingaleManager:
             f"PnL={format_usd(net_pnl)} | Cumulative chain PnL={format_usd(cumulative_pnl)}")
         log(f"MAE: {self.max_adverse_excursion_pct:.2f}% (candle {self.mae_candle} of {total_candles})")
 
-        # Only reset to level 0 if ENTIRE CHAIN is profitable
+        # WIN: Reduce level by 1 (user requirement: faster chain recovery)
+        if self.level > 0:
+            log(f"WIN: Level reduced {self.level} → {self.level - 1} | Cumulative chain PnL={format_usd(cumulative_pnl)}")
+            self.level -= 1
+        else:
+            log(f"WIN at Level 0: Chain continues | Cumulative chain PnL={format_usd(cumulative_pnl)}")
+
+        # Reset chain only if ENTIRE CHAIN is now profitable
         if cumulative_pnl > 0:
-            log(f"CHAIN PROFITABLE: {format_usd(cumulative_pnl)} | Level={self.level} → 0")
+            log(f"CHAIN PROFITABLE: {format_usd(cumulative_pnl)} | Resetting chain")
             self.level = 0
             self.chain_start_balance = 0.0
+            self.chain_start_time = 0.0  # Reset chain timer
             self.chain_pnl_history = []  # Clear chain history
-        else:
-            # Chain still negative - increment level to increase position size
-            log(f"CHAIN STILL NEGATIVE: {format_usd(cumulative_pnl)} | Level={self.level} → {self.level + 1}", "warning")
-            self.level += 1
-
-            # Check if max level exceeded even after a win
-            if self.level > config.MAX_LEVEL:
-                log(f"MAX LEVEL HIT ({config.MAX_LEVEL}) after WIN - Chain still unprofitable | "
-                    f"Cumulative chain PnL={format_usd(cumulative_pnl)} | "
-                    f"Entering {config.COOLDOWN_AFTER_MAX_LOSS}s cooldown", "warning")
-                self.last_max_loss_time = time.time()
-                self.level = 0
-                self.chain_start_balance = 0.0
-                self.chain_pnl_history = []  # Reset chain on MAX_LEVEL
 
         self._clear_position()
 
@@ -280,9 +283,6 @@ class MartingaleManager:
         log(f"BLACKLIST: {self.current_symbol} added to cooldown for {config.COOLDOWN_CANDLES} candles "
             f"({config.COOLDOWN_DURATION_SECS/60:.0f} minutes)", "warning")
 
-        # Increment level
-        self.level += 1
-
         # Track consecutive losses (informational only)
         self.consecutive_losses += 1
         log(f"Consecutive losses: {self.consecutive_losses}")
@@ -293,8 +293,25 @@ class MartingaleManager:
             log(f"⚠️ REGIME FLIP ACTIVATED: {self.consecutive_losses} consecutive losses → "
                 f"Switching from SHORT bias to LONG bias", "warning")
 
-        # Check if max level exceeded
-        if self.level > config.MAX_LEVEL:
+        # Check for MAX_CHAIN_DURATION_HOURS: force-reset LOSING chains after duration limit
+        # (Winning chains are exempt - only stop bleeding losses)
+        chain_duration_hours = 0.0
+        if self.chain_start_time > 0:
+            chain_duration_hours = (time.time() - self.chain_start_time) / 3600
+
+        if (config.MAX_CHAIN_DURATION_HOURS > 0 and
+            chain_duration_hours > config.MAX_CHAIN_DURATION_HOURS and
+            cumulative_pnl < 0):
+            log(f"CHAIN DURATION LIMIT: {chain_duration_hours:.1f}h > {config.MAX_CHAIN_DURATION_HOURS}h | "
+                f"Cumulative chain PnL={format_usd(cumulative_pnl)} < 0 | "
+                f"Force-resetting losing chain", "warning")
+            self.level = 0
+            self.consecutive_losses = 0
+            self.chain_start_balance = 0.0
+            self.chain_start_time = 0.0  # Reset chain timer
+            self.chain_pnl_history = []
+        # Check if max level exceeded BEFORE incrementing (FIX: prevent levels > MAX_LEVEL)
+        elif self.level >= config.MAX_LEVEL:
             log(f"MAX LEVEL HIT ({config.MAX_LEVEL}) - Full chain blowout | "
                 f"Cumulative chain PnL={format_usd(sum(self.chain_pnl_history))} | "
                 f"Entering {config.COOLDOWN_AFTER_MAX_LOSS}s cooldown", "warning")
@@ -302,7 +319,19 @@ class MartingaleManager:
             self.level = 0
             self.consecutive_losses = 0  # Reset on chain blowout
             self.chain_start_balance = 0.0  # Clear cached balance for next cycle
+            self.chain_start_time = 0.0  # Reset chain timer
             self.chain_pnl_history = []  # Clear chain history on MAX_LEVEL reset
+        else:
+            # Only increment if below MAX_LEVEL
+            prev_level = self.level
+            self.level += 1
+
+            # Start chain timer when going from level 0 to 1
+            if prev_level == 0 and self.level == 1:
+                self.chain_start_time = time.time()
+                log(f"CHAIN STARTED: Timer started at level {self.level}")
+
+            log(f"Level incremented: {prev_level} → {self.level}")
 
         self._clear_position()
 

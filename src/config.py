@@ -33,7 +33,8 @@ BASE_SIZE_PCT = 0.03          # 3% of account balance per trade at level 0 (dyna
 MARTINGALE_MULTIPLIER = 1.25  # Position size multiplier per level (1.25x = 25% increase)
 MAX_LEVEL = 10                # Max 10 levels
 LEVERAGE = 20                 # 20x leverage
-COOLDOWN_AFTER_MAX_LOSS = 0  # 1 hour cooldown after blowing a full chain
+COOLDOWN_AFTER_MAX_LOSS = 3600  # 1 hour cooldown after blowing a full chain
+MAX_CHAIN_DURATION_HOURS = 48   # Force chain reset after 2 days (prevents 8-day chains)
 MAX_POSITION_PCT = 0.25       # EMERGENCY BRAKE: Never risk more than 25% of account in one position
 DAILY_LOSS_LIMIT_USD = 1000.0   # Effectively disabled - high limit
 MAX_HOLD_CANDLES = 54         # Maximum candles to hold position before timeout close (2.25 hours at 2.5m)
@@ -73,7 +74,7 @@ BTC_PUMP_THRESHOLD_4H = 0.05   # Pause shorts if BTC up >5% in 4h
 
 # Adaptive regime switching
 CONSECUTIVE_LOSS_FLIP_THRESHOLD = 3  # Flip SHORT→LONG bias after this many losses
-LONG_PENALTY_MULTIPLIER = 0.1        # LONG signals get 90% penalty (effectively blocks LONGs)
+LONG_PENALTY_MULTIPLIER = 0.9        # LONG signals get 10% penalty (allows regime flip to work)
 SHORT_PENALTY_MULTIPLIER = 0.6       # SHORT signals get 40% penalty when regime flipped
 
 # Top 100 pairs ranked by 30-day move frequency (backtest-derived)

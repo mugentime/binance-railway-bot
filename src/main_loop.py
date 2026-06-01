@@ -5,6 +5,7 @@ Orchestrator - the main entry point
 import asyncio
 import time
 import math
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Callable, Any
 from utils import log, save_state, load_state, format_usd, setup_signal_handlers
 import config
@@ -107,6 +108,48 @@ def wait_until_next_candle(interval_secs: int = 300):
         minutes = sleep_time / 60
         log(f"Waiting {minutes:.1f} minutes until next candle...")
         time.sleep(sleep_time)
+
+# CST timezone offset (UTC-6)
+CST = timedelta(hours=-6)
+
+def is_overnight_entry(entry_time_utc: float) -> bool:
+    """
+    Returns True if entry time falls in 00:00–08:00 CST (06:00–14:00 UTC).
+    Args:
+        entry_time_utc: Unix timestamp in seconds (UTC)
+    """
+    entry_dt = datetime.fromtimestamp(entry_time_utc, tz=timezone.utc)
+    cst_time = entry_dt + CST
+    return 0 <= cst_time.hour < 8
+
+def check_overnight_first_candle_kill(manager: MartingaleManager, current_price: float) -> bool:
+    """
+    Check if overnight position should be killed after first candle adverse move.
+    Returns True if position should be closed immediately.
+    """
+    # Skip if already checked
+    if manager.overnight_first_candle_checked:
+        return False
+
+    # Check if at least 1 candle has elapsed
+    candles_elapsed = manager.candles_held(time.time())
+    if candles_elapsed < 1:
+        return False
+
+    # Mark as checked (only check once after first candle)
+    manager.overnight_first_candle_checked = True
+
+    # Check if entry was during overnight hours
+    if not is_overnight_entry(manager.entry_candle_time):
+        return False  # Not an overnight entry
+
+    # Check for ANY adverse move after first candle
+    if manager.current_direction == 'SHORT' and current_price > manager.entry_price:
+        return True  # Price went up on short — kill
+    if manager.current_direction == 'LONG' and current_price < manager.entry_price:
+        return True  # Price went down on long — kill
+
+    return False
 
 def verify_and_sync_state(executor: OrderExecutor, manager: MartingaleManager) -> bool:
     """
@@ -521,6 +564,49 @@ async def main_loop():
                     log(f"HOLDING: {manager.current_symbol} {manager.current_direction} | "
                         f"Candles: {candles_held} | Unrealized PnL: {format_usd(unrealized_pnl)} | "
                         f"Drawdown: {current_drawdown_pct:.2f}% | MAE: {manager.max_adverse_excursion_pct:.2f}% @ candle {manager.mae_candle}")
+
+                    # OVERNIGHT FIRST-CANDLE KILL: Close if overnight entry moved adversely after first candle
+                    if check_overnight_first_candle_kill(manager, mark_price):
+                        log(f"[OVERNIGHT KILL] {manager.current_symbol} {manager.current_direction} "
+                            f"entry={manager.entry_price:.6f} current={mark_price:.6f} — "
+                            f"adverse move after candle 1, closing at market", "warning")
+
+                        # Cancel all pending orders
+                        executor.cancel_all_orders(manager.current_symbol)
+
+                        # Close position at market
+                        try:
+                            close_order = executor.close_position_market(
+                                manager.current_symbol,
+                                manager.current_direction,
+                                manager.entry_quantity
+                            )
+                            exit_price = float(close_order["avgPrice"])
+
+                            # Check if position was already closed (e.g., by SL)
+                            if close_order.get("alreadyClosed"):
+                                log(f"ALREADY CLOSED: {manager.current_symbol} @ {exit_price:.6f} (SL algo order likely triggered)")
+
+                            # Overnight kill is always a loss (position moved adversely)
+                            manager.close_loss(exit_price)
+                            save_state(manager)
+
+                            log(f"OVERNIGHT KILL CLOSE: {manager.current_symbol} @ {exit_price:.6f} | "
+                                f"PnL: {format_usd(unrealized_pnl)}")
+
+                            # Print stats
+                            stats = manager.stats()
+                            log(f"STATS: {stats['total_trades']} trades | "
+                                f"WR: {stats['win_rate']*100:.1f}% | "
+                                f"PnL: {format_usd(stats['total_pnl'])} | "
+                                f"Level: {stats['current_level']}")
+
+                        except Exception as e:
+                            log(f"Error closing overnight kill position: {e}", "error")
+                            import traceback
+                            traceback.print_exc()
+
+                        continue
 
                     # CRITICAL: Verify SL exists every 5 candles (safety check)
                     if candles_held % 5 == 0 and candles_held > 0:
