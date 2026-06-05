@@ -29,7 +29,7 @@ SL_PCT = 0.04                 # 4.0% price-based stop loss (prevents catastrophe
 # SHORT on overbought (RSI>65, BB>0.8), LONG on oversold (RSI<35, BB<0.2)
 
 # Martingale parameters
-BASE_SIZE_PCT = 0.03          # 3% of account balance per trade at level 0 (dynamic sizing)
+BASE_SIZE_PCT = 0.05          # 5% of account balance per trade at level 0 (increased from 3% for faster growth)
 MARTINGALE_MULTIPLIER = 1.25  # Position size multiplier per level (1.25x = 25% increase)
 MAX_LEVEL = 10                # Max 10 levels
 LEVERAGE = 20                 # 20x leverage
