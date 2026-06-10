@@ -40,12 +40,13 @@ class SignalResult:
     volume_ratio: float
     spread_pct: float
     funding_rate: float
-    sma_slope_pct: float = 0.0
+    sma_50: float = 0.0  # SMA-50 for trend filter
     volume_24h: float = 0.0
     volume_score: float = 0.0
     rsi_score: float = 0.0
     bb_score: float = 0.0
     zscore_score: float = 0.0
+    trend_penalized: bool = False  # Track if trend filter was applied
 
 
 class SignalScorer:
@@ -217,7 +218,7 @@ class SignalScorer:
             volumes      = data["volumes"]
             spread_pct   = data["spread_pct"]
             funding_rate = data["funding_rate"]
-            sma_slope    = data.get("sma_slope_pct", 0.0)
+            sma_50       = data.get("sma_50", closes[-1])  # Get SMA-50 for trend filter
             volume_24h   = data.get("volume_24h", 0.0)
 
             rsi          = self.calculate_rsi(closes)
@@ -251,6 +252,21 @@ class SignalScorer:
                 final_direction = "LONG" if long_pts > short_pts else "SHORT"
                 total_score = raw_score * config.LONG_PENALTY_MULTIPLIER if final_direction == "LONG" else raw_score
 
+            # ── SOFT TREND FILTER (20% penalty for counter-trend trades) ──
+            current_price = closes[-1]
+            trend_penalized = False
+
+            # If trading against trend, apply 20% penalty
+            if current_price < sma_50 and final_direction == "LONG":
+                total_score = total_score * 0.8  # 20% penalty
+                trend_penalized = True
+                log(f"🛡️ TREND FILTER: {symbol} LONG penalized (price ${current_price:.6f} < SMA ${sma_50:.6f})")
+
+            if current_price > sma_50 and final_direction == "SHORT":
+                total_score = total_score * 0.8  # 20% penalty
+                trend_penalized = True
+                log(f"🛡️ TREND FILTER: {symbol} SHORT penalized (price ${current_price:.6f} > SMA ${sma_50:.6f})")
+
             # ── Entry gate ────────────────────────────────────────────────
             if total_score < config.ENTRY_THRESHOLD:
                 below_threshold.append(f"{symbol} ({total_score:.1f}pts)")
@@ -270,12 +286,13 @@ class SignalScorer:
                 volume_ratio=volume_ratio,
                 spread_pct=spread_pct,
                 funding_rate=funding_rate,
-                sma_slope_pct=sma_slope,
+                sma_50=sma_50,
                 volume_24h=volume_24h,
                 volume_score=volume_score,
                 rsi_score=rsi_score,
                 bb_score=bb_score,
                 zscore_score=zscore_score,
+                trend_penalized=trend_penalized,
             ))
 
         all_scores.sort(key=lambda x: x.score, reverse=True)
