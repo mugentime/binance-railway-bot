@@ -270,9 +270,12 @@ class PairScanner:
                         filter_stats["volume_filtered"] += 1
                         return  # Skip this pair
 
-                    # SMA slope computation removed: KLINE_LIMIT=50, SMA_PERIOD=50
-                    # produces only 1 SMA value, slope is always 0.0
-                    sma_slope_pct = 0.0
+                    # Calculate SMA-50 for trend filter
+                    if len(closes) >= 50:
+                        sma_50 = np.mean(closes[-50:])
+                    else:
+                        sma_50 = closes[-1]  # Fallback to current price if not enough data
+
                     # Order book depth (2 weight)
                     await asyncio.sleep(0.1)  # Rate limit control (increased from 0.05s to 0.1s)
                     depth_resp = await self.client.get(
@@ -316,7 +319,7 @@ class PairScanner:
                         "slippage_short": estimated_slippage_short,
                         "atr_pct": atr_pct,  # Store ATR% for logging/analysis
                         "volume_24h": volume_24h_data.get(symbol, 0.0),  # 24h quote volume in USD
-                        "sma_slope_pct": sma_slope_pct,  # SMA slope percentage per candle
+                        "sma_50": sma_50,  # SMA-50 for trend filter
                     }
 
                 except Exception as e:
