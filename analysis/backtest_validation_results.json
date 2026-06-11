@@ -1,0 +1,391 @@
+{
+  "timestamp": "2026-06-03T17:31:55.909132+00:00",
+  "validation_dataset": {
+    "file": "C:\\Users\\je2al\\Desktop\\binance-railway-bot\\analysis\\pre_move_indicators_30d.csv",
+    "total_moves": 4821,
+    "date_range": "Last 30 days"
+  },
+  "configurations_tested": 10,
+  "results": [
+    {
+      "config_rank": 1,
+      "config": {
+        "rsi_short": 55,
+        "rsi_long": 45,
+        "bb_short": 0.6,
+        "bb_long": 0.3,
+        "z_short": 0.5,
+        "z_long": -0.5
+      },
+      "results_59_movers": {
+        "coverage_pct": 98.31,
+        "direction_accuracy": 22.41,
+        "triggered_count": 58,
+        "correct_direction_count": 13
+      },
+      "results_historical": {
+        "coverage_pct": 69.78,
+        "direction_accuracy": 43.55,
+        "triggered_count": 3364,
+        "correct_direction_count": 1465,
+        "total_movers": 4821
+      },
+      "false_positive_estimate": {
+        "scans_per_day": 28800,
+        "trigger_rate": 0.6978,
+        "expected_triggers_per_day": 20096.6,
+        "expected_real_triggers": 111.6,
+        "expected_false_positives": 19985.0,
+        "false_positive_rate": 99.44
+      },
+      "overfitting_analysis": {
+        "coverage_diff": -28.53,
+        "accuracy_diff": 21.14,
+        "overfitting_severity": "SEVERE",
+        "overfitting_note": "Coverage dropped >20pp - strong overfitting signal"
+      }
+    },
+    {
+      "config_rank": 2,
+      "config": {
+        "rsi_short": 55,
+        "rsi_long": 45,
+        "bb_short": 0.7,
+        "bb_long": 0.3,
+        "z_short": 0.5,
+        "z_long": -0.5
+      },
+      "results_59_movers": {
+        "coverage_pct": 98.31,
+        "direction_accuracy": 22.41,
+        "triggered_count": 58,
+        "correct_direction_count": 13
+      },
+      "results_historical": {
+        "coverage_pct": 64.95,
+        "direction_accuracy": 43.31,
+        "triggered_count": 3131,
+        "correct_direction_count": 1356,
+        "total_movers": 4821
+      },
+      "false_positive_estimate": {
+        "scans_per_day": 28800,
+        "trigger_rate": 0.6495,
+        "expected_triggers_per_day": 18705.6,
+        "expected_real_triggers": 103.9,
+        "expected_false_positives": 18601.7,
+        "false_positive_rate": 99.44
+      },
+      "overfitting_analysis": {
+        "coverage_diff": -33.36,
+        "accuracy_diff": 20.9,
+        "overfitting_severity": "SEVERE",
+        "overfitting_note": "Coverage dropped >20pp - strong overfitting signal"
+      }
+    },
+    {
+      "config_rank": 3,
+      "config": {
+        "rsi_short": 55,
+        "rsi_long": 45,
+        "bb_short": 0.6,
+        "bb_long": 0.4,
+        "z_short": 0.5,
+        "z_long": -0.5
+      },
+      "results_59_movers": {
+        "coverage_pct": 100.0,
+        "direction_accuracy": 20.34,
+        "triggered_count": 59,
+        "correct_direction_count": 12
+      },
+      "results_historical": {
+        "coverage_pct": 73.03,
+        "direction_accuracy": 43.82,
+        "triggered_count": 3521,
+        "correct_direction_count": 1543,
+        "total_movers": 4821
+      },
+      "false_positive_estimate": {
+        "scans_per_day": 28800,
+        "trigger_rate": 0.7303,
+        "expected_triggers_per_day": 21032.6,
+        "expected_real_triggers": 116.8,
+        "expected_false_positives": 20915.8,
+        "false_positive_rate": 99.44
+      },
+      "overfitting_analysis": {
+        "coverage_diff": -26.97,
+        "accuracy_diff": 23.48,
+        "overfitting_severity": "SEVERE",
+        "overfitting_note": "Coverage dropped >20pp - strong overfitting signal"
+      }
+    },
+    {
+      "config_rank": 4,
+      "config": {
+        "rsi_short": 55,
+        "rsi_long": 45,
+        "bb_short": 0.7,
+        "bb_long": 0.4,
+        "z_short": 0.5,
+        "z_long": -0.5
+      },
+      "results_59_movers": {
+        "coverage_pct": 100.0,
+        "direction_accuracy": 20.34,
+        "triggered_count": 59,
+        "correct_direction_count": 12
+      },
+      "results_historical": {
+        "coverage_pct": 68.2,
+        "direction_accuracy": 43.61,
+        "triggered_count": 3288,
+        "correct_direction_count": 1434,
+        "total_movers": 4821
+      },
+      "false_positive_estimate": {
+        "scans_per_day": 28800,
+        "trigger_rate": 0.682,
+        "expected_triggers_per_day": 19641.6,
+        "expected_real_triggers": 109.1,
+        "expected_false_positives": 19532.5,
+        "false_positive_rate": 99.44
+      },
+      "overfitting_analysis": {
+        "coverage_diff": -31.8,
+        "accuracy_diff": 23.27,
+        "overfitting_severity": "SEVERE",
+        "overfitting_note": "Coverage dropped >20pp - strong overfitting signal"
+      }
+    },
+    {
+      "config_rank": 5,
+      "config": {
+        "rsi_short": 55,
+        "rsi_long": 45,
+        "bb_short": 0.6,
+        "bb_long": 0.3,
+        "z_short": 1.0,
+        "z_long": -0.5
+      },
+      "results_59_movers": {
+        "coverage_pct": 94.92,
+        "direction_accuracy": 25.0,
+        "triggered_count": 56,
+        "correct_direction_count": 14
+      },
+      "results_historical": {
+        "coverage_pct": 60.92,
+        "direction_accuracy": 43.0,
+        "triggered_count": 2937,
+        "correct_direction_count": 1263,
+        "total_movers": 4821
+      },
+      "false_positive_estimate": {
+        "scans_per_day": 28800,
+        "trigger_rate": 0.6092,
+        "expected_triggers_per_day": 17545.0,
+        "expected_real_triggers": 97.5,
+        "expected_false_positives": 17447.5,
+        "false_positive_rate": 99.44
+      },
+      "overfitting_analysis": {
+        "coverage_diff": -34.0,
+        "accuracy_diff": 18.0,
+        "overfitting_severity": "SEVERE",
+        "overfitting_note": "Coverage dropped >20pp - strong overfitting signal"
+      }
+    },
+    {
+      "config_rank": 6,
+      "config": {
+        "rsi_short": 55,
+        "rsi_long": 45,
+        "bb_short": 0.7,
+        "bb_long": 0.3,
+        "z_short": 1.0,
+        "z_long": -0.5
+      },
+      "results_59_movers": {
+        "coverage_pct": 94.92,
+        "direction_accuracy": 25.0,
+        "triggered_count": 56,
+        "correct_direction_count": 14
+      },
+      "results_historical": {
+        "coverage_pct": 60.92,
+        "direction_accuracy": 43.0,
+        "triggered_count": 2937,
+        "correct_direction_count": 1263,
+        "total_movers": 4821
+      },
+      "false_positive_estimate": {
+        "scans_per_day": 28800,
+        "trigger_rate": 0.6092,
+        "expected_triggers_per_day": 17545.0,
+        "expected_real_triggers": 97.5,
+        "expected_false_positives": 17447.5,
+        "false_positive_rate": 99.44
+      },
+      "overfitting_analysis": {
+        "coverage_diff": -34.0,
+        "accuracy_diff": 18.0,
+        "overfitting_severity": "SEVERE",
+        "overfitting_note": "Coverage dropped >20pp - strong overfitting signal"
+      }
+    },
+    {
+      "config_rank": 7,
+      "config": {
+        "rsi_short": 55,
+        "rsi_long": 45,
+        "bb_short": 0.6,
+        "bb_long": 0.4,
+        "z_short": 1.0,
+        "z_long": -0.5
+      },
+      "results_59_movers": {
+        "coverage_pct": 96.61,
+        "direction_accuracy": 22.81,
+        "triggered_count": 57,
+        "correct_direction_count": 13
+      },
+      "results_historical": {
+        "coverage_pct": 64.18,
+        "direction_accuracy": 43.34,
+        "triggered_count": 3094,
+        "correct_direction_count": 1341,
+        "total_movers": 4821
+      },
+      "false_positive_estimate": {
+        "scans_per_day": 28800,
+        "trigger_rate": 0.6418,
+        "expected_triggers_per_day": 18483.8,
+        "expected_real_triggers": 102.7,
+        "expected_false_positives": 18381.2,
+        "false_positive_rate": 99.44
+      },
+      "overfitting_analysis": {
+        "coverage_diff": -32.43,
+        "accuracy_diff": 20.53,
+        "overfitting_severity": "SEVERE",
+        "overfitting_note": "Coverage dropped >20pp - strong overfitting signal"
+      }
+    },
+    {
+      "config_rank": 8,
+      "config": {
+        "rsi_short": 55,
+        "rsi_long": 45,
+        "bb_short": 0.7,
+        "bb_long": 0.4,
+        "z_short": 1.0,
+        "z_long": -0.5
+      },
+      "results_59_movers": {
+        "coverage_pct": 96.61,
+        "direction_accuracy": 22.81,
+        "triggered_count": 57,
+        "correct_direction_count": 13
+      },
+      "results_historical": {
+        "coverage_pct": 64.18,
+        "direction_accuracy": 43.34,
+        "triggered_count": 3094,
+        "correct_direction_count": 1341,
+        "total_movers": 4821
+      },
+      "false_positive_estimate": {
+        "scans_per_day": 28800,
+        "trigger_rate": 0.6418,
+        "expected_triggers_per_day": 18483.8,
+        "expected_real_triggers": 102.7,
+        "expected_false_positives": 18381.2,
+        "false_positive_rate": 99.44
+      },
+      "overfitting_analysis": {
+        "coverage_diff": -32.43,
+        "accuracy_diff": 20.53,
+        "overfitting_severity": "SEVERE",
+        "overfitting_note": "Coverage dropped >20pp - strong overfitting signal"
+      }
+    },
+    {
+      "config_rank": 9,
+      "config": {
+        "rsi_short": 55,
+        "rsi_long": 45,
+        "bb_short": 0.8,
+        "bb_long": 0.3,
+        "z_short": 0.5,
+        "z_long": -0.5
+      },
+      "results_59_movers": {
+        "coverage_pct": 93.22,
+        "direction_accuracy": 25.45,
+        "triggered_count": 55,
+        "correct_direction_count": 14
+      },
+      "results_historical": {
+        "coverage_pct": 57.0,
+        "direction_accuracy": 42.65,
+        "triggered_count": 2748,
+        "correct_direction_count": 1172,
+        "total_movers": 4821
+      },
+      "false_positive_estimate": {
+        "scans_per_day": 28800,
+        "trigger_rate": 0.57,
+        "expected_triggers_per_day": 16416.0,
+        "expected_real_triggers": 91.2,
+        "expected_false_positives": 16324.8,
+        "false_positive_rate": 99.44
+      },
+      "overfitting_analysis": {
+        "coverage_diff": -36.22,
+        "accuracy_diff": 17.2,
+        "overfitting_severity": "SEVERE",
+        "overfitting_note": "Coverage dropped >20pp - strong overfitting signal"
+      }
+    },
+    {
+      "config_rank": 10,
+      "config": {
+        "rsi_short": 55,
+        "rsi_long": 45,
+        "bb_short": 0.8,
+        "bb_long": 0.3,
+        "z_short": 1.0,
+        "z_long": -0.5
+      },
+      "results_59_movers": {
+        "coverage_pct": 93.22,
+        "direction_accuracy": 25.45,
+        "triggered_count": 55,
+        "correct_direction_count": 14
+      },
+      "results_historical": {
+        "coverage_pct": 57.0,
+        "direction_accuracy": 42.65,
+        "triggered_count": 2748,
+        "correct_direction_count": 1172,
+        "total_movers": 4821
+      },
+      "false_positive_estimate": {
+        "scans_per_day": 28800,
+        "trigger_rate": 0.57,
+        "expected_triggers_per_day": 16416.0,
+        "expected_real_triggers": 91.2,
+        "expected_false_positives": 16324.8,
+        "false_positive_rate": 99.44
+      },
+      "overfitting_analysis": {
+        "coverage_diff": -36.22,
+        "accuracy_diff": 17.2,
+        "overfitting_severity": "SEVERE",
+        "overfitting_note": "Coverage dropped >20pp - strong overfitting signal"
+      }
+    }
+  ]
+}

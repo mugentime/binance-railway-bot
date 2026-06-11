@@ -1,0 +1,808 @@
+{
+  "timestamp": "2026-06-05T09:25:11.514282",
+  "strategy": {
+    "trigger_pct": 0.02,
+    "lookback_min": 10,
+    "vol_mult": 1.2,
+    "tp_long": 0.1,
+    "tp_short": 0.08,
+    "hourly_check_min": 60,
+    "max_timeout_min": 240
+  },
+  "periods_tested": 5,
+  "aggregate_metrics": {
+    "total_trades": 100,
+    "total_pnl": -1.4164942496981667,
+    "avg_pnl_per_period": -0.28329884993963333,
+    "overall_win_rate": 28.000000000000004,
+    "profitable_periods": 2,
+    "consistency_pct": 40.0
+  },
+  "period_results": [
+    {
+      "period": "1 day(s) ago (2026-06-04)",
+      "days_ago": 1,
+      "results": {
+        "total_movers": 157,
+        "entries": 23,
+        "coverage": 23.0,
+        "win_rate": 34.78260869565217,
+        "tp_hit_rate": 21.73913043478261,
+        "hourly_exit_rate": 65.21739130434783,
+        "net_pnl": 6.516812062124008,
+        "roi_pct": 6.516812062124008,
+        "avg_hold_min": 100.04347826086956,
+        "trades": [
+          {
+            "symbol": "ZECUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.1,
+            "minutes_held": 21,
+            "is_win": true
+          },
+          {
+            "symbol": "SUSHIUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.0327706057596822,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "NEARUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.025431861804222616,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "APEUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.01327088212334098,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "INJUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.03383897316219377,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "STGUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.01267962806424346,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "NFPUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.1,
+            "minutes_held": 100,
+            "is_win": true
+          },
+          {
+            "symbol": "ENAUSDT",
+            "exit_reason": "HOURLY_EXIT_180min",
+            "pnl_pct": -0.008623624191535196,
+            "minutes_held": 180,
+            "is_win": false
+          },
+          {
+            "symbol": "COSUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.08,
+            "minutes_held": 124,
+            "is_win": true
+          },
+          {
+            "symbol": "ALCHUSDT",
+            "exit_reason": "HOURLY_EXIT_180min",
+            "pnl_pct": -0.014021118227453784,
+            "minutes_held": 180,
+            "is_win": false
+          },
+          {
+            "symbol": "DUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.08,
+            "minutes_held": 68,
+            "is_win": true
+          },
+          {
+            "symbol": "VVVUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.0004420308158625709,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "HEIUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.012235817575083468,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "EPICUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.05577812018489986,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "SIRENUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.0058974746711023965,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "NILUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.04051724137931034,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "FHEUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.04926908500270715,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "AERGOUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.04221435793731036,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "SKYAIUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.0013421317526003255,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "LAUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.1,
+            "minutes_held": 8,
+            "is_win": true
+          },
+          {
+            "symbol": "MYXUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.001785714285714213,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "BULLAUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.004771642808452469,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "ESPORTSUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.04314595660749511,
+            "minutes_held": 240,
+            "is_win": true
+          }
+        ]
+      }
+    },
+    {
+      "period": "2 day(s) ago (2026-06-03)",
+      "days_ago": 2,
+      "results": {
+        "total_movers": 59,
+        "entries": 27,
+        "coverage": 45.76271186440678,
+        "win_rate": 22.22222222222222,
+        "tp_hit_rate": 7.4074074074074066,
+        "hourly_exit_rate": 77.77777777777779,
+        "net_pnl": -5.383739725321986,
+        "roi_pct": -5.383739725321986,
+        "avg_hold_min": 97.29629629629629,
+        "trades": [
+          {
+            "symbol": "ZECUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.02901746851604666,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "SUSHIUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.0327706057596822,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "NEARUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.025431861804222616,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "STGUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.01267962806424346,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "WLDUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.023156394727467066,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "MEMEUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.052712700369913795,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "ENAUSDT",
+            "exit_reason": "HOURLY_EXIT_180min",
+            "pnl_pct": -0.008623624191535196,
+            "minutes_held": 180,
+            "is_win": false
+          },
+          {
+            "symbol": "VVVUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.0004420308158625709,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "EPICUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.06370569762225209,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "PLUMEUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.03916666666666666,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "SKYAIUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.0013421317526003255,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "HOMEUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.04158315479070198,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "INUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.04475152129817433,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "USELESSUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.07418015179722168,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "CLOUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.051352843732744444,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "LABUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.08,
+            "minutes_held": 20,
+            "is_win": true
+          },
+          {
+            "symbol": "APRUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.040376055954219316,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "BEATUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.012258657676984381,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "GUAUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.011270102570596454,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "LITUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.013099582898852977,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "AIAUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.02845749501540696,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "TRIAUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.008606421714664012,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "OPNUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.08,
+            "minutes_held": 27,
+            "is_win": true
+          },
+          {
+            "symbol": "\u9f99\u867eUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.0007907221929362438,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "EDGEUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.03939996385324424,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "GENIUSUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.026208766380478987,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "SLXUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.04725441862904504,
+            "minutes_held": 60,
+            "is_win": false
+          }
+        ]
+      }
+    },
+    {
+      "period": "3 day(s) ago (2026-06-02)",
+      "days_ago": 3,
+      "results": {
+        "total_movers": 43,
+        "entries": 20,
+        "coverage": 46.51162790697674,
+        "win_rate": 40.0,
+        "tp_hit_rate": 20.0,
+        "hourly_exit_rate": 60.0,
+        "net_pnl": 2.5714870183295835,
+        "roi_pct": 2.5714870183295835,
+        "avg_hold_min": 109.35,
+        "trades": [
+          {
+            "symbol": "NFPUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.1,
+            "minutes_held": 100,
+            "is_win": true
+          },
+          {
+            "symbol": "HEIUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.012235817575083468,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "EPICUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.06370569762225209,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "SKYAIUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.0013421317526003255,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "MYXUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.001785714285714213,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "HUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.005695103213307358,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "MUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.030147913199133274,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "CUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.024662234612910106,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "ESPORTSUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.04314595660749511,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "USELESSUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.07418015179722168,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "CLOUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.044033335303505006,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "LABUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.08,
+            "minutes_held": 20,
+            "is_win": true
+          },
+          {
+            "symbol": "RIVERUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.033753637245392897,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "GUAUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.011270102570596454,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "SPORTFUNUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.08,
+            "minutes_held": 180,
+            "is_win": true
+          },
+          {
+            "symbol": "FIGHTUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.026565995525726957,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "OPNUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.08,
+            "minutes_held": 27,
+            "is_win": true
+          },
+          {
+            "symbol": "EDGEUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.03939996385324424,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "AIGENSYNUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.014767133661491783,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "SLXUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.04725441862904504,
+            "minutes_held": 60,
+            "is_win": false
+          }
+        ]
+      }
+    },
+    {
+      "period": "5 day(s) ago (2026-05-31)",
+      "days_ago": 5,
+      "results": {
+        "total_movers": 25,
+        "entries": 13,
+        "coverage": 52.0,
+        "win_rate": 23.076923076923077,
+        "tp_hit_rate": 7.6923076923076925,
+        "hourly_exit_rate": 76.92307692307693,
+        "net_pnl": -2.3021187942510655,
+        "roi_pct": -2.3021187942510655,
+        "avg_hold_min": 109.23076923076923,
+        "trades": [
+          {
+            "symbol": "STGUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.01267962806424346,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "USTCUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.036717062634989174,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "NFPUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.1,
+            "minutes_held": 100,
+            "is_win": true
+          },
+          {
+            "symbol": "HEIUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.012235817575083468,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "NILUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.04051724137931034,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "HOMEUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.04158315479070198,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "MYXUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.001785714285714213,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "HUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.005695103213307358,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "INUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.04475152129817433,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "\u5e01\u5b89\u4eba\u751fUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.02423875170428725,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "GUAUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.011270102570596454,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "SPORTFUNUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.06582174979558464,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "AIAUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.03905390539053905,
+            "minutes_held": 60,
+            "is_win": false
+          }
+        ]
+      }
+    },
+    {
+      "period": "7 day(s) ago (2026-05-29)",
+      "days_ago": 7,
+      "results": {
+        "total_movers": 34,
+        "entries": 17,
+        "coverage": 50.0,
+        "win_rate": 17.647058823529413,
+        "tp_hit_rate": 11.76470588235294,
+        "hourly_exit_rate": 82.35294117647058,
+        "net_pnl": -2.818934810578707,
+        "roi_pct": -2.818934810578707,
+        "avg_hold_min": 100.82352941176471,
+        "trades": [
+          {
+            "symbol": "INJUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.03383897316219377,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "STGUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.01267962806424346,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "USTCUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.036717062634989174,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "MBOXUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.009720534629404644,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "SWARMSUSDT",
+            "exit_reason": "HOURLY_EXIT_180min",
+            "pnl_pct": -0.00190939073077601,
+            "minutes_held": 180,
+            "is_win": false
+          },
+          {
+            "symbol": "HEIUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.012235817575083468,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "EPICUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.08,
+            "minutes_held": 194,
+            "is_win": true
+          },
+          {
+            "symbol": "NILUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.04051724137931034,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "ESPORTSUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.04314595660749511,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "INUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.04475152129817433,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "CLOUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.044033335303505006,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "LABUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.08,
+            "minutes_held": 20,
+            "is_win": true
+          },
+          {
+            "symbol": "POWERUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.00828542441663844,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "LITUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.028949489521762586,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "GENIUSUSDT",
+            "exit_reason": "HOURLY_EXIT_120min",
+            "pnl_pct": -0.026208766380478987,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "AIGENSYNUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.014767133661491783,
+            "minutes_held": 60,
+            "is_win": false
+          },
+          {
+            "symbol": "QNTXUSDT",
+            "exit_reason": "HOURLY_EXIT_60min",
+            "pnl_pct": -0.01587837837837846,
+            "minutes_held": 60,
+            "is_win": false
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "symbol": "SIRENUSDT",
+    "id": 500610985,
+    "orderId": 4036730373,
+    "side": "SELL",
+    "price": "0.6275000",
+    "qty": "76",
+    "realizedPnl": "0",
+    "quoteQty": "47.6900000",
+    "commission": "0.00003129",
+    "commissionAsset": "BNB",
+    "time": 1780321811068,
+    "positionSide": "BOTH",
+    "buyer": false,
+    "maker": false
+  },
+  {
+    "symbol": "SIRENUSDT",
+    "id": 500650977,
+    "orderId": 4036966133,
+    "side": "BUY",
+    "price": "0.6548000",
+    "qty": "73",
+    "realizedPnl": "-1.99290000",
+    "quoteQty": "47.8004000",
+    "commission": "0.00003144",
+    "commissionAsset": "BNB",
+    "time": 1780322611082,
+    "positionSide": "BOTH",
+    "buyer": true,
+    "maker": false
+  },
+  {
+    "symbol": "SIRENUSDT",
+    "id": 500650978,
+    "orderId": 4036966133,
+    "side": "BUY",
+    "price": "0.6548000",
+    "qty": "3",
+    "realizedPnl": "-0.08190000",
+    "quoteQty": "1.9644000",
+    "commission": "0.00000129",
+    "commissionAsset": "BNB",
+    "time": 1780322611082,
+    "positionSide": "BOTH",
+    "buyer": true,
+    "maker": false
+  }
+]

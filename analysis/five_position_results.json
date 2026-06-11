@@ -1,0 +1,86 @@
+{
+  "timestamp": "2026-06-05T10:21:31.022983",
+  "strategy": {
+    "trigger_pct": 0.02,
+    "lookback_min": 10,
+    "vol_mult": 1.2,
+    "tp_long": 0.1,
+    "tp_short": 0.08,
+    "check_interval_min": 120,
+    "max_positions": 5,
+    "base_size_usd": 1.0
+  },
+  "results": {
+    "total_movers": 303,
+    "signals_found": 47,
+    "positions_taken": 5,
+    "win_rate": 80.0,
+    "tp_hit_rate": 20.0,
+    "net_pnl": 2.758340210098292,
+    "total_deployed": 5.0,
+    "roi_pct": 55.166804201965846,
+    "avg_hold_min": 169.2
+  },
+  "trades": [
+    {
+      "symbol": "TSTUSDT",
+      "actual_move": 14.546,
+      "actual_direction": "DOWN",
+      "entry_direction": "SHORT",
+      "direction_match": false,
+      "exit_reason": "MAX_TIMEOUT",
+      "pnl_pct": 0.01055543422872529,
+      "minutes_held": 240,
+      "is_win": true,
+      "score": 10261.106827428548
+    },
+    {
+      "symbol": "TAKEUSDT",
+      "actual_move": 19.914,
+      "actual_direction": "DOWN",
+      "entry_direction": "SHORT",
+      "direction_match": false,
+      "exit_reason": "TP",
+      "pnl_pct": 0.08,
+      "minutes_held": 6,
+      "is_win": true,
+      "score": 6995.0791890447845
+    },
+    {
+      "symbol": "BTRUSDT",
+      "actual_move": 14.381,
+      "actual_direction": "DOWN",
+      "entry_direction": "SHORT",
+      "direction_match": false,
+      "exit_reason": "MAX_TIMEOUT",
+      "pnl_pct": 0.028672032193158836,
+      "minutes_held": 240,
+      "is_win": true,
+      "score": 4554.988651048844
+    },
+    {
+      "symbol": "BULLAUSDT",
+      "actual_move": 10.025,
+      "actual_direction": "DOWN",
+      "entry_direction": "SHORT",
+      "direction_match": false,
+      "exit_reason": "CHECK_EXIT_120min",
+      "pnl_pct": -0.016814360372642445,
+      "minutes_held": 120,
+      "is_win": false,
+      "score": 1690.1704734472685
+    },
+    {
+      "symbol": "HAEDALUSDT",
+      "actual_move": 26.786,
+      "actual_direction": "DOWN",
+      "entry_direction": "SHORT",
+      "direction_match": false,
+      "exit_reason": "MAX_TIMEOUT",
+      "pnl_pct": 0.03950390445567293,
+      "minutes_held": 240,
+      "is_win": true,
+      "score": 1457.9676423299109
+    }
+  ]
+}

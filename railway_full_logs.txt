@@ -1,0 +1,517 @@
+2026-06-03 17:25:05,054 [INFO]   ... and 10 more
+2026-06-03 17:25:05,054 [INFO]   VOL BONUS (10 pts) — bonus only, never gates
+2026-06-03 17:25:05,054 [INFO] 
+2026-06-03 17:25:05,054 [INFO] SCORING SYSTEM (v2 — built from 30-day precursor analysis):
+2026-06-03 17:25:05,054 [INFO]   LONG PENALTY: score *= 0.1
+2026-06-03 17:25:05,054 [INFO]   NO VOLUME GATE  (median vol before 10%+ move = 0.88x, not a precursor)
+2026-06-03 17:25:05,054 [INFO]   ENTRY GATE: score >= 20 pts
+2026-06-03 17:25:05,054 [INFO]   RSI       (50 pts) — SHORT if RSI>60, LONG if RSI<40
+2026-06-03 17:25:05,054 [INFO] 
+2026-06-03 17:25:05,054 [INFO]   BB%B      (30 pts) — SHORT if BB>0.6,  LONG if BB<0.4
+2026-06-03 17:25:05,054 [INFO] >  Rank   Symbol          Dir    Score    RSI    BB     Z      VolB   | RSI      BB%B     Z        VolRatio  
+2026-06-03 17:25:05,054 [INFO] --------------------------------------------------------------------------------------------------------------------------------------------
+2026-06-03 17:25:05,054 [INFO] > 1     MYXUSDT         LONG   83.3     48.4   27.1   17.0   0.0    | 15.80    -0.05    -2.20    0.02      
+2026-06-03 17:25:05,054 [INFO]   2     BEATUSDT        LONG   76.2     50.0   21.4   13.3   0.0    | 15.00    0.04     -1.83    0.00      
+2026-06-03 17:25:05,054 [INFO]   3     TAUSDT          SHORT  65.6     31.8   20.9   12.9   0.0    | 75.90    0.95     1.79     0.01      
+2026-06-03 17:25:05,054 [INFO]   4     STOUSDT         SHORT  59.2     14.9   25.3   15.9   3.1    | 67.47    1.02     2.09     1.62      
+2026-06-03 17:25:05,054 [INFO]   5     SKYAIUSDT       SHORT  57.8     39.0   11.8   6.9    0.0    | 79.52    0.80     1.19     0.00      
+2026-06-03 17:25:05,054 [INFO]   6     APRUSDT         SHORT  56.5     12.9   26.8   16.9   0.0    | 66.44    1.05     2.19     0.53      
+2026-06-03 17:25:05,054 [INFO]   7     USUSDT          SHORT  53.1     28.7   15.1   9.1    0.3    | 74.37    0.85     1.41     1.05      
+2026-06-03 17:25:05,054 [INFO]   8     COLLECTUSDT     LONG   46.5     21.3   18.8   11.5   0.0    | 29.35    0.09     -1.65    0.34      
+2026-06-03 17:25:05,054 [INFO]   9     CHIPUSDT        SHORT  45.9     23.7   13.9   8.3    0.0    | 71.84    0.83     1.33     0.37      
+2026-06-03 17:25:05,054 [INFO]   10    RAVEUSDT        SHORT  37.8     7.9    18.5   11.4   0.0    | 63.95    0.91     1.64     0.80      
+2026-06-03 17:25:05,054 [INFO]   11    CUSDT           LONG   34.7     15.2   14.6   8.7    0.0    | 32.39    0.16     -1.37    0.13      
+2026-06-03 17:25:05,055 [INFO]   12    PLAYUSDT        LONG   32.3     1.5    18.4   11.3   4.7    | 39.23    0.09     -1.63    1.93      
+2026-06-03 17:25:05,055 [INFO]   13    FIDAUSDT        SHORT  32.3     22.6   6.4    3.3    0.0    | 71.31    0.71     0.83     0.01      
+2026-06-03 17:25:05,055 [INFO]   14    BIOUSDT         LONG   27.2     0.0    18.7   11.5   0.0    | 40.12    0.09     -1.65    0.01      
+2026-06-03 17:25:05,055 [INFO]   15    SPKUSDT         SHORT  27.2     0.5    16.6   10.1   0.0    | 60.24    0.88     1.51     0.00      
+2026-06-03 17:25:05,055 [INFO]   16    UAIUSDT         LONG   25.0     20.6   4.9    2.3    0.0    | 29.70    0.32     -0.73    0.00      
+2026-06-03 17:25:05,055 [INFO]   17    KERNELUSDT      SHORT  24.8     3.7    13.3   7.8    0.0    | 61.83    0.82     1.28     0.00      
+2026-06-03 17:25:05,055 [INFO]   18    MUSDT           LONG   24.2     0.0    16.8   10.2   0.0    | 47.55    0.12     -1.52    0.80      
+2026-06-03 17:25:05,055 [INFO]   19    ORDIUSDT        LONG   24.2     9.2    11.2   6.5    0.0    | 35.42    0.21     -1.15    0.35      
+2026-06-03 17:25:05,055 [INFO]   20    LABUSDT         LONG   21.7     18.8   2.7    0.8    1.9    | 30.62    0.35     -0.58    1.37      
+2026-06-03 17:25:05,055 [INFO]   21    UBUSDT          SHORT  20.2     0.0    12.7   7.5    0.0    | 57.66    0.81     1.25     0.65      
+2026-06-03 17:25:05,055 [INFO] ============================================================================================================================================
+2026-06-03 17:25:05,055 [INFO] > TOP SIGNAL: MYXUSDT LONG @ 83.3 pts | RSI=48.4 BB=27.1 Z=17.0 VolBonus=0.0
+2026-06-03 17:25:05,055 [INFO]   RSI=15.8 BB%B=-0.05 Z=-2.20 VolRatio=0.02x
+2026-06-03 17:25:05,055 [INFO] ============================================================================================================================================
+2026-06-03 17:25:05,055 [INFO] BEST SIGNAL: MYXUSDT LONG | Score=83.26 | RSI=15.8 BB=-0.05 Z=-2.20
+2026-06-03 17:25:05,136 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/balance?timestamp=1780507505018&recvWindow=20000&signature=012c302f3fe83db13ddd507701cc968a13ef9c634a72823fb06bf1dc78bfabc4 "HTTP/1.1 200 OK"
+2026-06-03 17:25:05,136 [INFO] BALANCE: $42.75 → Base size = $1.28 (3.0%)
+2026-06-03 17:25:05,219 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780507505099&recvWindow=20000&signature=abdc4a4a9fba0d30ad21fcf53bda7165936e15eef22106eaf6a679e146ae8228 "HTTP/1.1 200 OK"
+2026-06-03 17:25:05,299 [INFO] HTTP Request: POST https://fapi.binance.com/fapi/v1/leverage?symbol=MYXUSDT&leverage=20&timestamp=1780507505190&recvWindow=20000&signature=4d860998d0747db434846a63eb637ed64cecd748373b4f13ee399742e1c9e46b "HTTP/1.1 400 Bad Request"
+2026-06-03 17:25:05,300 [WARNING] Leverage 20x not available for MYXUSDT (code: -4028)
+2026-06-03 17:25:05,300 [WARNING] Skipping MYXUSDT: Leverage 20x not supported
+2026-06-03 17:25:05,300 [INFO] Waiting 2.4 minutes until next candle...
+2026-06-03 17:27:32,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 17:27:32,000 [INFO] CYCLE START | Level=0 | In position=False
+2026-06-03 17:27:32,083 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,083 [INFO] Time synced with Binance server (offset: -37ms)
+2026-06-03 17:27:32,170 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780507652046&recvWindow=20000&signature=f241728aa2af2006b27edd2d711d4bf59034519020a538e129a5f0405e01d819 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,259 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/balance?timestamp=1780507652141&recvWindow=20000&signature=295b2a6289500363a8f62272f704e0f8eca7ee0fc2313f4b818dd59faff156a2 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,343 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=4h&limit=1 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,344 [INFO] Scanning 94 pairs...
+2026-06-03 17:27:32,344 [WARNING] WARNING: 24h ticker cache missing, fetching again...
+2026-06-03 17:27:32,435 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/ticker/24hr "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,527 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/premiumIndex "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,626 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=RAVEUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,648 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=SIRENUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,650 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=BLESSUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,805 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=RAVEUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,652 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=BULLAUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,826 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=SIRENUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,653 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=ARIAUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,828 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=BLESSUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,655 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=STOUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,657 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=NOMUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,659 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=ONUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,659 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=BASUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,663 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=TRADOORUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,740 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=BRUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,831 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=BULLAUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,912 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=PLAYUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,833 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=ARIAUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,835 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=NOMUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,914 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=BASEDUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,836 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=STOUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,915 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=CYSUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,840 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=BASUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,842 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=TRADOORUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,883 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=AKEUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,904 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=DUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,906 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=PIPPINUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,919 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=AGTUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,921 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=BRUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,922 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=HIGHUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,924 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=TAKEUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:32,963 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=DRIFTUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,001 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=QUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,083 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=DUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,087 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=PIPPINUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,091 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=PLAYUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,095 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=CYSUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,097 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=BASEDUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,100 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=AGTUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,107 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=HIGHUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,133 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=TAKEUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,140 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=DRIFTUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,162 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=CHIPUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,164 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=ORDIUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,166 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=SKYAIUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,176 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=XNYUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,179 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=KOMAUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,181 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=MAGMAUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,183 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=QUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,186 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=UBUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,220 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=JCTUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,226 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=LABUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,257 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=PIEVERSEUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,363 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=UBUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,259 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=ENJUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,400 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=JCTUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,260 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=PTBUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,342 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=CHIPUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,345 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=ORDIUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,348 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=SKYAIUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,359 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=MAGMAUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,404 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=LABUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,424 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=APRUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,525 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=COLLECTUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,426 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=MOVRUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,427 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=BEATUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,437 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=PIEVERSEUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,443 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=PTBUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,446 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=ENJUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,448 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=AIAUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,469 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=SOLVUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,476 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=CTSIUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,479 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=GWEIUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,513 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=GENIUSUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,522 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=NAORISUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,547 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=MYXUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,556 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=PROMUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,602 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=APRUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,605 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=AINUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,606 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=BEATUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,609 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=MOVRUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,625 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=AIAUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,657 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=GWEIUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,687 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=GTCUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,689 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=PORTALUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,690 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=ONTUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,693 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=GENIUSUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,704 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=MUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,712 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=COLLECTUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,725 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=MYXUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,735 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=LYNUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,738 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=PROMUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,769 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=CLOUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,790 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=RIVERUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,804 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=PRLUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,817 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=TSTUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,819 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=BLUAIUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,867 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=PORTALUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,870 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=GTCUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,873 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=ONTUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,884 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=MUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,913 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=LYNUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,948 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=BIOUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,950 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=BANKUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,951 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=REDUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,953 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=CLOUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,960 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=GUAUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,969 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=RIVERUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,982 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=PRLUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,988 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=1000SATSUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,994 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=TSTUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:33,998 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=BLUAIUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,028 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=ZEREBROUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,031 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=SPKUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,047 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=BTRUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,058 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=UAIUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,072 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=NEIROUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,077 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=FIDAUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,124 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=GUNUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,126 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=BIOUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,129 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=REDUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,138 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=GUAUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,164 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=1000SATSUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,204 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=GIGGLEUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,206 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=ZEREBROUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,207 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=ALICEUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,210 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=SPKUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,215 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=STABLEUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,235 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=UAIUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,241 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=IRYSUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,257 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=FIDAUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,262 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=NEIROUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,287 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=INXUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,288 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=EDGEUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,305 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=GUNUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,313 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=JOEUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,333 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=BANUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,379 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=CUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,384 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=ALICEUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,386 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=GIGGLEUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,388 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=HEMIUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,422 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=IRYSUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,464 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=EDGEUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,465 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=EDUUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,467 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=PNUTUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,470 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=INXUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,473 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=SOONUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,498 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=FIGHTUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,654 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=EDUUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,523 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=STABLEUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,533 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=BANUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,549 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=TAUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,553 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=GRIFFAINUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,558 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=CUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,565 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=HEMIUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,577 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=BROCCOLIF3BUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,610 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=AIOUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,631 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=FOLKSUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,636 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=USUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,657 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=ONGUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,662 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=PNUTUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,664 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=SOONUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,729 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=TAUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,735 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=KERNELUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,737 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=EVAAUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,738 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=TAGUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,780 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/klines?symbol=MEGAUSDT&interval=5m&limit=50 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,787 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=AIOUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,810 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=FOLKSUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,815 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=USUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,913 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=KERNELUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,925 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=TAGUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,964 [INFO] ============================================================================================================================================
+2026-06-03 17:27:34,958 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=MEGAUSDT&limit=5 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,960 [INFO] After ATR filter:      94 (94 → 94, filtered 0)
+2026-06-03 17:27:34,964 [INFO] SCAN RESULTS (Scorer v2 — Precursor-Based) — Top 30 of 16 signals
+2026-06-03 17:27:34,960 [INFO] ================================================================================
+2026-06-03 17:27:34,960 [INFO] After volume filter:   78 (94 → 78, filtered 16)
+2026-06-03 17:27:34,960 [INFO] FILTERING PIPELINE
+2026-06-03 17:27:34,960 [INFO] ================================================================================
+2026-06-03 17:27:34,960 [INFO] After spread filter:   40 (78 → 40, filtered 38)
+2026-06-03 17:27:34,960 [INFO] Initial pairs:         94
+2026-06-03 17:27:34,960 [INFO] After slippage filter: 40 (40 → 40, filtered 0)
+2026-06-03 17:27:34,960 [INFO] Final pairs passed:    40
+2026-06-03 17:27:34,960 [INFO] ================================================================================
+2026-06-03 17:27:34,961 [INFO] Scoring signals...
+2026-06-03 17:27:34,964 [INFO] ============================================================================================================================================
+2026-06-03 17:27:34,964 [INFO] 
+2026-06-03 17:27:34,964 [INFO]   VOL BONUS (10 pts) — bonus only, never gates
+2026-06-03 17:27:34,964 [INFO] BELOW THRESHOLD (<20pts): 24 pairs
+2026-06-03 17:27:34,964 [INFO]   LONG PENALTY: score *= 0.1
+2026-06-03 17:27:34,964 [INFO]   SIRENUSDT (12.7pts), BLESSUSDT (0.0pts), NOMUSDT (8.5pts), BASEDUSDT (0.0pts), ORDIUSDT (7.6pts), LABUSDT (14.2pts), PIEVERSEUSDT (0.0pts), ENJUSDT (0.4pts), GENIUSUSDT (0.5pts), PORTALUSDT (0.0pts)
+2026-06-03 17:27:34,964 [INFO]   ... and 14 more
+2026-06-03 17:27:34,964 [INFO]   ENTRY GATE: score >= 20 pts
+2026-06-03 17:27:34,964 [INFO] 
+2026-06-03 17:27:34,964 [INFO] 
+2026-06-03 17:27:34,964 [INFO] >  Rank   Symbol          Dir    Score    RSI    BB     Z      VolB   | RSI      BB%B     Z        VolRatio  
+2026-06-03 17:27:34,964 [INFO] SCORING SYSTEM (v2 — built from 30-day precursor analysis):
+2026-06-03 17:27:34,964 [INFO]   NO VOLUME GATE  (median vol before 10%+ move = 0.88x, not a precursor)
+2026-06-03 17:27:34,964 [INFO]   RSI       (50 pts) — SHORT if RSI>60, LONG if RSI<40
+2026-06-03 17:27:34,964 [INFO]   BB%B      (30 pts) — SHORT if BB>0.6,  LONG if BB<0.4
+2026-06-03 17:27:34,964 [INFO]   Z-SCORE   (20 pts) — SHORT if Z>0.5,   LONG if Z<-0.5
+2026-06-03 17:27:34,964 [INFO] --------------------------------------------------------------------------------------------------------------------------------------------
+2026-06-03 17:27:34,965 [INFO]   7     CHIPUSDT        SHORT  42.9     23.7   12.1   7.1    0.0    | 71.84    0.80     1.21     0.23      
+2026-06-03 17:27:34,964 [INFO] > 1     APRUSDT         SHORT  70.0     20.9   30.0   19.1   0.0    | 70.44    1.10     2.41     0.30      
+2026-06-03 17:27:34,965 [INFO]   8     RAVEUSDT        SHORT  36.7     11.8   15.6   9.4    0.0    | 65.89    0.86     1.44     0.13      
+2026-06-03 17:27:34,964 [INFO]   2     STOUSDT         SHORT  69.1     27.5   25.6   16.0   0.0    | 73.74    1.03     2.10     0.72      
+2026-06-03 17:27:34,965 [INFO]   9     FIDAUSDT        SHORT  34.1     23.8   6.8    3.5    0.0    | 71.90    0.71     0.85     0.22      
+2026-06-03 17:27:34,964 [INFO]   3     TAUSDT          SHORT  66.2     31.3   20.2   12.5   2.2    | 75.65    0.94     1.75     1.43      
+2026-06-03 17:27:34,965 [INFO]   10    PLAYUSDT        LONG   33.4     0.0    22.9   14.3   0.0    | 42.14    0.02     -1.93    0.64      
+2026-06-03 17:27:34,964 [INFO]   4     SKYAIUSDT       SHORT  60.2     39.7   12.9   7.6    0.0    | 79.85    0.82     1.26     0.18      
+2026-06-03 17:27:34,965 [INFO]   11    GIGGLEUSDT      SHORT  25.1     0.0    15.7   9.4    0.0    | 56.86    0.86     1.44     0.27      
+2026-06-03 17:27:34,964 [INFO]   5     BEATUSDT        LONG   58.4     36.5   17.7   10.8   0.0    | 21.77    0.11     -1.58    0.55      
+2026-06-03 17:27:34,964 [INFO]   6     SPKUSDT         SHORT  50.3     8.3    25.8   16.2   0.0    | 64.13    1.03     2.12     0.21      
+2026-06-03 17:27:35,053 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/balance?timestamp=1780507654928&recvWindow=20000&signature=0b0358d1894c60db3159bc93d16ca03b7704bec40ceefa4ee3737461c9173774 "HTTP/1.1 200 OK"
+2026-06-03 17:27:34,965 [INFO]   12    UAIUSDT         LONG   25.0     20.6   4.9    2.3    0.0    | 29.70    0.32     -0.73    0.05      
+2026-06-03 17:27:35,053 [INFO] BALANCE: $42.96 → Base size = $1.29 (3.0%)
+2026-06-03 17:27:34,965 [INFO]   13    BIOUSDT         LONG   23.2     0.0    16.1   9.7    0.0    | 41.21    0.13     -1.47    0.16      
+2026-06-03 17:27:34,965 [INFO]   14    CLOUSDT         LONG   22.9     15.7   6.5    3.3    0.0    | 32.15    0.29     -0.83    0.21      
+2026-06-03 17:27:34,965 [INFO]   15    IRYSUSDT        SHORT  22.2     0.0    13.7   8.1    0.5    | 49.43    0.83     1.31     1.09      
+2026-06-03 17:27:34,965 [INFO]   16    CYSUSDT         SHORT  20.3     15.2   3.7    1.4    0.0    | 67.59    0.66     0.64     0.17      
+2026-06-03 17:27:34,965 [INFO] ============================================================================================================================================
+2026-06-03 17:27:34,965 [INFO] > TOP SIGNAL: APRUSDT SHORT @ 70.0 pts | RSI=20.9 BB=30.0 Z=19.1 VolBonus=0.0
+2026-06-03 17:27:34,965 [INFO]   RSI=70.4 BB%B=1.10 Z=2.41 VolRatio=0.30x
+2026-06-03 17:27:34,965 [INFO] ============================================================================================================================================
+2026-06-03 17:27:34,965 [INFO] BEST SIGNAL: APRUSDT SHORT | Score=69.97 | RSI=70.4 BB=1.10 Z=2.41
+2026-06-03 17:27:35,142 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780507655016&recvWindow=20000&signature=da76a07615f8cb49ee2e98b78199bdbaba73891b20f9ce3a1359b45ad431184e "HTTP/1.1 200 OK"
+2026-06-03 17:27:35,227 [INFO] HTTP Request: POST https://fapi.binance.com/fapi/v1/leverage?symbol=APRUSDT&leverage=20&timestamp=1780507655114&recvWindow=20000&signature=37e2139e7b85bfa3fa78f237316ec3736dcf7ca5766342b9f13e591d64a7569f "HTTP/1.1 200 OK"
+2026-06-03 17:27:35,228 [INFO] Set leverage 20x for APRUSDT
+2026-06-03 17:27:35,304 [INFO] HTTP Request: POST https://fapi.binance.com/fapi/v1/marginType?symbol=APRUSDT&marginType=CROSSED&timestamp=1780507655191&recvWindow=20000&signature=1f1963845a7f9f1678b6f357112cc5f6667164b0aa0d8c32d06de88dc92868bb "HTTP/1.1 400 Bad Request"
+2026-06-03 17:27:35,305 [INFO] Margin type already configured for APRUSDT (code: -4046)
+2026-06-03 17:27:35,381 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780507655268&recvWindow=20000&signature=707b9b3bbb13241275e87bd0269ea8cf5bbb47b88428b6d10da499253c886144 "HTTP/1.1 200 OK"
+2026-06-03 17:27:35,382 [INFO] ✓ Verified margin type CROSSED for APRUSDT (API returned: CROSS)
+2026-06-03 17:27:35,456 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/depth?symbol=APRUSDT&limit=20 "HTTP/1.1 200 OK"
+2026-06-03 17:27:35,457 [INFO] Orderbook depth OK for APRUSDT: $2071 within 1.0% of mid price
+2026-06-03 17:27:35,532 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/ticker/price?symbol=APRUSDT "HTTP/1.1 200 OK"
+2026-06-03 17:27:35,532 [INFO] Placing MARKET SELL order: APRUSDT qty=100 (notional=$25.78 @ price=0.2553)
+2026-06-03 17:27:35,611 [INFO] HTTP Request: POST https://fapi.binance.com/fapi/v1/order?symbol=APRUSDT&side=SELL&type=MARKET&quantity=100&newOrderRespType=RESULT&timestamp=1780507655495&recvWindow=20000&signature=f9ae3872b9cb52312e6376b56cf78dce4c0499e4c09d34988d374d0eceeaffbd "HTTP/1.1 200 OK"
+2026-06-03 17:27:35,611 [INFO] MARKET order filled: APRUSDT SELL @ 0.25511 | Executed qty=100.0
+2026-06-03 17:27:35,612 [INFO] ENTERED: APRUSDT SHORT @ 0.2551 | Level=0 | Size=$25.78 | Qty=100.0000 | Score=69.97
+2026-06-03 17:27:35,688 [INFO] HTTP Request: POST https://fapi.binance.com/fapi/v1/order?symbol=APRUSDT&side=BUY&type=LIMIT&price=0.2296000&quantity=100&timeInForce=GTC&reduceOnly=true&timestamp=1780507655575&recvWindow=20000&signature=5e9b105e3ff089119dfdbc69ced604b7fae9dd1dd1f8a7192b966005dc56e56d "HTTP/1.1 200 OK"
+2026-06-03 17:27:35,688 [INFO] TP LIMIT order placed: APRUSDT @ 0.2296000
+2026-06-03 17:27:35,771 [INFO] HTTP Request: POST https://fapi.binance.com/fapi/v1/algoOrder?symbol=APRUSDT&side=BUY&algoType=CONDITIONAL&type=STOP&triggerPrice=0.2653100&price=0.2666400&quantity=100&workingType=MARK_PRICE&timestamp=1780507655651&recvWindow=20000&signature=7ac68645f1a709d55e97fe5aebf0c8e4451f7e69db84426a5bf2a6d55c235bdf "HTTP/1.1 200 OK"
+2026-06-03 17:27:35,771 [INFO] SL STOP_LIMIT algo order placed: APRUSDT trigger=0.2653100 limit=0.2666400 (algoId: 2000001045212980)
+2026-06-03 17:27:35,771 [INFO] Verifying TP/SL orders were placed successfully...
+2026-06-03 17:27:35,847 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/openAlgoOrders?symbol=APRUSDT&timestamp=1780507655734&recvWindow=20000&signature=a9a91853ecf1ace2438a8e2885b0e21dadc098fea66c1fece4baf74e397932e9 "HTTP/1.1 200 OK"
+2026-06-03 17:27:35,848 [INFO] ✓ SL order exists: APRUSDT @ 0.26531 (algoId: 2000001045212980)
+2026-06-03 17:27:35,848 [INFO] State saved: level=0, in_position=True
+2026-06-03 17:27:35,848 [INFO] ENTERED: APRUSDT SHORT @ 0.255110 | Level=0 | Size=$25.78 | TP=0.229599 | SL=0.265314
+2026-06-03 17:27:35,849 [INFO] Waiting 2.4 minutes until next candle...
+2026-06-03 17:30:02,368 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 17:30:02,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 17:30:02,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 17:30:02,160 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 17:30:02,161 [INFO] Time synced with Binance server (offset: -59ms)
+2026-06-03 17:30:02,283 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780507802102&recvWindow=20000&signature=f2776d403bf59188b8fbe4928a0dd2c853193024245ee55fab0fd08f61896a46 "HTTP/1.1 200 OK"
+2026-06-03 17:30:02,367 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780507802232&recvWindow=20000&signature=4a9b7d09ee9290692eeadf786c55aa08bfe9af4c445ff8ad9f00945812da6311 "HTTP/1.1 200 OK"
+2026-06-03 17:30:02,368 [INFO] HOLDING: APRUSDT SHORT | Candles: 0 | Unrealized PnL: $-0.03 | Drawdown: -0.13% | MAE: -0.13% @ candle 0
+2026-06-03 17:32:32,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 17:32:32,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 17:32:32,087 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 17:32:32,088 [INFO] Time synced with Binance server (offset: -38ms)
+2026-06-03 17:32:32,172 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780507952050&recvWindow=20000&signature=bb9d1d81bd8cee42bd6decdb1211394790de8cb10675f263e351864d9241436d "HTTP/1.1 200 OK"
+2026-06-03 17:32:32,265 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780507952145&recvWindow=20000&signature=41aa356f5c563c909500c04621054030ee614faebb3d4756479b1cd4127f89c6 "HTTP/1.1 200 OK"
+2026-06-03 17:32:32,266 [INFO] HOLDING: APRUSDT SHORT | Candles: 1 | Unrealized PnL: $0.06 | Drawdown: 0.25% | MAE: -0.13% @ candle 0
+2026-06-03 17:32:32,266 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 17:35:02,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 17:35:02,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 17:35:02,081 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 17:35:02,082 [INFO] Time synced with Binance server (offset: -37ms)
+2026-06-03 17:35:02,166 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780508102045&recvWindow=20000&signature=c7984b9b13e6a83193a3b409790f5e2042cb731e9de70d0198581dd8eeb025b9 "HTTP/1.1 200 OK"
+2026-06-03 17:35:02,248 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780508102136&recvWindow=20000&signature=6bcd5dd89dabed88d179a5113758a769032b11e1458f9a81d67246d48b525d30 "HTTP/1.1 200 OK"
+2026-06-03 17:35:02,249 [INFO] HOLDING: APRUSDT SHORT | Candles: 2 | Unrealized PnL: $-0.02 | Drawdown: -0.06% | MAE: -0.13% @ candle 0
+2026-06-03 17:35:02,249 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 17:37:32,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 17:37:32,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 17:37:32,087 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 17:37:32,087 [INFO] Time synced with Binance server (offset: -39ms)
+2026-06-03 17:37:32,174 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780508252048&recvWindow=20000&signature=c1d58790be8c7b37970324e079daf29f124ec304e960e6cdc70d6157ff3ca5d4 "HTTP/1.1 200 OK"
+2026-06-03 17:37:32,259 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780508252141&recvWindow=20000&signature=bde395274da15e0d280f0ea8eabfc28018528898338d61a9720d1aa7f087cf47 "HTTP/1.1 200 OK"
+2026-06-03 17:37:32,259 [INFO] HOLDING: APRUSDT SHORT | Candles: 3 | Unrealized PnL: $-0.31 | Drawdown: -1.23% | MAE: -1.23% @ candle 3
+2026-06-03 17:37:32,259 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 17:40:02,244 [INFO] Time synced with Binance server (offset: -42ms)
+2026-06-03 17:40:02,332 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780508402202&recvWindow=20000&signature=ca6ba17b62199df93320be6b21268c3bad423c67691beca4132e9b0f1e36b755 "HTTP/1.1 200 OK"
+2026-06-03 17:40:02,414 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780508402297&recvWindow=20000&signature=04785a823241820a2f0602a0482459ca1d80d0739c69f471b125b52604f46b80 "HTTP/1.1 200 OK"
+2026-06-03 17:40:02,415 [INFO] HOLDING: APRUSDT SHORT | Candles: 4 | Unrealized PnL: $-0.20 | Drawdown: -0.77% | MAE: -1.23% @ candle 3
+2026-06-03 17:40:02,415 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 17:40:02,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 17:40:02,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 17:40:02,243 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 17:42:32,001 [INFO] --------------------------------------------------------------------------------
+2026-06-03 17:42:32,002 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 17:42:32,093 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 17:42:32,093 [INFO] Time synced with Binance server (offset: -41ms)
+2026-06-03 17:42:32,181 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780508552052&recvWindow=20000&signature=bfb74d74d5a2fb2f95fba46eb641f5af1c26959a1503a36fd57f4e0c8f564f1d "HTTP/1.1 200 OK"
+2026-06-03 17:42:32,275 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780508552152&recvWindow=20000&signature=899513fb1f506e857d1ea3a44fd01ef78a5fe5f2f4bf5bacc324c179aed8b998 "HTTP/1.1 200 OK"
+2026-06-03 17:42:32,276 [INFO] HOLDING: APRUSDT SHORT | Candles: 5 | Unrealized PnL: $-0.20 | Drawdown: -0.80% | MAE: -1.23% @ candle 3
+2026-06-03 17:42:32,276 [INFO] Periodic SL verification check (candle 5)...
+2026-06-03 17:42:32,354 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/openAlgoOrders?symbol=APRUSDT&timestamp=1780508552235&recvWindow=20000&signature=452c62b49553f9863a2f0730be351e5df0881afd85d743e7442c3ecd8ce121a2 "HTTP/1.1 200 OK"
+2026-06-03 17:42:32,355 [INFO] ✓ SL order exists: APRUSDT @ 0.26531 (algoId: 2000001045212980)
+2026-06-03 17:42:32,355 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 17:45:02,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 17:45:02,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 17:45:02,086 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 17:45:02,086 [INFO] Time synced with Binance server (offset: -38ms)
+2026-06-03 17:45:05,246 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780508702048&recvWindow=20000&signature=73663582e8dd3321b0afcecf7759b7f415716d4f61fa58076492c9cf758917b3 "HTTP/1.1 200 OK"
+2026-06-03 17:45:05,333 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780508705217&recvWindow=20000&signature=a3df03b7691478f21f0e369df825a2ac5aac8a0fd5b69febc3c8df2983201c7f "HTTP/1.1 200 OK"
+2026-06-03 17:45:05,333 [INFO] HOLDING: APRUSDT SHORT | Candles: 6 | Unrealized PnL: $-0.24 | Drawdown: -0.94% | MAE: -1.23% @ candle 3
+2026-06-03 17:45:05,334 [INFO] Waiting 2.4 minutes until next candle...
+2026-06-03 17:47:32,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 17:47:32,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 17:47:32,080 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 17:47:32,081 [INFO] Time synced with Binance server (offset: -36ms)
+2026-06-03 17:47:32,170 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780508852045&recvWindow=20000&signature=36b4d4036b31791440df8d88acdffcaee1a1afb999a80ef264d7b92ddb287fa6 "HTTP/1.1 200 OK"
+2026-06-03 17:47:32,256 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780508852140&recvWindow=20000&signature=1e9627bd882d3790d1b65ec3d2c86f0e8653fb5d1a1322c2c5f22da7827d0ec3 "HTTP/1.1 200 OK"
+2026-06-03 17:47:32,257 [INFO] HOLDING: APRUSDT SHORT | Candles: 7 | Unrealized PnL: $-0.15 | Drawdown: -0.60% | MAE: -1.23% @ candle 3
+2026-06-03 17:47:32,257 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 17:50:02,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 17:50:02,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 17:50:02,218 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 17:50:02,219 [INFO] Time synced with Binance server (offset: -36ms)
+2026-06-03 17:50:02,506 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780509002183&recvWindow=20000&signature=041d92857bb6e9b40f3f70dc24e04c8f56fb30cd3a62e15a3ce30657e748e337 "HTTP/1.1 200 OK"
+2026-06-03 17:50:02,590 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780509002477&recvWindow=20000&signature=15333e5f3366ddc5f0b970b67e3cf22ddc1ab83a0f0e161f0475d47c66f19c71 "HTTP/1.1 200 OK"
+2026-06-03 17:50:02,590 [INFO] HOLDING: APRUSDT SHORT | Candles: 8 | Unrealized PnL: $-0.23 | Drawdown: -0.89% | MAE: -1.23% @ candle 3
+2026-06-03 17:50:02,590 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 17:52:32,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 17:52:32,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 17:52:32,084 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 17:52:32,084 [INFO] Time synced with Binance server (offset: -36ms)
+2026-06-03 17:52:32,170 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780509152048&recvWindow=20000&signature=9670323206668cd5522028181a9c3b437ae43c4d1c8580ccd979c2fa1d50a0b0 "HTTP/1.1 200 OK"
+2026-06-03 17:52:32,259 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780509152144&recvWindow=20000&signature=0b23fd97a256b8a2c0fcae1e3ca6c0fbf7882efd4e82924842c3e4e356096de8 "HTTP/1.1 200 OK"
+2026-06-03 17:52:32,259 [INFO] HOLDING: APRUSDT SHORT | Candles: 9 | Unrealized PnL: $-0.28 | Drawdown: -1.09% | MAE: -1.23% @ candle 3
+2026-06-03 17:52:32,260 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 17:55:02,508 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 17:55:02,508 [INFO] Time synced with Binance server (offset: -57ms)
+2026-06-03 17:55:02,606 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780509302451&recvWindow=20000&signature=25a2b1026b5148c4245654dc2770a0f7de65d7d8508106eb5cfd19c90b18145c "HTTP/1.1 200 OK"
+2026-06-03 17:55:02,687 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780509302555&recvWindow=20000&signature=e461f80e07a416370607bea80acdef96a6b5b4cbd88b82c36247be4910d9f569 "HTTP/1.1 200 OK"
+2026-06-03 17:55:02,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 17:55:02,688 [INFO] HOLDING: APRUSDT SHORT | Candles: 10 | Unrealized PnL: $-0.32 | Drawdown: -1.27% | MAE: -1.27% @ candle 10
+2026-06-03 17:55:02,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 17:55:02,688 [INFO] Periodic SL verification check (candle 10)...
+2026-06-03 17:55:02,764 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/openAlgoOrders?symbol=APRUSDT&timestamp=1780509302631&recvWindow=20000&signature=5aba518ff2b0c22ef298773202e68ae4ed8ddc736ab2fc253b334b3e821c1e77 "HTTP/1.1 200 OK"
+2026-06-03 17:55:02,765 [INFO] ✓ SL order exists: APRUSDT @ 0.26531 (algoId: 2000001045212980)
+2026-06-03 17:55:02,765 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 17:57:32,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 17:57:32,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 17:57:32,083 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 17:57:32,084 [INFO] Time synced with Binance server (offset: -38ms)
+2026-06-03 17:57:32,167 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780509452046&recvWindow=20000&signature=28a494403712760a88d34e264c770db86aba0e40c85bcf90f82780931d50fa00 "HTTP/1.1 200 OK"
+2026-06-03 17:57:32,255 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780509452138&recvWindow=20000&signature=c0b3fa971ddf688487f92a8d118fcf59d167e3a16da57587ee6ddd0cbad22b9a "HTTP/1.1 200 OK"
+2026-06-03 17:57:32,256 [INFO] HOLDING: APRUSDT SHORT | Candles: 11 | Unrealized PnL: $-0.37 | Drawdown: -1.47% | MAE: -1.47% @ candle 11
+2026-06-03 17:57:32,256 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 18:00:02,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 18:00:02,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 18:00:04,948 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 18:00:04,948 [INFO] Time synced with Binance server (offset: -38ms)
+2026-06-03 18:00:05,044 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780509604910&recvWindow=20000&signature=0f056b84614fa10862b3f63fc3010134de9810533e1bda89dd01190ffe7b32fa "HTTP/1.1 200 OK"
+2026-06-03 18:00:05,129 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780509605014&recvWindow=20000&signature=1a84badcd581a0aaf546e507ba1558c6b573896da5bb9a63bd1b5e375f4622ec "HTTP/1.1 200 OK"
+2026-06-03 18:00:05,129 [INFO] HOLDING: APRUSDT SHORT | Candles: 12 | Unrealized PnL: $-0.41 | Drawdown: -1.59% | MAE: -1.59% @ candle 12
+2026-06-03 18:00:05,129 [INFO] Waiting 2.4 minutes until next candle...
+2026-06-03 18:02:32,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 18:02:32,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 18:02:32,088 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 18:02:32,088 [INFO] Time synced with Binance server (offset: -37ms)
+2026-06-03 18:02:32,173 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780509752051&recvWindow=20000&signature=e65c2462f6d3da8dc1401ea0671e4700dfff47258ae9e622dcc90c0edb416d4c "HTTP/1.1 200 OK"
+2026-06-03 18:02:32,258 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780509752145&recvWindow=20000&signature=8e2a0ffd8a4542c047592dcc67b851a76b6c33147db51f18787a83a10a1dfa5d "HTTP/1.1 200 OK"
+2026-06-03 18:02:32,258 [INFO] HOLDING: APRUSDT SHORT | Candles: 13 | Unrealized PnL: $-0.32 | Drawdown: -1.27% | MAE: -1.59% @ candle 12
+2026-06-03 18:02:32,258 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 18:05:02,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 18:05:02,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 18:05:02,081 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 18:05:02,081 [INFO] Time synced with Binance server (offset: -37ms)
+2026-06-03 18:05:02,187 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780509902044&recvWindow=20000&signature=1e155b3e81c62005cf5e5d2b89abfa3220d84c0d6ab2cd6eb03bd987a0f7f519 "HTTP/1.1 200 OK"
+2026-06-03 18:05:02,419 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780509902157&recvWindow=20000&signature=7f668b00ad57688a238caec1d3ffdaafdd0430c79dddb87c09754386610da944 "HTTP/1.1 200 OK"
+2026-06-03 18:05:02,420 [INFO] HOLDING: APRUSDT SHORT | Candles: 14 | Unrealized PnL: $-0.30 | Drawdown: -1.20% | MAE: -1.59% @ candle 12
+2026-06-03 18:05:02,420 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 18:07:32,246 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780510052136&recvWindow=20000&signature=4c781a1c677a70f97dcba07c94eaf9e4387615b61b264602bee099d6d075c42a "HTTP/1.1 200 OK"
+2026-06-03 18:07:32,246 [INFO] HOLDING: APRUSDT SHORT | Candles: 15 | Unrealized PnL: $-0.30 | Drawdown: -1.20% | MAE: -1.59% @ candle 12
+2026-06-03 18:07:32,246 [INFO] Periodic SL verification check (candle 15)...
+2026-06-03 18:07:32,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 18:07:32,320 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/openAlgoOrders?symbol=APRUSDT&timestamp=1780510052211&recvWindow=20000&signature=4cd473aa93825494f79c754dda4149528e5e2e4cbfc78554e1378041e755a210 "HTTP/1.1 200 OK"
+2026-06-03 18:07:32,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 18:07:32,321 [INFO] ✓ SL order exists: APRUSDT @ 0.26531 (algoId: 2000001045212980)
+2026-06-03 18:07:32,082 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 18:07:32,321 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 18:07:32,082 [INFO] Time synced with Binance server (offset: -35ms)
+2026-06-03 18:07:32,163 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780510052047&recvWindow=20000&signature=63d1264a9316b3947f47d2390d6a3a502767eeb74c6612a4b384848d7febe3a7 "HTTP/1.1 200 OK"
+2026-06-03 18:10:02,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 18:10:02,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 18:10:02,087 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 18:10:02,087 [INFO] Time synced with Binance server (offset: -37ms)
+2026-06-03 18:10:02,193 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780510202050&recvWindow=20000&signature=a187c73cbe1e6ef1abb9494d5fddbfaaeddec4dc5a9d6ce6f84d2c11b2887f5c "HTTP/1.1 200 OK"
+2026-06-03 18:10:02,292 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780510202162&recvWindow=20000&signature=0b619916773b700d54e9e3324b556eb1a01416e9addfa34a3d18d077a6d4c274 "HTTP/1.1 200 OK"
+2026-06-03 18:10:02,292 [INFO] HOLDING: APRUSDT SHORT | Candles: 16 | Unrealized PnL: $-0.29 | Drawdown: -1.13% | MAE: -1.59% @ candle 12
+2026-06-03 18:10:02,292 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 18:12:32,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 18:12:32,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 18:12:32,098 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 18:12:32,098 [INFO] Time synced with Binance server (offset: -38ms)
+2026-06-03 18:12:32,183 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780510352060&recvWindow=20000&signature=b56f3dc01b7c02ee168634157d8d9ee1022f681160920afb8aa79783eee413bd "HTTP/1.1 200 OK"
+2026-06-03 18:12:32,268 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780510352152&recvWindow=20000&signature=35bf315570889dcbec7ba4178ea490364a37b1d1af8594f56b9683dd4a04df7c "HTTP/1.1 200 OK"
+2026-06-03 18:12:32,269 [INFO] HOLDING: APRUSDT SHORT | Candles: 17 | Unrealized PnL: $-0.38 | Drawdown: -1.47% | MAE: -1.59% @ candle 12
+2026-06-03 18:12:32,269 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 18:15:02,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 18:15:02,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 18:15:02,897 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 18:15:02,897 [INFO] Time synced with Binance server (offset: -54ms)
+2026-06-03 18:15:04,785 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780510502843&recvWindow=20000&signature=42047410784188fa0d67f121e55a8abc98026e6132ffc41cdde20db508bec52c "HTTP/1.1 200 OK"
+2026-06-03 18:15:04,869 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780510504740&recvWindow=20000&signature=9fd98a6a77aab319eaad77eb2e4fb001aa447149a9da1acbe365ea5ae9ea6738 "HTTP/1.1 200 OK"
+2026-06-03 18:15:04,872 [INFO] HOLDING: APRUSDT SHORT | Candles: 18 | Unrealized PnL: $-0.45 | Drawdown: -1.75% | MAE: -1.75% @ candle 18
+2026-06-03 18:15:04,872 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 18:17:32,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 18:17:32,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 18:17:32,084 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 18:17:32,084 [INFO] Time synced with Binance server (offset: -36ms)
+2026-06-03 18:17:32,170 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780510652048&recvWindow=20000&signature=6ca7e2ae95074e9245141e5c88bee221e70ab1fa1058ff5d881476763f96ad54 "HTTP/1.1 200 OK"
+2026-06-03 18:17:32,253 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780510652141&recvWindow=20000&signature=b2dc8abbbdd98830cd23d33bd9f15abc815c61f7d5bc79f94586da42cfd4f70b "HTTP/1.1 200 OK"
+2026-06-03 18:17:32,254 [INFO] HOLDING: APRUSDT SHORT | Candles: 19 | Unrealized PnL: $-0.31 | Drawdown: -1.21% | MAE: -1.75% @ candle 18
+2026-06-03 18:17:32,254 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 18:20:02,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 18:20:02,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 18:20:02,088 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 18:20:02,089 [INFO] Time synced with Binance server (offset: -39ms)
+2026-06-03 18:20:02,244 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780510802050&recvWindow=20000&signature=176cbae603eb311b42cd6fbb9320ca53d85970f0c989e40bd5ef8e0b57414388 "HTTP/1.1 200 OK"
+2026-06-03 18:20:02,376 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780510802210&recvWindow=20000&signature=e3f4f63d19fcf9cb142f22b4b5cacb9d7f5e282161a5c9607426314ebad5d5f9 "HTTP/1.1 200 OK"
+2026-06-03 18:20:02,377 [INFO] HOLDING: APRUSDT SHORT | Candles: 20 | Unrealized PnL: $-0.30 | Drawdown: -1.18% | MAE: -1.75% @ candle 18
+2026-06-03 18:20:02,377 [INFO] Periodic SL verification check (candle 20)...
+2026-06-03 18:20:02,451 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/openAlgoOrders?symbol=APRUSDT&timestamp=1780510802338&recvWindow=20000&signature=36fa54ec464569580ff158c2e0acd757e259d03756eb77adaf9511b455994135 "HTTP/1.1 200 OK"
+2026-06-03 18:20:02,452 [INFO] ✓ SL order exists: APRUSDT @ 0.26531 (algoId: 2000001045212980)
+2026-06-03 18:20:02,452 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 18:22:32,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 18:22:32,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 18:22:32,085 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 18:22:32,085 [INFO] Time synced with Binance server (offset: -38ms)
+2026-06-03 18:22:32,169 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780510952047&recvWindow=20000&signature=fd08e3a59ce4223b3bf6f882f4c10d042f4c382bd5ce0b96d635f7117c136375 "HTTP/1.1 200 OK"
+2026-06-03 18:22:32,251 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780510952138&recvWindow=20000&signature=c8b2afc36a32029bdc6ee50d573e4f0cbd4385e22fddd275b9996c370edde2c4 "HTTP/1.1 200 OK"
+2026-06-03 18:22:32,252 [INFO] HOLDING: APRUSDT SHORT | Candles: 21 | Unrealized PnL: $-0.25 | Drawdown: -0.96% | MAE: -1.75% @ candle 18
+2026-06-03 18:22:32,252 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 18:25:02,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 18:25:02,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 18:25:02,082 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 18:25:02,082 [INFO] Time synced with Binance server (offset: -37ms)
+2026-06-03 18:25:02,168 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780511102045&recvWindow=20000&signature=95a573819fbfac09bf891fb2962fd8e7f7021cbff32715789c970474593e004c "HTTP/1.1 200 OK"
+2026-06-03 18:25:02,252 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780511102139&recvWindow=20000&signature=a8a4e8736d5eb2b221de8365fc3378c06a65de81595836122f7dff1513d7352d "HTTP/1.1 200 OK"
+2026-06-03 18:25:02,252 [INFO] HOLDING: APRUSDT SHORT | Candles: 22 | Unrealized PnL: $-0.31 | Drawdown: -1.23% | MAE: -1.75% @ candle 18
+2026-06-03 18:25:02,252 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 18:27:32,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 18:27:32,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 18:27:32,081 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 18:27:32,081 [INFO] Time synced with Binance server (offset: -37ms)
+2026-06-03 18:27:32,164 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780511252045&recvWindow=20000&signature=97380337b7aa8e7ba524acbe2f820bfda891a2255deb3bca4e68e7705919b7ae "HTTP/1.1 200 OK"
+2026-06-03 18:27:32,248 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780511252135&recvWindow=20000&signature=be4e4abdb77c9e8c3d25d1971668e37c3f39ea241be4d58ac6f2c1b4b158784a "HTTP/1.1 200 OK"
+2026-06-03 18:27:32,249 [INFO] HOLDING: APRUSDT SHORT | Candles: 23 | Unrealized PnL: $-0.29 | Drawdown: -1.15% | MAE: -1.75% @ candle 18
+2026-06-03 18:27:32,249 [INFO] Waiting 2.5 minutes until next candle...
+2026-06-03 18:30:02,000 [INFO] --------------------------------------------------------------------------------
+2026-06-03 18:30:02,000 [INFO] CYCLE START | Level=0 | In position=True
+2026-06-03 18:30:02,127 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v1/time "HTTP/1.1 200 OK"
+2026-06-03 18:30:02,127 [INFO] Time synced with Binance server (offset: -50ms)
+2026-06-03 18:30:03,366 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?timestamp=1780511402077&recvWindow=20000&signature=b38498642722cef846d4a448e2c02c66defab046c24bd586d3a8a0e809b8b246 "HTTP/1.1 200 OK"
+2026-06-03 18:30:03,513 [INFO] HTTP Request: GET https://fapi.binance.com/fapi/v2/positionRisk?symbol=APRUSDT&timestamp=1780511403325&recvWindow=20000&signature=d293efdd30b9d41684e18cce02f0befdc4ad52bb6d0f478d36cff41639b0b574 "HTTP/1.1 200 OK"
+2026-06-03 18:30:03,513 [INFO] HOLDING: APRUSDT SHORT | Candles: 24 | Unrealized PnL: $-0.24 | Drawdown: -0.92% | MAE: -1.75% @ candle 18
+2026-06-03 18:30:03,513 [INFO] Waiting 2.5 minutes until next candle...

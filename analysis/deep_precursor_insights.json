@@ -1,0 +1,213 @@
+{
+  "total_movers": 59,
+  "timestamp": "2026-06-02T17:24:24.962521+00:00",
+  "directional_split": {
+    "UP": 27,
+    "DOWN": 32
+  },
+  "top_precursor_patterns": [
+    {
+      "name": "Low Volume (< 0.8\u00d7 avg)",
+      "frequency": 88.1,
+      "count": 52,
+      "description": "Below-average volume before move - breakout occurs on low liquidity"
+    },
+    {
+      "name": "Z-Score Extreme (|Z| > 2.0)",
+      "frequency": 76.3,
+      "count": 45,
+      "description": "Price is 2+ standard deviations from mean - statistically significant deviation"
+    },
+    {
+      "name": "Squeeze On (BB inside KC)",
+      "frequency": 40.7,
+      "count": 24,
+      "description": "Bollinger Bands compressed inside Keltner Channels - volatility building up for breakout"
+    },
+    {
+      "name": "RSI Oversold (< 30)",
+      "frequency": 32.2,
+      "count": 19,
+      "description": "RSI below 30 suggests oversold conditions, potential mean-reversion bounce"
+    },
+    {
+      "name": "BB Below Lower Band",
+      "frequency": 32.2,
+      "count": 19,
+      "description": "Price broke below lower Bollinger Band - extreme oversold, likely bounce"
+    },
+    {
+      "name": "Volume Surge in Final Candle (2\u00d7 avg)",
+      "frequency": 30.5,
+      "count": 18,
+      "description": "Sudden 2\u00d7+ volume spike in the candle immediately before the move - strong entry signal"
+    },
+    {
+      "name": "Expanding Volatility (Squeeze > 2.5)",
+      "frequency": 22.0,
+      "count": 13,
+      "description": "Bollinger Bands expanding rapidly - volatility breaking out"
+    },
+    {
+      "name": "RSI Overbought (> 70)",
+      "frequency": 16.9,
+      "count": 10,
+      "description": "RSI above 70 suggests overbought conditions, potential mean-reversion drop"
+    },
+    {
+      "name": "BB Above Upper Band",
+      "frequency": 16.9,
+      "count": 10,
+      "description": "Price broke above upper Bollinger Band - extreme overbought, likely pullback"
+    },
+    {
+      "name": "Extreme Volatility (ATR > 4%)",
+      "frequency": 3.4,
+      "count": 2,
+      "description": "High ATR indicates recent large price swings, suggesting pair is \"hot\" and primed for more movement"
+    },
+    {
+      "name": "Volatility Compression Before Breakout",
+      "frequency": 0.0,
+      "count": 0,
+      "description": "ATR declining in precursor candles (compression), then explosive breakout"
+    },
+    {
+      "name": "Bullish/Bearish Divergence",
+      "frequency": 0.0,
+      "count": 0,
+      "description": "Price and indicator moving in opposite directions - reversal signal"
+    }
+  ],
+  "symbol_categories": {
+    "mid_small_cap": {
+      "count": 51,
+      "examples": [
+        "SANDUSDT",
+        "UBUSDT",
+        "LITUSDT",
+        "SLXUSDT",
+        "USELESSUSDT"
+      ],
+      "percentage": 86.4406779661017
+    },
+    "gaming": {
+      "count": 2,
+      "examples": [
+        "PIEVERSEUSDT",
+        "PLAYUSDT"
+      ],
+      "percentage": 3.389830508474576
+    },
+    "meme": {
+      "count": 2,
+      "examples": [
+        "CATIUSDT",
+        "DOGSUSDT"
+      ],
+      "percentage": 3.389830508474576
+    },
+    "ai_tech": {
+      "count": 4,
+      "examples": [
+        "GRIFFAINUSDT",
+        "AIGENSYNUSDT",
+        "SKYAIUSDT",
+        "HYUNDAIUSDT"
+      ],
+      "percentage": 6.779661016949152
+    }
+  },
+  "time_patterns": {
+    "15": 12,
+    "17": 6,
+    "16": 14,
+    "7": 2,
+    "12": 2,
+    "11": 3,
+    "13": 4,
+    "4": 1,
+    "14": 11,
+    "8": 1,
+    "21": 1,
+    "2": 1,
+    "6": 1
+  },
+  "time_periods": {
+    "asia_morning": 1,
+    "asia_afternoon": 4,
+    "europe_morning": 4,
+    "europe_afternoon": 29,
+    "us_morning": 20,
+    "us_evening": 1
+  },
+  "peak_hours": "16:00 UTC (14 moves), 15:00 UTC (12 moves), 14:00 UTC (11 moves)",
+  "wave_analysis": {
+    "wave_count": 6,
+    "avg_wave_size": 9.166666666666666,
+    "largest_wave": 43
+  },
+  "gap_analysis": {
+    "immediate": 21,
+    "short": 25,
+    "medium": 8,
+    "long": 2,
+    "very_long": 2
+  },
+  "clustering_pattern": "Moderately clustered - some wave patterns",
+  "directional_runs": [
+    [
+      "DOWN",
+      7
+    ],
+    [
+      "DOWN",
+      7
+    ],
+    [
+      "UP",
+      5
+    ],
+    [
+      "UP",
+      4
+    ],
+    [
+      "DOWN",
+      4
+    ],
+    [
+      "UP",
+      4
+    ],
+    [
+      "DOWN",
+      3
+    ],
+    [
+      "DOWN",
+      3
+    ],
+    [
+      "DOWN",
+      3
+    ],
+    [
+      "UP",
+      3
+    ],
+    [
+      "UP",
+      3
+    ],
+    [
+      "UP",
+      2
+    ],
+    [
+      "UP",
+      2
+    ]
+  ],
+  "directional_clustering_pattern": "Strong directional clustering - moves follow market momentum"
+}

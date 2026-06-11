@@ -1,0 +1,583 @@
+{
+  "params": {
+    "trigger_pct": 0.02,
+    "lookback_min": 10,
+    "vol_mult": 1.2,
+    "tp_long": 0.1,
+    "tp_short": 0.08,
+    "sl": null,
+    "timeout_min": 240
+  },
+  "metrics": {
+    "coverage": 94.91525423728814,
+    "entries": 56,
+    "win_rate": 51.78571428571429,
+    "tp_hit_rate": 14.285714285714285,
+    "direction_accuracy": 0.0,
+    "net_pnl": 13.395093360819464,
+    "roi_pct": 13.395093360819464,
+    "avg_hold_min": 218.46428571428572
+  },
+  "trades": [
+    {
+      "symbol": "SANDUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.006003569690086035,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "UBUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TP",
+      "pnl_pct": 0.08,
+      "minutes_held": 2,
+      "is_win": true
+    },
+    {
+      "symbol": "LITUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TP",
+      "pnl_pct": 0.1,
+      "minutes_held": 50,
+      "is_win": true
+    },
+    {
+      "symbol": "SLXUSDT",
+      "direction": "SHORT",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.06005905621483097,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "USELESSUSDT",
+      "direction": "SHORT",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.016029459547276175,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "KGENUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.06975989617131724,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "OPNUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.084914182475158,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "PIEVERSEUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TP",
+      "pnl_pct": 0.1,
+      "minutes_held": 110,
+      "is_win": true
+    },
+    {
+      "symbol": "CATIUSDT",
+      "direction": "LONG",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.03591160220994479,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "RIFUSDT",
+      "direction": "SHORT",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.01437938571264221,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "STABLEUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.0252287219295814,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "EDGEUSDT",
+      "direction": "LONG",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.012907904278462681,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "GRIFFAINUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.014418455623197662,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "USUSDT",
+      "direction": "SHORT",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.06280810662771584,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "COHRUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TP",
+      "pnl_pct": 0.1,
+      "minutes_held": 66,
+      "is_win": true
+    },
+    {
+      "symbol": "MYXUSDT",
+      "direction": "SHORT",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.012107235514557616,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "SPORTFUNUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.031134564643799486,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "AIGENSYNUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.017608897126969447,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "TAUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.0007874790825868367,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "JCTUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.0030403537866223675,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "NOMUSDT",
+      "direction": "LONG",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.0897485493230174,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "EPICUSDT",
+      "direction": "SHORT",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.03658536585365863,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "ASTSUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.04889126369222544,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "XLMUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.027704896162227002,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "DOGSUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.021680776378278033,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "VICUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.006968641114982597,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "HEIUSDT",
+      "direction": "LONG",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TP",
+      "pnl_pct": 0.1,
+      "minutes_held": 225,
+      "is_win": true
+    },
+    {
+      "symbol": "RONINUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.0,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "RIVERUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.0005492493592091017,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "PORTALUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TP",
+      "pnl_pct": 0.1,
+      "minutes_held": 36,
+      "is_win": true
+    },
+    {
+      "symbol": "ZECUSDC",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.01118604765093003,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "CUSDT",
+      "direction": "SHORT",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.023667305308238528,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "ZECUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.025831605143094235,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "APRUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TP",
+      "pnl_pct": 0.1,
+      "minutes_held": 42,
+      "is_win": true
+    },
+    {
+      "symbol": "LITEUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.05538926743556469,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "PLAYUSDT",
+      "direction": "LONG",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.08979555868875565,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "BERAUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.03146417445482865,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "SKYAIUSDT",
+      "direction": "LONG",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.010885534927207108,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "HEMIUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.025268573157815173,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "RAVEUSDT",
+      "direction": "LONG",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.031633616619452236,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "NOTUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.013788575180564654,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "CLOUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.006708473093189471,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "FHEUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.024137931034482675,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "HYUNDAIUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.008276553943903314,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "NFPUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.0020100502512563736,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "ZORAUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.00409500409500407,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "HUSDT",
+      "direction": "SHORT",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.046371271183889715,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "LABUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TP",
+      "pnl_pct": 0.1,
+      "minutes_held": 183,
+      "is_win": true
+    },
+    {
+      "symbol": "MRVLUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.08811514526781958,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "MUSDT",
+      "direction": "LONG",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.02755380242473467,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "FIGHTUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.0024789291026275635,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "INITUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.003010321100917458,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "MERLUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.040756914119359514,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "CHIPUSDT",
+      "direction": "SHORT",
+      "actual_direction": "UP",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": 0.01991565135895041,
+      "minutes_held": 240,
+      "is_win": true
+    },
+    {
+      "symbol": "SIRENUSDT",
+      "direction": "LONG",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.013900955690703747,
+      "minutes_held": 240,
+      "is_win": false
+    },
+    {
+      "symbol": "EVAAUSDT",
+      "direction": "SHORT",
+      "actual_direction": "DOWN",
+      "direction_match": false,
+      "exit_reason": "TIMEOUT",
+      "pnl_pct": -0.009275959804174162,
+      "minutes_held": 240,
+      "is_win": false
+    }
+  ]
+}

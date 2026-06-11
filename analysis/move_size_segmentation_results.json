@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-06-03T17:33:31.346554+00:00",
+  "configuration_tested": {
+    "rsi_short": 55,
+    "rsi_long": 45,
+    "bb_short": 0.6,
+    "bb_long": 0.3,
+    "z_short": 0.5,
+    "z_long": -0.5
+  },
+  "segments": {
+    "small": {
+      "size": 36,
+      "results": {
+        "coverage_pct": 97.22,
+        "direction_accuracy": 11.43,
+        "triggered_count": 35,
+        "correct_direction_count": 4,
+        "total_movers": 36
+      },
+      "indicator_stats": {
+        "avg_rsi": 40.74,
+        "avg_bb_pct_b": 0.23,
+        "avg_zscore": -1.08,
+        "avg_volume_ratio": 2.36,
+        "sample_size": 36
+      }
+    },
+    "medium": {
+      "size": 17,
+      "results": {
+        "coverage_pct": 100.0,
+        "direction_accuracy": 29.41,
+        "triggered_count": 17,
+        "correct_direction_count": 5,
+        "total_movers": 17
+      },
+      "indicator_stats": {
+        "avg_rsi": 49.73,
+        "avg_bb_pct_b": 0.441,
+        "avg_zscore": -0.24,
+        "avg_volume_ratio": 1.78,
+        "sample_size": 17
+      }
+    },
+    "large": {
+      "size": 6,
+      "results": {
+        "coverage_pct": 100.0,
+        "direction_accuracy": 66.67,
+        "triggered_count": 6,
+        "correct_direction_count": 4,
+        "total_movers": 6
+      },
+      "indicator_stats": {
+        "avg_rsi": 56.33,
+        "avg_bb_pct_b": 0.711,
+        "avg_zscore": 0.84,
+        "avg_volume_ratio": 1.23,
+        "sample_size": 6
+      }
+    }
+  },
+  "best_segment": "large",
+  "accuracy_range": 55.24,
+  "recommendation": "segment_specific"
+}

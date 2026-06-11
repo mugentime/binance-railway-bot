@@ -1,0 +1,28 @@
+{
+  "level": 7,
+  "in_position": true,
+  "current_symbol": "GENIUSUSDT",
+  "current_direction": "SHORT",
+  "entry_price": 0.706,
+  "entry_quantity": 104.0,
+  "current_size_usd": 73.42399999999999,
+  "entry_candle_time": 1776932706.8105977,
+  "last_max_loss_time": 1776832662.7250252,
+  "cooldown_blacklist": {
+    "BLURUSDT": 1776933010.0255961
+  },
+  "max_adverse_excursion_pct": 0.0,
+  "mae_candle": 0,
+  "consecutive_losses": 1,
+  "regime_flipped": true,
+  "chain_pnl_history": [
+    -0.030134695117206955,
+    -0.09937594048460105,
+    -0.3419470500000002,
+    -0.09532988849402313,
+    -0.2529311912992324,
+    -0.060604499999999416,
+    -0.142690880000007
+  ],
+  "saved_at": "2026-04-23T08:25:06.810625"
+}

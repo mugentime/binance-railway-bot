@@ -1,0 +1,286 @@
+{
+  "timestamp": "2026-06-05T10:46:33.567536",
+  "strategy": {
+    "trigger_pct": 0.02,
+    "lookback_min": 10,
+    "vol_mult": 1.2,
+    "tp_long": 0.1,
+    "tp_short": 0.08,
+    "check_interval_min": 120,
+    "max_positions": 5,
+    "base_size_usd": 1.0
+  },
+  "periods_tested": 5,
+  "aggregate_metrics": {
+    "total_positions": 25,
+    "total_pnl": 3.697050681641567,
+    "total_deployed": 25.0,
+    "avg_pnl_per_period": 0.7394101363283134,
+    "overall_win_rate": 40.0,
+    "overall_roi": 14.788202726566269,
+    "profitable_periods": 3,
+    "consistency_pct": 60.0
+  },
+  "period_results": [
+    {
+      "period": "1 day(s) ago (2026-06-04)",
+      "days_ago": 1,
+      "results": {
+        "total_movers": 78,
+        "signals_found": 25,
+        "positions_taken": 5,
+        "win_rate": 20.0,
+        "tp_hit_rate": 0.0,
+        "net_pnl": -1.5064979448719393,
+        "total_deployed": 5.0,
+        "roi_pct": -30.129958897438787,
+        "avg_hold_min": 168.0,
+        "trades": [
+          {
+            "symbol": "MYXUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.006696428571428577,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "FORMUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.0012048192771084126,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "AVAAIUSDT",
+            "exit_reason": "CHECK_EXIT_240min",
+            "pnl_pct": -0.03353057199211046,
+            "minutes_held": 240,
+            "is_win": false
+          },
+          {
+            "symbol": "NFPUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.044622425629290585,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "CLOUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.014729348226341065,
+            "minutes_held": 240,
+            "is_win": true
+          }
+        ]
+      }
+    },
+    {
+      "period": "2 day(s) ago (2026-06-03)",
+      "days_ago": 2,
+      "results": {
+        "total_movers": 51,
+        "signals_found": 24,
+        "positions_taken": 5,
+        "win_rate": 100.0,
+        "tp_hit_rate": 20.0,
+        "net_pnl": 4.393735726028493,
+        "total_deployed": 5.0,
+        "roi_pct": 87.87471452056985,
+        "avg_hold_min": 204.2,
+        "trades": [
+          {
+            "symbol": "TRIAUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.009138381201044354,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "AGTUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.04121490130664441,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "INUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.1,
+            "minutes_held": 61,
+            "is_win": true
+          },
+          {
+            "symbol": "CLOUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.014729348226341065,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "SUSHIUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.05860415556739483,
+            "minutes_held": 240,
+            "is_win": true
+          }
+        ]
+      }
+    },
+    {
+      "period": "3 day(s) ago (2026-06-02)",
+      "days_ago": 3,
+      "results": {
+        "total_movers": 47,
+        "signals_found": 24,
+        "positions_taken": 5,
+        "win_rate": 40.0,
+        "tp_hit_rate": 20.0,
+        "net_pnl": 0.9300667652770516,
+        "total_deployed": 5.0,
+        "roi_pct": 18.60133530554103,
+        "avg_hold_min": 140.6,
+        "trades": [
+          {
+            "symbol": "MYXUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.006696428571428577,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "JCTUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.08,
+            "minutes_held": 103,
+            "is_win": true
+          },
+          {
+            "symbol": "MUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.03305329397645078,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "NFPUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.044622425629290585,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "VICUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.011231101511879041,
+            "minutes_held": 120,
+            "is_win": false
+          }
+        ]
+      }
+    },
+    {
+      "period": "5 day(s) ago (2026-05-31)",
+      "days_ago": 5,
+      "results": {
+        "total_movers": 23,
+        "signals_found": 12,
+        "positions_taken": 5,
+        "win_rate": 0.0,
+        "tp_hit_rate": 0.0,
+        "net_pnl": -2.1697133736067586,
+        "total_deployed": 5.0,
+        "roi_pct": -43.39426747213517,
+        "avg_hold_min": 144.0,
+        "trades": [
+          {
+            "symbol": "MYXUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.006696428571428577,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "USUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.0023677260723067102,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "NFPUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.044622425629290585,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "TAUSDT",
+            "exit_reason": "CHECK_EXIT_240min",
+            "pnl_pct": -0.015252727677577335,
+            "minutes_held": 240,
+            "is_win": false
+          },
+          {
+            "symbol": "AIAUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.03554636072973473,
+            "minutes_held": 120,
+            "is_win": false
+          }
+        ]
+      }
+    },
+    {
+      "period": "7 day(s) ago (2026-05-29)",
+      "days_ago": 7,
+      "results": {
+        "total_movers": 29,
+        "signals_found": 13,
+        "positions_taken": 5,
+        "win_rate": 40.0,
+        "tp_hit_rate": 20.0,
+        "net_pnl": 2.0494595088147207,
+        "total_deployed": 5.0,
+        "roi_pct": 40.989190176294414,
+        "avg_hold_min": 174.0,
+        "trades": [
+          {
+            "symbol": "USUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.0023677260723067102,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "ARUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.018000000000000016,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "BILLUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.050974512743628284,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "LABUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.1,
+            "minutes_held": 150,
+            "is_win": true
+          },
+          {
+            "symbol": "ESPORTSUSDT",
+            "exit_reason": "CHECK_EXIT_240min",
+            "pnl_pct": -0.02413381123058552,
+            "minutes_held": 240,
+            "is_win": false
+          }
+        ]
+      }
+    }
+  ]
+}

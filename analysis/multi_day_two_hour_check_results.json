@@ -1,0 +1,210 @@
+{
+  "timestamp": "2026-06-05T10:05:19.549951",
+  "strategy": {
+    "trigger_pct": 0.02,
+    "lookback_min": 10,
+    "vol_mult": 1.2,
+    "tp_long": 0.1,
+    "tp_short": 0.08,
+    "check_interval_min": 120,
+    "max_timeout_min": 240
+  },
+  "periods_tested": 4,
+  "aggregate_metrics": {
+    "total_trades": 17,
+    "total_pnl": 4.464660464404779,
+    "avg_pnl_per_period": 1.1161651161011947,
+    "overall_win_rate": 58.82352941176471,
+    "profitable_periods": 2,
+    "consistency_pct": 50.0
+  },
+  "period_results": [
+    {
+      "period": "2 day(s) ago (2026-06-03)",
+      "days_ago": 2,
+      "results": {
+        "total_movers": 9,
+        "entries": 1,
+        "coverage": 11.11111111111111,
+        "win_rate": 0.0,
+        "tp_hit_rate": 0.0,
+        "check_exit_rate": 100.0,
+        "net_pnl": -0.7869090909090914,
+        "roi_pct": -0.7869090909090914,
+        "avg_hold_min": 120.0,
+        "trades": [
+          {
+            "symbol": "ZROUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.03854545454545457,
+            "minutes_held": 120,
+            "is_win": false
+          }
+        ]
+      }
+    },
+    {
+      "period": "3 day(s) ago (2026-06-02)",
+      "days_ago": 3,
+      "results": {
+        "total_movers": 17,
+        "entries": 6,
+        "coverage": 35.294117647058826,
+        "win_rate": 100.0,
+        "tp_hit_rate": 33.33333333333333,
+        "check_exit_rate": 0.0,
+        "net_pnl": 6.212316262063828,
+        "roi_pct": 6.212316262063828,
+        "avg_hold_min": 193.33333333333334,
+        "trades": [
+          {
+            "symbol": "NFPUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.1,
+            "minutes_held": 67,
+            "is_win": true
+          },
+          {
+            "symbol": "ESPORTSUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.04314595660749511,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "CLOUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.014729348226341065,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "GUAUSDT",
+            "exit_reason": "TP",
+            "pnl_pct": 0.08,
+            "minutes_held": 133,
+            "is_win": true
+          },
+          {
+            "symbol": "FIGHTUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.026565995525726957,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "BILLUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.050974512743628284,
+            "minutes_held": 240,
+            "is_win": true
+          }
+        ]
+      }
+    },
+    {
+      "period": "5 day(s) ago (2026-05-31)",
+      "days_ago": 5,
+      "results": {
+        "total_movers": 13,
+        "entries": 4,
+        "coverage": 30.76923076923077,
+        "win_rate": 25.0,
+        "tp_hit_rate": 0.0,
+        "check_exit_rate": 75.0,
+        "net_pnl": -1.960989755468963,
+        "roi_pct": -1.960989755468963,
+        "avg_hold_min": 150.0,
+        "trades": [
+          {
+            "symbol": "STGUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.01267962806424346,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "HEIUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.07897664071190222,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "\u5e01\u5b89\u4eba\u751fUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.005006126901580986,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "AIAUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.0018129079042785146,
+            "minutes_held": 240,
+            "is_win": true
+          }
+        ]
+      }
+    },
+    {
+      "period": "7 day(s) ago (2026-05-29)",
+      "days_ago": 7,
+      "results": {
+        "total_movers": 22,
+        "entries": 6,
+        "coverage": 27.27272727272727,
+        "win_rate": 50.0,
+        "tp_hit_rate": 0.0,
+        "check_exit_rate": 50.0,
+        "net_pnl": 1.0002430487190055,
+        "roi_pct": 1.0002430487190055,
+        "avg_hold_min": 180.0,
+        "trades": [
+          {
+            "symbol": "ARUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.018000000000000016,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "USTCUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.0217644126931384,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "ESPORTSUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.04314595660749511,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "LITUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.02955921609479791,
+            "minutes_held": 120,
+            "is_win": false
+          },
+          {
+            "symbol": "BILLUSDT",
+            "exit_reason": "MAX_TIMEOUT",
+            "pnl_pct": 0.050974512743628284,
+            "minutes_held": 240,
+            "is_win": true
+          },
+          {
+            "symbol": "QNTXUSDT",
+            "exit_reason": "CHECK_EXIT_120min",
+            "pnl_pct": -0.013513513513513585,
+            "minutes_held": 120,
+            "is_win": false
+          }
+        ]
+      }
+    }
+  ]
+}

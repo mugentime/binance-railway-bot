@@ -1,0 +1,54 @@
+{
+  "timestamp": "2026-06-03T17:33:28.936512+00:00",
+  "configuration_tested": {
+    "rsi_short": 55,
+    "rsi_long": 45,
+    "bb_short": 0.6,
+    "bb_long": 0.3,
+    "z_short": 0.5,
+    "z_long": -0.5
+  },
+  "window_sizes_tested": [
+    1,
+    3,
+    6
+  ],
+  "results": [
+    {
+      "window_size_candles": 1,
+      "window_size_minutes": 5,
+      "coverage_pct": 77.97,
+      "direction_accuracy": 21.74,
+      "triggered_count": 46,
+      "correct_direction_count": 10,
+      "total_movers": 59
+    },
+    {
+      "window_size_candles": 3,
+      "window_size_minutes": 15,
+      "coverage_pct": 91.53,
+      "direction_accuracy": 24.07,
+      "triggered_count": 54,
+      "correct_direction_count": 13,
+      "total_movers": 59
+    },
+    {
+      "window_size_candles": 6,
+      "window_size_minutes": 30,
+      "coverage_pct": 98.31,
+      "direction_accuracy": 22.41,
+      "triggered_count": 58,
+      "correct_direction_count": 13,
+      "total_movers": 59
+    }
+  ],
+  "best_window": {
+    "window_size_candles": 3,
+    "window_size_minutes": 15,
+    "coverage_pct": 91.53,
+    "direction_accuracy": 24.07,
+    "triggered_count": 54,
+    "correct_direction_count": 13,
+    "total_movers": 59
+  }
+}

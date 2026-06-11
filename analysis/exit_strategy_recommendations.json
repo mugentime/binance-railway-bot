@@ -1,0 +1,736 @@
+{
+  "timestamp": "2026-06-03T17:23:10.223180+00:00",
+  "total_movers": 59,
+  "current_settings": {
+    "stop_loss": 0.03,
+    "take_profit_min": 0.08,
+    "take_profit_max": 0.15
+  },
+  "tp_analysis": {
+    "10-15%": {
+      "total_moves": 36,
+      "avg_move_size": 12.130027777777778,
+      "tp_analysis": {
+        "0.04": {
+          "hit_rate": 100.0,
+          "hit_count": 36,
+          "total": 36
+        },
+        "0.05": {
+          "hit_rate": 100.0,
+          "hit_count": 36,
+          "total": 36
+        },
+        "0.06": {
+          "hit_rate": 100.0,
+          "hit_count": 36,
+          "total": 36
+        },
+        "0.07": {
+          "hit_rate": 100.0,
+          "hit_count": 36,
+          "total": 36
+        },
+        "0.08": {
+          "hit_rate": 100.0,
+          "hit_count": 36,
+          "total": 36
+        },
+        "0.09": {
+          "hit_rate": 100.0,
+          "hit_count": 36,
+          "total": 36
+        },
+        "0.1": {
+          "hit_rate": 100.0,
+          "hit_count": 36,
+          "total": 36
+        },
+        "0.12": {
+          "hit_rate": 52.77777777777778,
+          "hit_count": 19,
+          "total": 36
+        },
+        "0.15": {
+          "hit_rate": 0.0,
+          "hit_count": 0,
+          "total": 36
+        },
+        "0.2": {
+          "hit_rate": 0.0,
+          "hit_count": 0,
+          "total": 36
+        }
+      }
+    },
+    "15-20%": {
+      "total_moves": 13,
+      "avg_move_size": 17.855923076923077,
+      "tp_analysis": {
+        "0.04": {
+          "hit_rate": 100.0,
+          "hit_count": 13,
+          "total": 13
+        },
+        "0.05": {
+          "hit_rate": 100.0,
+          "hit_count": 13,
+          "total": 13
+        },
+        "0.06": {
+          "hit_rate": 100.0,
+          "hit_count": 13,
+          "total": 13
+        },
+        "0.07": {
+          "hit_rate": 100.0,
+          "hit_count": 13,
+          "total": 13
+        },
+        "0.08": {
+          "hit_rate": 100.0,
+          "hit_count": 13,
+          "total": 13
+        },
+        "0.09": {
+          "hit_rate": 100.0,
+          "hit_count": 13,
+          "total": 13
+        },
+        "0.1": {
+          "hit_rate": 100.0,
+          "hit_count": 13,
+          "total": 13
+        },
+        "0.12": {
+          "hit_rate": 100.0,
+          "hit_count": 13,
+          "total": 13
+        },
+        "0.15": {
+          "hit_rate": 100.0,
+          "hit_count": 13,
+          "total": 13
+        },
+        "0.2": {
+          "hit_rate": 0.0,
+          "hit_count": 0,
+          "total": 13
+        }
+      }
+    },
+    "20-30%": {
+      "total_moves": 6,
+      "avg_move_size": 25.314833333333333,
+      "tp_analysis": {
+        "0.04": {
+          "hit_rate": 100.0,
+          "hit_count": 6,
+          "total": 6
+        },
+        "0.05": {
+          "hit_rate": 100.0,
+          "hit_count": 6,
+          "total": 6
+        },
+        "0.06": {
+          "hit_rate": 100.0,
+          "hit_count": 6,
+          "total": 6
+        },
+        "0.07": {
+          "hit_rate": 100.0,
+          "hit_count": 6,
+          "total": 6
+        },
+        "0.08": {
+          "hit_rate": 100.0,
+          "hit_count": 6,
+          "total": 6
+        },
+        "0.09": {
+          "hit_rate": 100.0,
+          "hit_count": 6,
+          "total": 6
+        },
+        "0.1": {
+          "hit_rate": 100.0,
+          "hit_count": 6,
+          "total": 6
+        },
+        "0.12": {
+          "hit_rate": 100.0,
+          "hit_count": 6,
+          "total": 6
+        },
+        "0.15": {
+          "hit_rate": 100.0,
+          "hit_count": 6,
+          "total": 6
+        },
+        "0.2": {
+          "hit_rate": 100.0,
+          "hit_count": 6,
+          "total": 6
+        }
+      }
+    },
+    "30%+": {
+      "total_moves": 4,
+      "avg_move_size": 34.466499999999996,
+      "tp_analysis": {
+        "0.04": {
+          "hit_rate": 100.0,
+          "hit_count": 4,
+          "total": 4
+        },
+        "0.05": {
+          "hit_rate": 100.0,
+          "hit_count": 4,
+          "total": 4
+        },
+        "0.06": {
+          "hit_rate": 100.0,
+          "hit_count": 4,
+          "total": 4
+        },
+        "0.07": {
+          "hit_rate": 100.0,
+          "hit_count": 4,
+          "total": 4
+        },
+        "0.08": {
+          "hit_rate": 100.0,
+          "hit_count": 4,
+          "total": 4
+        },
+        "0.09": {
+          "hit_rate": 100.0,
+          "hit_count": 4,
+          "total": 4
+        },
+        "0.1": {
+          "hit_rate": 100.0,
+          "hit_count": 4,
+          "total": 4
+        },
+        "0.12": {
+          "hit_rate": 100.0,
+          "hit_count": 4,
+          "total": 4
+        },
+        "0.15": {
+          "hit_rate": 100.0,
+          "hit_count": 4,
+          "total": 4
+        },
+        "0.2": {
+          "hit_rate": 100.0,
+          "hit_count": 4,
+          "total": 4
+        }
+      }
+    }
+  },
+  "sl_analysis": {
+    "1.5%": {
+      "would_stop_out": 0,
+      "correct_stops": 0,
+      "incorrect_stops": 0
+    },
+    "2.0%": {
+      "would_stop_out": 0,
+      "correct_stops": 0,
+      "incorrect_stops": 0
+    },
+    "2.5%": {
+      "would_stop_out": 0,
+      "correct_stops": 0,
+      "incorrect_stops": 0
+    },
+    "3.0%": {
+      "would_stop_out": 0,
+      "correct_stops": 0,
+      "incorrect_stops": 0
+    },
+    "3.5%": {
+      "would_stop_out": 0,
+      "correct_stops": 0,
+      "incorrect_stops": 0
+    },
+    "4.0%": {
+      "would_stop_out": 0,
+      "correct_stops": 0,
+      "incorrect_stops": 0
+    },
+    "5.0%": {
+      "would_stop_out": 0,
+      "correct_stops": 0,
+      "incorrect_stops": 0
+    }
+  },
+  "timing_analysis": [
+    {
+      "symbol": "SANDUSDT",
+      "move_pct": 10.169,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.06241
+    },
+    {
+      "symbol": "UBUSDT",
+      "move_pct": 14.398,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.149
+    },
+    {
+      "symbol": "LITUSDT",
+      "move_pct": 13.105,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 1.445
+    },
+    {
+      "symbol": "SLXUSDT",
+      "move_pct": 13.241,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.3506
+    },
+    {
+      "symbol": "USELESSUSDT",
+      "move_pct": 29.997,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.09726
+    },
+    {
+      "symbol": "KGENUSDT",
+      "move_pct": 19.971,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.20672
+    },
+    {
+      "symbol": "OPNUSDT",
+      "move_pct": 17.398,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.1127
+    },
+    {
+      "symbol": "PIEVERSEUSDT",
+      "move_pct": 26.256,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 1.084
+    },
+    {
+      "symbol": "CATIUSDT",
+      "move_pct": 13.214,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.05093
+    },
+    {
+      "symbol": "RIFUSDT",
+      "move_pct": 19.591,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.08692
+    },
+    {
+      "symbol": "STABLEUSDT",
+      "move_pct": 11.888,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.03607
+    },
+    {
+      "symbol": "EDGEUSDT",
+      "move_pct": 40.282,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.7127
+    },
+    {
+      "symbol": "GRIFFAINUSDT",
+      "move_pct": 11.067,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.00947
+    },
+    {
+      "symbol": "USUSDT",
+      "move_pct": 32.721,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.011001
+    },
+    {
+      "symbol": "COHRUSDT",
+      "move_pct": 18.694,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 404.26
+    },
+    {
+      "symbol": "MYXUSDT",
+      "move_pct": 15.205,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.3394
+    },
+    {
+      "symbol": "SPORTFUNUSDT",
+      "move_pct": 11.599,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.05774
+    },
+    {
+      "symbol": "AIGENSYNUSDT",
+      "move_pct": 11.343,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.03229
+    },
+    {
+      "symbol": "TAUSDT",
+      "move_pct": 18.137,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.1034
+    },
+    {
+      "symbol": "JCTUSDT",
+      "move_pct": 15.044,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.003698
+    },
+    {
+      "symbol": "NOMUSDT",
+      "move_pct": 12.097,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.002539
+    },
+    {
+      "symbol": "EPICUSDT",
+      "move_pct": 17.16,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.3959
+    },
+    {
+      "symbol": "ASTSUSDT",
+      "move_pct": 11.188,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 111.96
+    },
+    {
+      "symbol": "XLMUSDT",
+      "move_pct": 13.679,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.22404
+    },
+    {
+      "symbol": "DOGSUSDT",
+      "move_pct": 10.886,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 4.817e-05
+    },
+    {
+      "symbol": "VICUSDT",
+      "move_pct": 19.703,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.04592
+    },
+    {
+      "symbol": "HEIUSDT",
+      "move_pct": 17.02,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.07475
+    },
+    {
+      "symbol": "RONINUSDT",
+      "move_pct": 10.023,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.0807
+    },
+    {
+      "symbol": "RIVERUSDT",
+      "move_pct": 15.824,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 5.652
+    },
+    {
+      "symbol": "PORTALUSDT",
+      "move_pct": 14.815,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.02248
+    },
+    {
+      "symbol": "ZECUSDC",
+      "move_pct": 11.217,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 600.91
+    },
+    {
+      "symbol": "CUSDT",
+      "move_pct": 12.041,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.08977
+    },
+    {
+      "symbol": "ZECUSDT",
+      "move_pct": 11.311,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 601.78
+    },
+    {
+      "symbol": "APRUSDT",
+      "move_pct": 24.344,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.21708
+    },
+    {
+      "symbol": "LITEUSDT",
+      "move_pct": 13.503,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 937.96
+    },
+    {
+      "symbol": "PLAYUSDT",
+      "move_pct": 12.384,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.10596
+    },
+    {
+      "symbol": "BERAUSDT",
+      "move_pct": 12.966,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.3237
+    },
+    {
+      "symbol": "SKYAIUSDT",
+      "move_pct": 23.028,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.15435
+    },
+    {
+      "symbol": "HEMIUSDT",
+      "move_pct": 13.096,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.006521
+    },
+    {
+      "symbol": "RAVEUSDT",
+      "move_pct": 12.222,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.4091
+    },
+    {
+      "symbol": "NOTUSDT",
+      "move_pct": 10.259,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.0004576
+    },
+    {
+      "symbol": "CLOUSDT",
+      "move_pct": 34.414,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.1343
+    },
+    {
+      "symbol": "FHEUSDT",
+      "move_pct": 11.284,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.02319
+    },
+    {
+      "symbol": "HYUNDAIUSDT",
+      "move_pct": 23.855,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 465.81
+    },
+    {
+      "symbol": "SOXLUSDT",
+      "move_pct": 12.638,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 231.78
+    },
+    {
+      "symbol": "NFPUSDT",
+      "move_pct": 11.392,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.00997
+    },
+    {
+      "symbol": "ZORAUSDT",
+      "move_pct": 13.277,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.01191
+    },
+    {
+      "symbol": "HUSDT",
+      "move_pct": 19.114,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.66602
+    },
+    {
+      "symbol": "LABUSDT",
+      "move_pct": 24.409,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 19.1814
+    },
+    {
+      "symbol": "ARCUSDT",
+      "move_pct": 11.733,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.07328
+    },
+    {
+      "symbol": "MRVLUSDT",
+      "move_pct": 30.449,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 268.5
+    },
+    {
+      "symbol": "TONUSDT",
+      "move_pct": 13.386,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 2.14
+    },
+    {
+      "symbol": "MUSDT",
+      "move_pct": 10.511,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 3.2795
+    },
+    {
+      "symbol": "FIGHTUSDT",
+      "move_pct": 19.266,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.0041
+    },
+    {
+      "symbol": "INITUSDT",
+      "move_pct": 12.321,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.07146
+    },
+    {
+      "symbol": "MERLUSDT",
+      "move_pct": 11.326,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.02697
+    },
+    {
+      "symbol": "CHIPUSDT",
+      "move_pct": 12.227,
+      "direction": "UP",
+      "precursor_count": 6,
+      "entry_price": 0.0422
+    },
+    {
+      "symbol": "SIRENUSDT",
+      "move_pct": 14.787,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.5705
+    },
+    {
+      "symbol": "EVAAUSDT",
+      "move_pct": 10.088,
+      "direction": "DOWN",
+      "precursor_count": 6,
+      "entry_price": 0.3889
+    }
+  ],
+  "atr_based_exits": {
+    "low_volatility": {
+      "count": 27,
+      "avg_move": 13.070074074074073,
+      "median_move": 11.888,
+      "min_move": 10.023,
+      "max_move": 23.855,
+      "suggested_tp": 7.1328,
+      "suggested_sl": 1.9605111111111109
+    },
+    "medium_volatility": {
+      "count": 28,
+      "avg_move": 19.173642857142855,
+      "median_move": 15.124500000000001,
+      "min_move": 11.217,
+      "max_move": 40.282,
+      "suggested_tp": 9.0747,
+      "suggested_sl": 2.8760464285714282
+    },
+    "high_volatility": {
+      "count": 4,
+      "avg_move": 17.20225,
+      "median_move": 17.6485,
+      "min_move": 14.398,
+      "max_move": 19.114,
+      "suggested_tp": 10.589099999999998,
+      "suggested_sl": 2.5803374999999997
+    }
+  },
+  "directional_analysis": {
+    "UP": {
+      "count": 27,
+      "avg": 18.644111111111112,
+      "median": 17.16,
+      "min": 10.511,
+      "max": 34.414,
+      "suggested_tp": 10.296,
+      "suggested_sl": 0.025
+    },
+    "DOWN": {
+      "count": 32,
+      "avg": 14.224124999999999,
+      "median": 12.3525,
+      "min": 10.023,
+      "max": 40.282,
+      "suggested_tp": 7.411499999999999,
+      "suggested_sl": 0.025
+    }
+  }
+}

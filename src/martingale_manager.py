@@ -43,9 +43,6 @@ class MartingaleManager:
         self.max_adverse_excursion_pct: float = 0.0  # Worst drawdown % from entry
         self.mae_candle: int = 0  # Candle number when MAE occurred
 
-        # Overnight first-candle kill tracking
-        self.overnight_first_candle_checked: bool = False
-
         # History
         self.history: List[TradeRecord] = []
         self.last_max_loss_time: float = 0
@@ -153,9 +150,6 @@ class MartingaleManager:
         # Reset MAE tracking for new position
         self.max_adverse_excursion_pct = 0.0
         self.mae_candle = 0
-
-        # Reset overnight first-candle check for new position
-        self.overnight_first_candle_checked = False
 
         log(f"ENTERED: {symbol} {direction} @ {entry_price:.4f} | "
             f"Level={self.level} | Size={format_usd(self.current_size_usd)} | "

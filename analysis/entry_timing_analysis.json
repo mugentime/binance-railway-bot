@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-06-03T12:48:23.270290",
+  "summary": {
+    "total_movers": 59,
+    "tp_hits": 0,
+    "tp_hit_rate": 0.0,
+    "avg_time_to_tp_min": null,
+    "median_time_to_tp_min": null,
+    "p90_time_min": null,
+    "recommended_timeout_min": null
+  },
+  "results": []
+}

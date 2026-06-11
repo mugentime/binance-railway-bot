@@ -1,0 +1,109 @@
+═══════════════════════════════════════════════════════════════════════
+                 IDEAL SETTINGS QUICK COMPARISON
+═══════════════════════════════════════════════════════════════════════
+
+─────────────────────────────────────────────────────────────────────
+📊 ENTRY THRESHOLDS
+─────────────────────────────────────────────────────────────────────
+Parameter            Current     Ideal       Change & Reason
+─────────────────────────────────────────────────────────────────────
+RSI SHORT            75          65          -10 (catch more moves)
+RSI LONG             25          30          +5  (reduce false pos)
+BB%B SHORT           0.8         0.7         -0.1 (more aggressive)
+BB%B LONG            0.2         0.25        +0.05 (more selective)
+Z-SCORE SHORT        1.5         1.2         -0.3 (earlier entry)
+Z-SCORE LONG         -1.5        -1.2        +0.3 (earlier entry)
+ENTRY_THRESHOLD      20          25          +5 (maintain quality)
+
+─────────────────────────────────────────────────────────────────────
+🎯 SIGNAL SCORING WEIGHTS
+─────────────────────────────────────────────────────────────────────
+Component            Current     Ideal       Change
+─────────────────────────────────────────────────────────────────────
+Volume               40%         35%         -5% (less dominant)
+RSI                  25%         20%         -5% (rebalanced)
+BB%B                 20%         20%          0% (keep as-is)
+Z-Score              15%         15%          0% (keep as-is)
+Squeeze               0%         10%         +10% (NEW INDICATOR!)
+
+─────────────────────────────────────────────────────────────────────
+⏰ TIMING & SCANNING
+─────────────────────────────────────────────────────────────────────
+Time Period          Current     Ideal       Strategy
+─────────────────────────────────────────────────────────────────────
+Peak (14-17 UTC)     150s        60s         73% of moves here
+Active (12-20 UTC)   150s        120s        83% of moves here
+Quiet (08-12, 20-24) 150s        300s        Save API calls
+Dead (00-08 UTC)     150s        300s        Only 8% of moves
+Wave Mode            N/A         60s         NEW - 30 min aggressive
+Cooldown             600s (10m)  300s (5m)   Faster re-entry
+
+─────────────────────────────────────────────────────────────────────
+🆕 NEW FEATURES
+─────────────────────────────────────────────────────────────────────
+
+1. 💥 VOLUME SURGE DETECTION
+   • Current vol > 2x avg last 5 candles = +20 pts (TRIGGER!)
+   • Current vol > 1.5x avg = +10 pts
+   • Current vol < 0.8x avg = +5 pts (low volume paradox)
+
+2. 🌊 WAVE MODE
+   • Activates on ANY entry signal
+   • Scans every 60s for 30 minutes (catch the wave)
+   • Extends if new signals found
+   • 79% of moves cluster within 15 min
+
+3. 📈 DIRECTIONAL MOMENTUM
+   • Tracks last 3 move directions
+   • 2+ same direction = +15% boost aligned, -15% penalty opposing
+   • Aligns with market momentum (7 consecutive runs detected)
+
+4. 🔵 SQUEEZE INDICATOR
+   • Squeeze < 1.0 (BB inside KC) = 50-100 pts
+   • Squeeze > 2.5 (BB expanding) = 60 pts
+   • 41% of moves had squeeze signal
+
+─────────────────────────────────────────────────────────────────────
+📊 EXPECTED PERFORMANCE
+─────────────────────────────────────────────────────────────────────
+Metric               Current     Ideal       Improvement
+─────────────────────────────────────────────────────────────────────
+Coverage             34%         47%         +38%
+Win Rate             45.5%       53.5%       +17.5%
+Signals per Day      13.5        22.5        +67%
+Profit per Day       $0.30       $0.65       +117%
+False Positives      5/day       11/day      +120% (manageable)
+Capital Needed       $300        $450        +50%
+
+═══════════════════════════════════════════════════════════════════════
+🎯 DEPLOYMENT PLAN
+═══════════════════════════════════════════════════════════════════════
+
+Week 1: Core Enhancements
+  • Add volume surge detection
+  • Implement wave mode
+  • Add momentum tracking
+  • Deploy to PAPER TRADING
+
+Week 2: Indicator Tuning
+  • Add squeeze indicator
+  • Adjust thresholds
+  • Rebalance weights
+  • Continue paper trading
+
+Week 3: Validation
+  • Compare paper vs current
+  • A/B test if results look good
+  • Monitor for 1 week
+
+Week 4: Deployment Decision
+  • If +10% win rate: DEPLOY FULL
+  • If +5-10%: DEPLOY CONSERVATIVE
+  • If <+5%: KEEP CURRENT, TRY OTHER ENHANCEMENTS
+
+═══════════════════════════════════════════════════════════════════════
+
+RECOMMENDATION: Start with Week 1 implementation and validate
+                thoroughly before deploying with real capital.
+
+Generated: 2026-06-02 | Based on 59 movers analysis

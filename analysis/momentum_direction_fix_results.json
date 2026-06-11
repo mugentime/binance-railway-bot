@@ -1,0 +1,554 @@
+{
+  "timestamp": "2026-06-03T18:44:47.849157+00:00",
+  "strategy": "MOMENTUM (reversed from mean-reversion)",
+  "direction_accuracy": 0.0,
+  "win_rate": 41.17647058823529,
+  "tp_hit_rate": 2.941176470588235,
+  "net_pnl": -4.295222311527959,
+  "trades": [
+    {
+      "symbol": "SANDUSDT",
+      "actual_move_pct": -10.169,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.06306,
+      "result": {
+        "exit_reason": "TIME_CAP",
+        "pnl_pct": 0.009197589597209071,
+        "minutes_held": 241,
+        "max_profit": 0.03076435141135433,
+        "max_drawdown": -0.006343165239454449
+      },
+      "is_win": true
+    },
+    {
+      "symbol": "UBUSDT",
+      "actual_move_pct": -14.398,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.14786,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 1,
+        "max_profit": 0,
+        "max_drawdown": 0
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "LITUSDT",
+      "actual_move_pct": 13.105,
+      "actual_direction": "UP",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 1.4262,
+      "result": {
+        "exit_reason": "TP",
+        "pnl_pct": 0.1,
+        "minutes_held": 60,
+        "max_profit": 0.10398261113448332,
+        "max_drawdown": -0.011358855700462763
+      },
+      "is_win": true
+    },
+    {
+      "symbol": "KGENUSDT",
+      "actual_move_pct": 19.971,
+      "actual_direction": "UP",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 0.2173,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 25,
+        "max_profit": 0.019328117809480024,
+        "max_drawdown": -0.019558214450069045
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "OPNUSDT",
+      "actual_move_pct": -17.398,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.1127,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 84,
+        "max_profit": 0.03105590062111792,
+        "max_drawdown": -0.02307009760425914
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "CATIUSDT",
+      "actual_move_pct": -13.214,
+      "actual_direction": "DOWN",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 0.05083,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 1,
+        "max_profit": 0,
+        "max_drawdown": 0
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "STABLEUSDT",
+      "actual_move_pct": -11.888,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.0367,
+      "result": {
+        "exit_reason": "TIME_CAP",
+        "pnl_pct": 0.040599455040872076,
+        "minutes_held": 241,
+        "max_profit": 0.05286103542234343,
+        "max_drawdown": -0.003269754768392237
+      },
+      "is_win": true
+    },
+    {
+      "symbol": "EDGEUSDT",
+      "actual_move_pct": -40.282,
+      "actual_direction": "DOWN",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 0.6895,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 1,
+        "max_profit": 0,
+        "max_drawdown": 0
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "GRIFFAINUSDT",
+      "actual_move_pct": -11.067,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.00947,
+      "result": {
+        "exit_reason": "TIME_CAP",
+        "pnl_pct": 0.01995776135163674,
+        "minutes_held": 241,
+        "max_profit": 0.025026399155226968,
+        "max_drawdown": -0.017951425554382262
+      },
+      "is_win": true
+    },
+    {
+      "symbol": "COHRUSDT",
+      "actual_move_pct": 18.694,
+      "actual_direction": "UP",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 394.47,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 1,
+        "max_profit": 0,
+        "max_drawdown": 0
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "TAUSDT",
+      "actual_move_pct": 18.137,
+      "actual_direction": "UP",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 0.10536,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 1,
+        "max_profit": 0,
+        "max_drawdown": 0
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "ASTSUSDT",
+      "actual_move_pct": 11.188,
+      "actual_direction": "UP",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 112.29,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 1,
+        "max_profit": 0,
+        "max_drawdown": 0
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "XLMUSDT",
+      "actual_move_pct": -13.679,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.22356,
+      "result": {
+        "exit_reason": "TIME_CAP",
+        "pnl_pct": 0.02406512792986221,
+        "minutes_held": 241,
+        "max_profit": 0.04182322419037394,
+        "max_drawdown": -0.01619252102343883
+      },
+      "is_win": true
+    },
+    {
+      "symbol": "DOGSUSDT",
+      "actual_move_pct": -10.886,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 4.817e-05,
+      "result": {
+        "exit_reason": "TIME_CAP",
+        "pnl_pct": 0.013493875856342168,
+        "minutes_held": 241,
+        "max_profit": 0.05086153207390489,
+        "max_drawdown": -0.01723064147809834
+      },
+      "is_win": true
+    },
+    {
+      "symbol": "HEIUSDT",
+      "actual_move_pct": -17.02,
+      "actual_direction": "DOWN",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 0.07453,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 63,
+        "max_profit": 0.027103179927546062,
+        "max_drawdown": -0.024285522608345527
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "RONINUSDT",
+      "actual_move_pct": -10.023,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.0807,
+      "result": {
+        "exit_reason": "TIME_CAP",
+        "pnl_pct": 0.013630731102849937,
+        "minutes_held": 241,
+        "max_profit": 0.04213135068153656,
+        "max_drawdown": -0.008674101610904662
+      },
+      "is_win": true
+    },
+    {
+      "symbol": "PORTALUSDT",
+      "actual_move_pct": 14.815,
+      "actual_direction": "UP",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 0.02109,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 1,
+        "max_profit": 0,
+        "max_drawdown": 0
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "ZECUSDC",
+      "actual_move_pct": 11.217,
+      "actual_direction": "UP",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 601.26,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 191,
+        "max_profit": 0.04259388617237138,
+        "max_drawdown": -0.023467385157835235
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "ZECUSDT",
+      "actual_move_pct": 11.311,
+      "actual_direction": "UP",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 602.27,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 191,
+        "max_profit": 0.04071263718930045,
+        "max_drawdown": -0.02434124229996508
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "APRUSDT",
+      "actual_move_pct": 24.344,
+      "actual_direction": "UP",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 0.21328,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 1,
+        "max_profit": 0,
+        "max_drawdown": 0
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "LITEUSDT",
+      "actual_move_pct": 13.503,
+      "actual_direction": "UP",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 951.33,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 28,
+        "max_profit": 0.015672794929204464,
+        "max_drawdown": -0.022589427433172514
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "PLAYUSDT",
+      "actual_move_pct": -12.384,
+      "actual_direction": "DOWN",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 0.11539,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 8,
+        "max_profit": 0.005286419967068199,
+        "max_drawdown": -0.009446225842794068
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "BERAUSDT",
+      "actual_move_pct": -12.966,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.3215,
+      "result": {
+        "exit_reason": "TIME_CAP",
+        "pnl_pct": 0.03297045101088646,
+        "minutes_held": 241,
+        "max_profit": 0.03390357698289275,
+        "max_drawdown": -0.012441679626749622
+      },
+      "is_win": true
+    },
+    {
+      "symbol": "SKYAIUSDT",
+      "actual_move_pct": -23.028,
+      "actual_direction": "DOWN",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 0.15412,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 101,
+        "max_profit": 0.05456786919283675,
+        "max_drawdown": -0.022125616402802986
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "HEMIUSDT",
+      "actual_move_pct": -13.096,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.006521,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 1,
+        "max_profit": 0,
+        "max_drawdown": 0
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "NOTUSDT",
+      "actual_move_pct": -10.259,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.0004648,
+      "result": {
+        "exit_reason": "TIME_CAP",
+        "pnl_pct": 0.025172117039586946,
+        "minutes_held": 241,
+        "max_profit": 0.07487091222030988,
+        "max_drawdown": -0.009896729776247856
+      },
+      "is_win": true
+    },
+    {
+      "symbol": "FHEUSDT",
+      "actual_move_pct": -11.284,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.02319,
+      "result": {
+        "exit_reason": "TIME_CAP",
+        "pnl_pct": 0.02026735661923235,
+        "minutes_held": 241,
+        "max_profit": 0.042690815006468215,
+        "max_drawdown": -0.013367830961621443
+      },
+      "is_win": true
+    },
+    {
+      "symbol": "HYUNDAIUSDT",
+      "actual_move_pct": 23.855,
+      "actual_direction": "UP",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 471.0,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 29,
+        "max_profit": 0.018259023354564804,
+        "max_drawdown": -0.018131634819532953
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "NFPUSDT",
+      "actual_move_pct": -11.392,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.00997,
+      "result": {
+        "exit_reason": "TIME_CAP",
+        "pnl_pct": 0.0030090270812437826,
+        "minutes_held": 241,
+        "max_profit": 0.04914744232698086,
+        "max_drawdown": -0.017051153460381146
+      },
+      "is_win": true
+    },
+    {
+      "symbol": "ZORAUSDT",
+      "actual_move_pct": 13.277,
+      "actual_direction": "UP",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 0.01224,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 14,
+        "max_profit": 0.011437908496732128,
+        "max_drawdown": -0.017973856209150305
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "MUSDT",
+      "actual_move_pct": 10.511,
+      "actual_direction": "UP",
+      "entry_signal": "LONG",
+      "direction_match": false,
+      "entry_price": 3.2903,
+      "result": {
+        "exit_reason": "TIME_CAP",
+        "pnl_pct": 0.003707868583411979,
+        "minutes_held": 241,
+        "max_profit": 0.053581740266845077,
+        "max_drawdown": -0.008388292860833245
+      },
+      "is_win": true
+    },
+    {
+      "symbol": "FIGHTUSDT",
+      "actual_move_pct": -19.266,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.0041,
+      "result": {
+        "exit_reason": "TIME_CAP",
+        "pnl_pct": 0.005609756097561085,
+        "minutes_held": 241,
+        "max_profit": 0.03170731707317092,
+        "max_drawdown": -0.01780487804878031
+      },
+      "is_win": true
+    },
+    {
+      "symbol": "MERLUSDT",
+      "actual_move_pct": -11.326,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.02682,
+      "result": {
+        "exit_reason": "SL",
+        "pnl_pct": -0.025,
+        "minutes_held": 58,
+        "max_profit": 0.018269947800149174,
+        "max_drawdown": -0.02348993288590599
+      },
+      "is_win": false
+    },
+    {
+      "symbol": "EVAAUSDT",
+      "actual_move_pct": -10.088,
+      "actual_direction": "DOWN",
+      "entry_signal": "SHORT",
+      "direction_match": false,
+      "entry_price": 0.3959,
+      "result": {
+        "exit_reason": "TIME_CAP",
+        "pnl_pct": 0.0007577671129072165,
+        "minutes_held": 241,
+        "max_profit": 0.05026521848951749,
+        "max_drawdown": -0.012124273806516865
+      },
+      "is_win": true
+    }
+  ]
+}

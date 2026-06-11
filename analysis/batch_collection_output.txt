@@ -1,0 +1,88 @@
+C:\Users\je2al\AppData\Local\Programs\Python\Python313\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.5.0) or chardet (7.4.3)/charset_normalizer (3.4.2) doesn't match a supported version!
+  warnings.warn(
+================================================================================
+BATCH PRECURSOR COLLECTION FOR 24H MOVERS
+================================================================================
+
+Loading movers from: C:\Users\je2al\Desktop\binance-railway-bot\analysis\..\docs\trades_export\24h_movers.json
+Found 62 movers with 10%+ change
+Target: 62 symbols
+
+[  1/62] Processing SANDUSDT        ( -10.17%)... ✓ Found 6 precursor candles
+[  2/62] Processing UBUSDT          ( -14.40%)... ✓ Found 6 precursor candles
+[  3/62] Processing LITUSDT         ( +13.11%)... ✓ Found 6 precursor candles
+[  4/62] Processing SLXUSDT         ( +13.24%)... ✓ Found 6 precursor candles
+[  5/62] Processing USELESSUSDT     ( +30.00%)... ✓ Found 6 precursor candles
+[  6/62] Processing KGENUSDT        ( +19.97%)... ✓ Found 6 precursor candles
+[  7/62] Processing OPNUSDT         ( -17.40%)... ✓ Found 6 precursor candles
+[  8/62] Processing PIEVERSEUSDT    ( +26.26%)... ✓ Found 6 precursor candles
+[  9/62] Processing DEEPUSDT        ( -12.99%)... ❌ Could not find move candle
+[ 10/62] Processing CATIUSDT        ( -13.21%)... ✓ Found 6 precursor candles
+[ 11/62] Processing RIFUSDT         ( +19.59%)... ✓ Found 6 precursor candles
+[ 12/62] Processing MONUSDT         ( -10.18%)... ❌ Could not find move candle
+[ 13/62] Processing STABLEUSDT      ( -11.89%)... ✓ Found 6 precursor candles
+[ 14/62] Processing EDGEUSDT        ( -40.28%)... ✓ Found 6 precursor candles
+[ 15/62] Processing GRIFFAINUSDT    ( -11.07%)... ✓ Found 6 precursor candles
+[ 16/62] Processing USUSDT          ( +32.72%)... ✓ Found 6 precursor candles
+[ 17/62] Processing COHRUSDT        ( +18.69%)... ✓ Found 6 precursor candles
+[ 18/62] Processing MYXUSDT         ( +15.21%)... ✓ Found 6 precursor candles
+[ 19/62] Processing SPORTFUNUSDT    ( -11.60%)... ✓ Found 6 precursor candles
+[ 20/62] Processing AIGENSYNUSDT    ( -11.34%)... ✓ Found 6 precursor candles
+[ 21/62] Processing TAUSDT          ( +18.14%)... ✓ Found 6 precursor candles
+[ 22/62] Processing JCTUSDT         ( -15.04%)... ✓ Found 6 precursor candles
+[ 23/62] Processing NOMUSDT         ( -12.10%)... ✓ Found 6 precursor candles
+[ 24/62] Processing EPICUSDT        ( +17.16%)... ✓ Found 6 precursor candles
+[ 25/62] Processing ASTSUSDT        ( +11.19%)... ✓ Found 6 precursor candles
+[ 26/62] Processing XLMUSDT         ( -13.68%)... ✓ Found 6 precursor candles
+[ 27/62] Processing DOGSUSDT        ( -10.89%)... ✓ Found 6 precursor candles
+[ 28/62] Processing VICUSDT         ( -19.70%)... ✓ Found 6 precursor candles
+[ 29/62] Processing HEIUSDT         ( -17.02%)... ✓ Found 6 precursor candles
+[ 30/62] Processing RONINUSDT       ( -10.02%)... ✓ Found 6 precursor candles
+[ 31/62] Processing RIVERUSDT       ( -15.82%)... ✓ Found 6 precursor candles
+[ 32/62] Processing PORTALUSDT      ( +14.81%)... ✓ Found 6 precursor candles
+[ 33/62] Processing ZECUSDC         ( +11.22%)... ✓ Found 6 precursor candles
+[ 34/62] Processing CUSDT           ( +12.04%)... ✓ Found 6 precursor candles
+[ 35/62] Processing ZECUSDT         ( +11.31%)... ✓ Found 6 precursor candles
+[ 36/62] Processing APRUSDT         ( +24.34%)... ✓ Found 6 precursor candles
+[ 37/62] Processing LITEUSDT        ( +13.50%)... ✓ Found 6 precursor candles
+[ 38/62] Processing PLAYUSDT        ( -12.38%)... ✓ Found 6 precursor candles
+[ 39/62] Processing BERAUSDT        ( -12.97%)... ✓ Found 6 precursor candles
+[ 40/62] Processing SKYAIUSDT       ( -23.03%)... ✓ Found 6 precursor candles
+[ 41/62] Processing HEMIUSDT        ( -13.10%)... ✓ Found 6 precursor candles
+[ 42/62] Processing RAVEUSDT        ( -12.22%)... ✓ Found 6 precursor candles
+[ 43/62] Processing NOTUSDT         ( -10.26%)... ✓ Found 6 precursor candles
+[ 44/62] Processing CLOUSDT         ( +34.41%)... ✓ Found 6 precursor candles
+[ 45/62] Processing FHEUSDT         ( -11.28%)... ✓ Found 6 precursor candles
+[ 46/62] Processing HYUNDAIUSDT     ( +23.86%)... ✓ Found 6 precursor candles
+[ 47/62] Processing SOXLUSDT        ( +12.64%)... ✓ Found 6 precursor candles
+[ 48/62] Processing NFPUSDT         ( -11.39%)... ✓ Found 6 precursor candles
+[ 49/62] Processing ZORAUSDT        ( +13.28%)... ✓ Found 6 precursor candles
+[ 50/62] Processing HUSDT           ( +19.11%)... ✓ Found 6 precursor candles
+[ 51/62] Processing LABUSDT         ( +24.41%)... ✓ Found 6 precursor candles
+[ 52/62] Processing ARCUSDT         ( -11.73%)... ✓ Found 6 precursor candles
+[ 53/62] Processing MRVLUSDT        ( +30.45%)... ✓ Found 6 precursor candles
+[ 54/62] Processing TONUSDT         ( -13.39%)... ✓ Found 6 precursor candles
+[ 55/62] Processing MUSDT           ( +10.51%)... ✓ Found 6 precursor candles
+[ 56/62] Processing BATUSDT         ( -10.51%)... ❌ Could not find move candle
+[ 57/62] Processing FIGHTUSDT       ( -19.27%)... ✓ Found 6 precursor candles
+[ 58/62] Processing INITUSDT        ( -12.32%)... ✓ Found 6 precursor candles
+[ 59/62] Processing MERLUSDT        ( -11.33%)... ✓ Found 6 precursor candles
+[ 60/62] Processing CHIPUSDT        ( +12.23%)... ✓ Found 6 precursor candles
+[ 61/62] Processing SIRENUSDT       ( -14.79%)... ✓ Found 6 precursor candles
+[ 62/62] Processing EVAAUSDT        ( -10.09%)... ✓ Found 6 precursor candles
+
+================================================================================
+COLLECTION SUMMARY
+================================================================================
+Total processed:     62
+Successful:          59 (95.2%)
+Failed:              3
+Elapsed time:        28.8 seconds
+Average per symbol:  0.47 seconds
+
+Failed symbols: DEEPUSDT, MONUSDT, BATUSDT
+
+✓ Results saved to: C:\Users\je2al\Desktop\binance-railway-bot\analysis\226_movers_precursors.json
+
+✓ Collection complete!
+✓ Success rate: 95.2% (minimum target: 80%)

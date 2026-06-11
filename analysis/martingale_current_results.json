@@ -1,0 +1,211 @@
+{
+  "timestamp": "2026-06-05T13:32:44.987833",
+  "strategy": {
+    "martingale_mult": 1.5,
+    "max_chain_level": 5,
+    "base_size_usd": 1.0
+  },
+  "results": {
+    "total_movers": 443,
+    "signals_found": 71,
+    "chains_executed": 10,
+    "winning_chains": 7,
+    "win_rate": 70.0,
+    "avg_levels": 1.0,
+    "total_deployed": 10.0,
+    "total_pnl": 0.5193943301236039,
+    "roi_pct": 5.193943301236039
+  },
+  "chains": [
+    {
+      "symbol": "POLYXUSDT",
+      "chain_trades": [
+        {
+          "level": 0,
+          "size_usd": 1.0,
+          "direction": "SHORT",
+          "entry_price": 0.03942,
+          "exit_reason": "TIMEOUT",
+          "pnl_pct": -0.0017757483510908326,
+          "pnl_usd": -0.051514967021816654,
+          "minutes": 240
+        }
+      ],
+      "chain_pnl_usd": -0.051514967021816654,
+      "total_deployed": 1.0,
+      "levels": 1,
+      "outcome": "LOSS"
+    },
+    {
+      "symbol": "1MBABYDOGEUSDT",
+      "chain_trades": [
+        {
+          "level": 0,
+          "size_usd": 1.0,
+          "direction": "SHORT",
+          "entry_price": 0.0003275,
+          "exit_reason": "TIMEOUT",
+          "pnl_pct": 0.005496183206106838,
+          "pnl_usd": 0.09392366412213676,
+          "minutes": 240
+        }
+      ],
+      "chain_pnl_usd": 0.09392366412213676,
+      "total_deployed": 1.0,
+      "levels": 1,
+      "outcome": "WIN"
+    },
+    {
+      "symbol": "NEOUSDT",
+      "chain_trades": [
+        {
+          "level": 0,
+          "size_usd": 1.0,
+          "direction": "SHORT",
+          "entry_price": 2.199,
+          "exit_reason": "TIMEOUT",
+          "pnl_pct": 0.0009095043201454206,
+          "pnl_usd": 0.0021900864029084123,
+          "minutes": 240
+        }
+      ],
+      "chain_pnl_usd": 0.0021900864029084123,
+      "total_deployed": 1.0,
+      "levels": 1,
+      "outcome": "WIN"
+    },
+    {
+      "symbol": "BRETTUSDT",
+      "chain_trades": [
+        {
+          "level": 0,
+          "size_usd": 1.0,
+          "direction": "SHORT",
+          "entry_price": 0.005255,
+          "exit_reason": "TIMEOUT",
+          "pnl_pct": -0.024928639391056145,
+          "pnl_usd": -0.5145727878211229,
+          "minutes": 240
+        }
+      ],
+      "chain_pnl_usd": -0.5145727878211229,
+      "total_deployed": 1.0,
+      "levels": 1,
+      "outcome": "LOSS"
+    },
+    {
+      "symbol": "ALPINEUSDT",
+      "chain_trades": [
+        {
+          "level": 0,
+          "size_usd": 1.0,
+          "direction": "SHORT",
+          "entry_price": 0.3382,
+          "exit_reason": "TIMEOUT",
+          "pnl_pct": 0.0023654642223537047,
+          "pnl_usd": 0.03130928444707409,
+          "minutes": 240
+        }
+      ],
+      "chain_pnl_usd": 0.03130928444707409,
+      "total_deployed": 1.0,
+      "levels": 1,
+      "outcome": "WIN"
+    },
+    {
+      "symbol": "INXUSDT",
+      "chain_trades": [
+        {
+          "level": 0,
+          "size_usd": 1.0,
+          "direction": "SHORT",
+          "entry_price": 0.007406,
+          "exit_reason": "TIMEOUT",
+          "pnl_pct": 0.018498514717796375,
+          "pnl_usd": 0.3539702943559275,
+          "minutes": 240
+        }
+      ],
+      "chain_pnl_usd": 0.3539702943559275,
+      "total_deployed": 1.0,
+      "levels": 1,
+      "outcome": "WIN"
+    },
+    {
+      "symbol": "MOVRUSDT",
+      "chain_trades": [
+        {
+          "level": 0,
+          "size_usd": 1.0,
+          "direction": "SHORT",
+          "entry_price": 1.228,
+          "exit_reason": "TIMEOUT",
+          "pnl_pct": -0.00814332247557004,
+          "pnl_usd": -0.1788664495114008,
+          "minutes": 240
+        }
+      ],
+      "chain_pnl_usd": -0.1788664495114008,
+      "total_deployed": 1.0,
+      "levels": 1,
+      "outcome": "LOSS"
+    },
+    {
+      "symbol": "AKTUSDT",
+      "chain_trades": [
+        {
+          "level": 0,
+          "size_usd": 1.0,
+          "direction": "SHORT",
+          "entry_price": 0.5544,
+          "exit_reason": "TIMEOUT",
+          "pnl_pct": 0.022366522366522305,
+          "pnl_usd": 0.4313304473304461,
+          "minutes": 240
+        }
+      ],
+      "chain_pnl_usd": 0.4313304473304461,
+      "total_deployed": 1.0,
+      "levels": 1,
+      "outcome": "WIN"
+    },
+    {
+      "symbol": "SOPHUSDT",
+      "chain_trades": [
+        {
+          "level": 0,
+          "size_usd": 1.0,
+          "direction": "SHORT",
+          "entry_price": 0.005467,
+          "exit_reason": "TIMEOUT",
+          "pnl_pct": 0.010243277848911584,
+          "pnl_usd": 0.18886555697823165,
+          "minutes": 240
+        }
+      ],
+      "chain_pnl_usd": 0.18886555697823165,
+      "total_deployed": 1.0,
+      "levels": 1,
+      "outcome": "WIN"
+    },
+    {
+      "symbol": "YFIUSDT",
+      "chain_trades": [
+        {
+          "level": 0,
+          "size_usd": 1.0,
+          "direction": "SHORT",
+          "entry_price": 1902.0,
+          "exit_reason": "TIMEOUT",
+          "pnl_pct": 0.008937960042060988,
+          "pnl_usd": 0.16275920084121975,
+          "minutes": 240
+        }
+      ],
+      "chain_pnl_usd": 0.16275920084121975,
+      "total_deployed": 1.0,
+      "levels": 1,
+      "outcome": "WIN"
+    }
+  ]
+}
