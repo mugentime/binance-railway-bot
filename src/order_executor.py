@@ -407,6 +407,10 @@ class OrderExecutor:
         }
         tp_params = self._sign_params(tp_params)
 
+        # Track order placement success
+        tp_success = False
+        tp_error = None
+
         try:
             resp = self.client.post(
                 f"{config.BINANCE_BASE_URL}/fapi/v1/order",
@@ -415,13 +419,18 @@ class OrderExecutor:
             )
             resp.raise_for_status()
             log(f"TP LIMIT order placed: {symbol} @ {tp_price_str}")
+            tp_success = True
         except httpx.HTTPStatusError as e:
             try:
                 error_data = e.response.json()
                 log(f"TP order failed - Binance error: {error_data}", "error")
+                tp_error = f"Binance error: {error_data}"
             except:
                 log(f"TP order failed - Response: {e.response.text}", "error")
-            raise
+                tp_error = f"HTTP error: {e.response.text}"
+        except Exception as e:
+            log(f"TP order failed - Unexpected error: {e}", "error")
+            tp_error = f"Unexpected error: {str(e)}"
 
         # STOP LOSS - Only place if enabled in config
         # Skip if SL_PCT >= 1.0 (effectively disabled)
@@ -458,7 +467,10 @@ class OrderExecutor:
         sl_params = self._sign_params(sl_params)
 
         # CRITICAL: Attempt SL order with retries and detailed error logging
+        sl_success = False
+        sl_error = None
         max_retries = 3
+
         for attempt in range(1, max_retries + 1):
             try:
                 resp = self.client.post(
@@ -470,7 +482,8 @@ class OrderExecutor:
                 sl_order = resp.json()
                 algo_id = sl_order.get("algoId")
                 log(f"SL STOP_LIMIT algo order placed: {symbol} trigger={sl_price_str} limit={sl_limit_str} (algoId: {algo_id})")
-                return  # Success
+                sl_success = True
+                break  # Success - exit retry loop
             except httpx.HTTPStatusError as e:
                 # Parse Binance error
                 try:
@@ -480,28 +493,39 @@ class OrderExecutor:
 
                     log(f"SL algo order FAILED (attempt {attempt}/{max_retries}): Binance error {error_code}: {error_msg}", "error")
                     log(f"SL params: triggerPrice={sl_price_str}, limit={sl_limit_str}, quantity={quantity_str}, side={sl_side}", "error")
+                    sl_error = f"Binance error {error_code}: {error_msg}"
 
-                    # If this is the last attempt, raise critical error
-                    if attempt == max_retries:
-                        log(f"CRITICAL: Failed to place SL after {max_retries} attempts!", "error")
-                        log(f"POSITION IS OPEN WITHOUT STOP LOSS - IMMEDIATE MANUAL INTERVENTION REQUIRED", "error")
-                        raise Exception(f"CRITICAL: SL algo order failed after {max_retries} attempts - "
-                                      f"Error {error_code}: {error_msg}. "
-                                      f"Position {symbol} {direction} is UNPROTECTED!")
-
-                    # Wait before retry
-                    import time
-                    time.sleep(1)
+                    # Wait before retry (unless last attempt)
+                    if attempt < max_retries:
+                        import time
+                        time.sleep(1)
 
                 except ValueError:
                     # Failed to parse JSON response
                     log(f"SL algo order failed - Response: {e.response.text}", "error")
-                    if attempt == max_retries:
-                        raise
+                    sl_error = f"HTTP error: {e.response.text}"
+                    if attempt < max_retries:
+                        import time
+                        time.sleep(1)
             except Exception as e:
-                log(f"SL algo order unexpected error (attempt {attempt}/{max_retries}): {e}", "error")
-                if attempt == max_retries:
-                    raise
+                log(f"SL algo order failed - Unexpected error: {e}", "error")
+                sl_error = f"Unexpected error: {str(e)}"
+                if attempt < max_retries:
+                    import time
+                    time.sleep(1)
+
+        # FINAL CHECK: Raise exception if either TP or SL failed
+        if not tp_success or not sl_success:
+            errors = []
+            if not tp_success:
+                errors.append(f"TP order failed: {tp_error}")
+            if not sl_success:
+                errors.append(f"SL order failed after {max_retries} attempts: {sl_error}")
+
+            error_msg = " | ".join(errors)
+            log(f"CRITICAL: Position {symbol} {direction} is NOT FULLY PROTECTED!", "error")
+            log(f"TP placed: {tp_success} | SL placed: {sl_success}", "error")
+            raise Exception(f"Order placement incomplete - {error_msg}")
 
     def close_position_market(self, symbol: str, direction: str, quantity: float) -> dict:
         """
@@ -821,6 +845,152 @@ class OrderExecutor:
             import traceback
             traceback.print_exc()
             return False
+
+    def verify_and_place_missing_orders(self, symbol: str, direction: str, tp_price: float, sl_price: float, quantity: float) -> tuple:
+        """
+        Verify if BOTH TP and SL orders exist, place any missing orders
+        Returns: (tp_ok, sl_ok) - tuple of booleans indicating if each order exists or was placed
+        """
+        tp_ok = False
+        sl_ok = False
+
+        try:
+            # CHECK TP ORDER (regular LIMIT order)
+            log(f"Checking TP order for {symbol}...")
+            regular_orders = self.get_open_orders(symbol)
+
+            for order in regular_orders:
+                if order.get('reduceOnly') and order.get('type') == 'LIMIT':
+                    tp_ok = True
+                    log(f"✓ TP order exists: {symbol} @ {order.get('price', 'N/A')} (orderId: {order.get('orderId', 'N/A')})")
+                    break
+
+            if not tp_ok:
+                # TP is missing - attempt to place it
+                log(f"⚠️ MISSING TP DETECTED: {symbol} {direction} has no take profit order!", "warning")
+                log(f"Attempting to place missing TP order for {symbol}...", "warning")
+
+                # Get precision
+                tick_size = self.symbol_info_cache[symbol]["tickSize"]
+                step_size = self.symbol_info_cache[symbol]["stepSize"]
+                price_precision = self.symbol_info_cache[symbol]["pricePrecision"]
+                qty_precision = self.symbol_info_cache[symbol]["quantityPrecision"]
+
+                # Round values
+                tp_price_rounded = self._round_to_tick_size(tp_price, tick_size)
+                quantity_rounded = self._round_to_step_size(quantity, step_size)
+
+                tp_price_str = f"{tp_price_rounded:.{price_precision}f}"
+                quantity_str = f"{quantity_rounded:.{qty_precision}f}"
+
+                tp_side = "SELL" if direction == "LONG" else "BUY"
+
+                tp_params = {
+                    "symbol": symbol,
+                    "side": tp_side,
+                    "positionSide": "BOTH",
+                    "type": "LIMIT",
+                    "price": tp_price_str,
+                    "quantity": quantity_str,
+                    "timeInForce": "GTC",
+                    "reduceOnly": "true",
+                }
+                tp_params = self._sign_params(tp_params)
+
+                resp = self.client.post(
+                    f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                    params=tp_params,
+                    headers=self._headers()
+                )
+                resp.raise_for_status()
+
+                log(f"OK: MISSING TP RECOVERED: {symbol} @ {tp_price_str}", "warning")
+                tp_ok = True
+
+        except Exception as e:
+            log(f"ERROR: Failed to verify/place TP for {symbol}: {e}", "error")
+            import traceback
+            traceback.print_exc()
+
+        try:
+            # CHECK SL ORDER (algo CONDITIONAL order)
+            log(f"Checking SL order for {symbol}...")
+            algo_orders = self.get_algo_open_orders(symbol)
+
+            for order in algo_orders:
+                if order.get('algoType') == 'CONDITIONAL':
+                    sl_ok = True
+                    log(f"✓ SL order exists: {symbol} @ {order.get('triggerPrice', 'N/A')} (algoId: {order.get('algoId', 'N/A')})")
+                    break
+
+            if not sl_ok:
+                # SL is missing - attempt to place it
+                log(f"⚠️ MISSING SL DETECTED: {symbol} {direction} has no stop loss order!", "warning")
+
+                # Skip if SL is disabled
+                if config.SL_PCT >= 1.0:
+                    log(f"SL placement skipped: SL_PCT={config.SL_PCT} (disabled)", "warning")
+                    return (tp_ok, False)
+
+                log(f"Attempting to place missing SL order for {symbol}...", "warning")
+
+                # Get precision
+                tick_size = self.symbol_info_cache[symbol]["tickSize"]
+                step_size = self.symbol_info_cache[symbol]["stepSize"]
+                price_precision = self.symbol_info_cache[symbol]["pricePrecision"]
+                qty_precision = self.symbol_info_cache[symbol]["quantityPrecision"]
+
+                # Round values
+                sl_price_rounded = self._round_to_tick_size(sl_price, tick_size)
+                quantity_rounded = self._round_to_step_size(quantity, step_size)
+
+                sl_price_str = f"{sl_price_rounded:.{price_precision}f}"
+                quantity_str = f"{quantity_rounded:.{qty_precision}f}"
+
+                sl_side = "SELL" if direction == "LONG" else "BUY"
+
+                # Calculate limit price with buffer
+                sl_buffer = config.SL_LIMIT_BUFFER_PCT
+                if direction == "LONG":
+                    sl_limit_price = sl_price_rounded * (1 - sl_buffer)
+                else:
+                    sl_limit_price = sl_price_rounded * (1 + sl_buffer)
+
+                sl_limit_price = self._round_to_tick_size(sl_limit_price, tick_size)
+                sl_limit_str = f"{sl_limit_price:.{price_precision}f}"
+
+                sl_params = {
+                    "symbol": symbol,
+                    "side": sl_side,
+                    "positionSide": "BOTH",
+                    "algoType": "CONDITIONAL",
+                    "type": "STOP",
+                    "triggerPrice": sl_price_str,
+                    "price": sl_limit_str,
+                    "quantity": quantity_str,
+                    "timeInForce": "GTC",
+                    "workingType": "MARK_PRICE",
+                }
+                sl_params = self._sign_params(sl_params)
+
+                resp = self.client.post(
+                    f"{config.BINANCE_BASE_URL}/fapi/v1/algoOrder",
+                    params=sl_params,
+                    headers=self._headers()
+                )
+                resp.raise_for_status()
+                sl_order = resp.json()
+                algo_id = sl_order.get("algoId")
+
+                log(f"OK: MISSING SL RECOVERED: {symbol} trigger={sl_price_str} limit={sl_limit_str} (algoId: {algo_id})", "warning")
+                sl_ok = True
+
+        except Exception as e:
+            log(f"ERROR: Failed to verify/place SL for {symbol}: {e}", "error")
+            import traceback
+            traceback.print_exc()
+
+        return (tp_ok, sl_ok)
 
     def get_last_trade(self, symbol: str) -> Optional[dict]:
         """Get last trade for symbol (for determining win/loss)"""

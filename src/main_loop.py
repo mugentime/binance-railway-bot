@@ -716,14 +716,17 @@ async def main_loop():
                     log(f"CRITICAL: TP/SL placement failed: {tp_sl_error}", "error")
                     log(f"Position {best.symbol} may be UNPROTECTED - attempting recovery...", "error")
 
-                    # Attempt to verify and place missing SL
-                    sl_ok = executor.verify_and_place_missing_sl(
+                    # Attempt to verify and place BOTH missing TP and SL orders
+                    tp_ok, sl_ok = executor.verify_and_place_missing_orders(
                         symbol=best.symbol,
                         direction=best.direction,
                         tp_price=manager.tp_price(),
                         sl_price=adjusted_sl_price,
                         quantity=entry_qty
                     )
+
+                    # Log recovery results
+                    log(f"RECOVERY RESULTS: TP={'OK' if tp_ok else 'FAILED'} | SL={'OK' if sl_ok else 'FAILED'}", "warning")
 
                     if not sl_ok:
                         log(f"RECOVERY FAILED: Could not place SL after error - CLOSING POSITION", "error")
@@ -737,6 +740,9 @@ async def main_loop():
                         except Exception as close_error:
                             log(f"CRITICAL: Failed to close unprotected position: {close_error}", "error")
                             log(f"MANUAL INTERVENTION REQUIRED - Check position {best.symbol} on Binance!", "error")
+                    elif not tp_ok:
+                        log(f"WARNING: Position has SL but NO TP - acceptable but not ideal", "warning")
+                        # Continue - position is protected with SL at least
                             continue
 
                 # FINAL VERIFICATION: Ensure SL was placed successfully
