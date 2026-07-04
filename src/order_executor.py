@@ -398,6 +398,7 @@ class OrderExecutor:
         tp_params = {
             "symbol": symbol,
             "side": tp_side,
+            "positionSide": "BOTH",  # Required for hedge mode compatibility
             "type": "LIMIT",
             "price": tp_price_str,
             "quantity": quantity_str,
@@ -445,11 +446,13 @@ class OrderExecutor:
         sl_params = {
             "symbol": symbol,
             "side": sl_side,
+            "positionSide": "BOTH",  # Required for hedge mode compatibility
             "algoType": "CONDITIONAL",  # Conditional algo order
             "type": "STOP",  # STOP order (becomes STOP_LIMIT for algo orders)
             "triggerPrice": sl_price_str,  # Trigger price
             "price": sl_limit_str,  # Limit price (0.5% buffer beyond trigger)
             "quantity": quantity_str,
+            "timeInForce": "GTC",  # Explicitly set time in force
             "workingType": "MARK_PRICE",
         }
         sl_params = self._sign_params(sl_params)
@@ -790,11 +793,13 @@ class OrderExecutor:
             sl_params = {
                 "symbol": symbol,
                 "side": sl_side,
+                "positionSide": "BOTH",  # Required for hedge mode compatibility
                 "algoType": "CONDITIONAL",
                 "type": "STOP",
                 "triggerPrice": sl_price_str,
                 "price": sl_limit_str,
                 "quantity": quantity_str,
+                "timeInForce": "GTC",  # Explicitly set time in force
                 "workingType": "MARK_PRICE",
             }
             sl_params = self._sign_params(sl_params)
