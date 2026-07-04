@@ -743,7 +743,6 @@ async def main_loop():
                     elif not tp_ok:
                         log(f"WARNING: Position has SL but NO TP - acceptable but not ideal", "warning")
                         # Continue - position is protected with SL at least
-                            continue
 
                 # FINAL VERIFICATION: Ensure SL was placed successfully
                 log(f"Verifying TP/SL orders were placed successfully...")
