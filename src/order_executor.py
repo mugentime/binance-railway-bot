@@ -434,85 +434,89 @@ class OrderExecutor:
 
         # STOP LOSS - Only place if enabled in config
         # Skip if SL_PCT >= 1.0 (effectively disabled)
+        sl_success = True  # Default to True if SL is disabled
+        sl_error = None
+
         if config.SL_PCT >= 1.0:
             log(f"SL order skipped: SL_PCT={config.SL_PCT} (stop-loss disabled)")
-            return
+            sl_success = True  # Mark as success since it's intentionally disabled
+            # Don't return early - need to check TP success at the end
+        else:
+            # STOP LOSS - ALGO ORDER with 0.5% buffer for execution guarantee
+            # Uses conditional algo orders which work on ALL pairs
+            sl_side = "SELL" if direction == "LONG" else "BUY"
 
-        # STOP LOSS - ALGO ORDER with 0.5% buffer for execution guarantee
-        # Uses conditional algo orders which work on ALL pairs
-        sl_side = "SELL" if direction == "LONG" else "BUY"
+            # Calculate limit price with 0.5% buffer beyond trigger (for algo STOP order)
+            sl_buffer = config.SL_LIMIT_BUFFER_PCT  # 0.5% buffer
+            if direction == "LONG":
+                sl_limit_price = sl_price_rounded * (1 - sl_buffer)
+            else:  # SHORT
+                sl_limit_price = sl_price_rounded * (1 + sl_buffer)
 
-        # Calculate limit price with 0.5% buffer beyond trigger (for algo STOP order)
-        sl_buffer = config.SL_LIMIT_BUFFER_PCT  # 0.5% buffer
-        if direction == "LONG":
-            sl_limit_price = sl_price_rounded * (1 - sl_buffer)
-        else:  # SHORT
-            sl_limit_price = sl_price_rounded * (1 + sl_buffer)
+            sl_limit_price = self._round_to_tick_size(sl_limit_price, tick_size)
+            sl_limit_str = f"{sl_limit_price:.{price_precision}f}"
 
-        sl_limit_price = self._round_to_tick_size(sl_limit_price, tick_size)
-        sl_limit_str = f"{sl_limit_price:.{price_precision}f}"
+            sl_params = {
+                "symbol": symbol,
+                "side": sl_side,
+                "positionSide": "BOTH",  # Required for hedge mode compatibility
+                "algoType": "CONDITIONAL",  # Conditional algo order
+                "type": "STOP",  # STOP order (becomes STOP_LIMIT for algo orders)
+                "triggerPrice": sl_price_str,  # Trigger price
+                "price": sl_limit_str,  # Limit price (0.5% buffer beyond trigger)
+                "quantity": quantity_str,
+                "timeInForce": "GTC",  # Explicitly set time in force
+                "workingType": "MARK_PRICE",
+            }
+            sl_params = self._sign_params(sl_params)
 
-        sl_params = {
-            "symbol": symbol,
-            "side": sl_side,
-            "positionSide": "BOTH",  # Required for hedge mode compatibility
-            "algoType": "CONDITIONAL",  # Conditional algo order
-            "type": "STOP",  # STOP order (becomes STOP_LIMIT for algo orders)
-            "triggerPrice": sl_price_str,  # Trigger price
-            "price": sl_limit_str,  # Limit price (0.5% buffer beyond trigger)
-            "quantity": quantity_str,
-            "timeInForce": "GTC",  # Explicitly set time in force
-            "workingType": "MARK_PRICE",
-        }
-        sl_params = self._sign_params(sl_params)
+            # CRITICAL: Attempt SL order with retries and detailed error logging
+            sl_success = False
+            sl_error = None
+            max_retries = 3
 
-        # CRITICAL: Attempt SL order with retries and detailed error logging
-        sl_success = False
-        sl_error = None
-        max_retries = 3
-
-        for attempt in range(1, max_retries + 1):
-            try:
-                resp = self.client.post(
-                    f"{config.BINANCE_BASE_URL}/fapi/v1/algoOrder",  # Algo order endpoint
-                    params=sl_params,
-                    headers=self._headers()
-                )
-                resp.raise_for_status()
-                sl_order = resp.json()
-                algo_id = sl_order.get("algoId")
-                log(f"SL STOP_LIMIT algo order placed: {symbol} trigger={sl_price_str} limit={sl_limit_str} (algoId: {algo_id})")
-                sl_success = True
-                break  # Success - exit retry loop
-            except httpx.HTTPStatusError as e:
-                # Parse Binance error
+            for attempt in range(1, max_retries + 1):
                 try:
-                    error_data = e.response.json()
-                    error_code = error_data.get('code')
-                    error_msg = error_data.get('msg', '')
+                    resp = self.client.post(
+                        f"{config.BINANCE_BASE_URL}/fapi/v1/algoOrder",  # Algo order endpoint
+                        params=sl_params,
+                        headers=self._headers()
+                    )
+                    resp.raise_for_status()
+                    sl_order = resp.json()
+                    algo_id = sl_order.get("algoId")
+                    log(f"SL STOP_LIMIT algo order placed: {symbol} trigger={sl_price_str} limit={sl_limit_str} (algoId: {algo_id})")
+                    sl_success = True
+                    break  # Success - exit retry loop
+                except httpx.HTTPStatusError as e:
+                    # Parse Binance error
+                    try:
+                        error_data = e.response.json()
+                        error_code = error_data.get('code')
+                        error_msg = error_data.get('msg', '')
 
-                    log(f"SL algo order FAILED (attempt {attempt}/{max_retries}): Binance error {error_code}: {error_msg}", "error")
-                    log(f"SL params: triggerPrice={sl_price_str}, limit={sl_limit_str}, quantity={quantity_str}, side={sl_side}", "error")
-                    sl_error = f"Binance error {error_code}: {error_msg}"
+                        log(f"SL algo order FAILED (attempt {attempt}/{max_retries}): Binance error {error_code}: {error_msg}", "error")
+                        log(f"SL params: triggerPrice={sl_price_str}, limit={sl_limit_str}, quantity={quantity_str}, side={sl_side}", "error")
+                        sl_error = f"Binance error {error_code}: {error_msg}"
 
-                    # Wait before retry (unless last attempt)
+                        # Wait before retry (unless last attempt)
+                        if attempt < max_retries:
+                            import time
+                            time.sleep(1)
+
+                    except ValueError:
+                        # Failed to parse JSON response
+                        log(f"SL algo order failed - Response: {e.response.text}", "error")
+                        sl_error = f"HTTP error: {e.response.text}"
+                        if attempt < max_retries:
+                            import time
+                            time.sleep(1)
+                except Exception as e:
+                    log(f"SL algo order failed - Unexpected error: {e}", "error")
+                    sl_error = f"Unexpected error: {str(e)}"
                     if attempt < max_retries:
                         import time
                         time.sleep(1)
-
-                except ValueError:
-                    # Failed to parse JSON response
-                    log(f"SL algo order failed - Response: {e.response.text}", "error")
-                    sl_error = f"HTTP error: {e.response.text}"
-                    if attempt < max_retries:
-                        import time
-                        time.sleep(1)
-            except Exception as e:
-                log(f"SL algo order failed - Unexpected error: {e}", "error")
-                sl_error = f"Unexpected error: {str(e)}"
-                if attempt < max_retries:
-                    import time
-                    time.sleep(1)
 
         # FINAL CHECK: Raise exception if either TP or SL failed
         if not tp_success or not sl_success:
