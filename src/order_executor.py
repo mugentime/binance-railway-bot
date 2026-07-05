@@ -361,11 +361,40 @@ class OrderExecutor:
             avg_price = float(order.get('avgPrice', 0))
             order_status = order.get('status', '')
 
-        if executed_qty == 0 or avg_price == 0:
-            log(f"MARKET order FAILED to fill: {symbol} {side} | executedQty={executed_qty} avgPrice={avg_price}", "error")
+        # Validate order execution
+        # Priority 1: Check if order actually filled
+        if executed_qty == 0:
+            log(f"MARKET order FAILED to fill: {symbol} {side} | executedQty={executed_qty}", "error")
             log(f"Order status: {order_status}", "error")
             log(f"Order response: {order}", "error")
-            raise Exception(f"Market order did not execute (qty={executed_qty}, price={avg_price}, status={order_status})")
+            raise Exception(f"Market order did not execute (qty={executed_qty}, status={order_status})")
+
+        # Priority 2: If avgPrice is 0 but order is FILLED, query again to get avgPrice
+        if avg_price == 0 and order_status == 'FILLED':
+            log(f"avgPrice not in response, querying order to get avgPrice...")
+            import time
+            time.sleep(0.5)  # Brief wait for Binance to process
+
+            query_params = {"symbol": symbol, "orderId": order['orderId']}
+            query_params = self._sign_params(query_params)
+            query_resp = self.client.get(
+                f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                params=query_params,
+                headers=self._headers()
+            )
+            query_resp.raise_for_status()
+            order = query_resp.json()
+            avg_price = float(order.get('avgPrice', 0))
+
+            # If still 0, get from position (last resort)
+            if avg_price == 0:
+                log(f"avgPrice still 0 after query, getting from position...")
+                positions = self.get_all_open_positions()
+                for pos in positions:
+                    if pos['symbol'] == symbol:
+                        avg_price = float(pos['entryPrice'])
+                        log(f"Got avgPrice from position: {avg_price}")
+                        break
 
         log(f"MARKET order filled: {symbol} {side} @ {avg_price} | Executed qty={executed_qty}")
 
