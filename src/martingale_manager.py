@@ -218,20 +218,18 @@ class MartingaleManager:
             f"PnL={format_usd(net_pnl)} | Cumulative chain PnL={format_usd(cumulative_pnl)}")
         log(f"MAE: {self.max_adverse_excursion_pct:.2f}% (candle {self.mae_candle} of {total_candles})")
 
-        # WIN: Reduce level by 1 (user requirement: faster chain recovery)
-        if self.level > 0:
-            log(f"WIN: Level reduced {self.level} → {self.level - 1} | Cumulative chain PnL={format_usd(cumulative_pnl)}")
-            self.level -= 1
-        else:
-            log(f"WIN at Level 0: Chain continues | Cumulative chain PnL={format_usd(cumulative_pnl)}")
-
-        # Reset chain only if ENTIRE CHAIN is now profitable
+        # WIN: Only reduce level if ENTIRE CHAIN is now profitable
+        # This ensures position sizing continues until full recovery
         if cumulative_pnl > 0:
             log(f"CHAIN PROFITABLE: {format_usd(cumulative_pnl)} | Resetting chain")
             self.level = 0
             self.chain_start_balance = 0.0
             self.chain_start_time = 0.0  # Reset chain timer
             self.chain_pnl_history = []  # Clear chain history
+        else:
+            # Chain still has accumulated loss - maintain current level for next position
+            log(f"WIN but chain still negative: {format_usd(cumulative_pnl)} | "
+                f"Level stays at {self.level} to ensure recovery on next position")
 
         self._clear_position()
 
