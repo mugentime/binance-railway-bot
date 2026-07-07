@@ -3,6 +3,8 @@ Martingale Signal Scanner - Main Loop
 Orchestrator - the main entry point
 """
 import asyncio
+import os
+import subprocess
 import time
 import math
 from datetime import datetime, timedelta, timezone
@@ -18,6 +20,26 @@ import httpx
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
+def get_running_commit() -> str:
+    """Identify the exact code version this process is running.
+
+    Railway injects RAILWAY_GIT_COMMIT_SHA at deploy time; fall back to a
+    local git lookup for non-Railway runs. Without this, a code fix can be
+    pushed while the live process keeps running the old commit with no way
+    to tell from the logs.
+    """
+    sha = os.environ.get("RAILWAY_GIT_COMMIT_SHA")
+    if sha:
+        return sha[:12]
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, timeout=5
+        ).decode().strip()[:12]
+    except Exception:
+        return "unknown"
+
+RUNNING_COMMIT = get_running_commit()
+
 class HealthCheckHandler(BaseHTTPRequestHandler):
     """Simple health check endpoint for Railway"""
     def do_GET(self):
@@ -25,7 +47,7 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
-            self.wfile.write(b'OK')
+            self.wfile.write(f"OK commit={RUNNING_COMMIT}".encode())
         else:
             self.send_response(404)
             self.end_headers()
@@ -302,6 +324,7 @@ async def main_loop():
     """Main trading loop"""
     log("="*80)
     log("MARTINGALE SIGNAL SCANNER - STARTING")
+    log(f"RUNNING COMMIT: {RUNNING_COMMIT}")
     log("="*80)
     log(f"Base size: {config.BASE_SIZE_PCT*100:.1f}% of balance | Leverage: {config.LEVERAGE}x | Max level: {config.MAX_LEVEL}")
     log(f"TP: {config.TP_PCT*100:.2f}% | SL: {config.SL_PCT*100:.2f}%")
