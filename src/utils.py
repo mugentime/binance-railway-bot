@@ -3,11 +3,17 @@ Martingale Signal Scanner - Utility Functions
 Logging, state persistence, helper functions
 """
 import logging
+import os
 import time
 import json
 import signal
 import sys
 from datetime import datetime
+
+# Persist state on the Railway volume when mounted (STATE_DIR env var), so
+# level/chain_pnl_history survive redeploys instead of resetting to defaults
+# while an in-progress martingale chain is still open on the exchange.
+DEFAULT_STATE_PATH = os.path.join(os.environ.get("STATE_DIR", "."), "state.json")
 
 # Configure logging
 logging.basicConfig(
@@ -24,14 +30,16 @@ def log(msg, level="info"):
     """Log a message at specified level"""
     getattr(logger, level)(msg)
 
-def save_state(manager, filepath="state.json"):
+def save_state(manager, filepath=None):
     """
     Save manager state to JSON file with atomic write and backup
     This prevents corruption if write fails or bot crashes during save
     """
-    import os
     import shutil
     import tempfile
+
+    if filepath is None:
+        filepath = DEFAULT_STATE_PATH
 
     state = {
         "level": manager.level,
@@ -49,6 +57,8 @@ def save_state(manager, filepath="state.json"):
         "consecutive_losses": manager.consecutive_losses,
         "regime_flipped": manager.regime_flipped,
         "chain_pnl_history": manager.chain_pnl_history,
+        "chain_start_balance": manager.chain_start_balance,
+        "chain_start_time": manager.chain_start_time,
         "saved_at": datetime.utcnow().isoformat(),
     }
 
@@ -82,8 +92,10 @@ def save_state(manager, filepath="state.json"):
             log(f"State restored from backup after save failure", "warning")
         raise Exception(f"Critical: State save failed - {e}")
 
-def load_state(filepath="state.json"):
+def load_state(filepath=None):
     """Load state from JSON file"""
+    if filepath is None:
+        filepath = DEFAULT_STATE_PATH
     try:
         with open(filepath) as f:
             state = json.load(f)

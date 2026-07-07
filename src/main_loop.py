@@ -373,8 +373,11 @@ async def main_loop():
         manager.consecutive_losses = saved_state.get("consecutive_losses", 0)
         manager.regime_flipped = saved_state.get("regime_flipped", False)
         manager.chain_pnl_history = saved_state.get("chain_pnl_history", [])
+        manager.chain_start_balance = saved_state.get("chain_start_balance", 0.0)
+        manager.chain_start_time = saved_state.get("chain_start_time", 0.0)
 
-        log(f"State restored: level={manager.level}, in_position={manager.in_position}")
+        log(f"State restored: level={manager.level}, in_position={manager.in_position}, "
+            f"chain_pnl_history={manager.chain_pnl_history}")
 
         if manager.level > config.MAX_LEVEL:
             log(f"WARNING: Loaded level={manager.level} exceeds MAX_LEVEL={config.MAX_LEVEL}. Resetting to 0.", "warning")
