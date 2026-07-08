@@ -99,15 +99,15 @@ class MonitoringDaemon:
         except Exception as e:
             log(f"Error checking TP orders for {symbol}: {e}", "error")
 
-        # Check SL (conditional algo order)
+        # Check SL (regular STOP_MARKET reduceOnly order)
         has_sl = False
         sl_price = None
         try:
-            algo_orders = self.executor.get_algo_open_orders(symbol)
-            for order in algo_orders:
-                if order.get('algoType') == 'CONDITIONAL':
+            orders = self.executor.get_open_orders(symbol)
+            for order in orders:
+                if order.get('type') == 'STOP_MARKET' and order.get('reduceOnly'):
                     has_sl = True
-                    sl_price = float(order.get('triggerPrice', order.get('stopPrice', 0)))
+                    sl_price = float(order.get('stopPrice', 0))
                     break
         except Exception as e:
             log(f"Error checking SL orders for {symbol}: {e}", "error")

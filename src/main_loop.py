@@ -578,10 +578,10 @@ async def main_loop():
                         if not sl_ok:
                             log(f"WARNING: SL verification failed for {manager.current_symbol}", "warning")
 
-                    # Break-even protection: after 36 candles (3h), close if negative
-                    # 30-day data: 72% of 10%+ moves take >3h to peak.
-                    # Old threshold (12 candles = 1h) was closing 94% of potential winners.
-                    if candles_held >= 36 and unrealized_pnl < 0:
+                    # Break-even protection: after BREAKEVEN_HOLD_CANDLES (3h), close if still negative.
+                    # 30-day data: 72% of 10%+ moves take >3h to peak, so this must not fire earlier
+                    # than that or it decapitates trades before the mean-reversion thesis can play out.
+                    if candles_held >= config.BREAKEVEN_HOLD_CANDLES and unrealized_pnl < 0:
                         log(f"BREAK-EVEN PROTECTION: {candles_held} candles held, PnL negative "
                             f"({format_usd(unrealized_pnl)}) → closing at market", "warning")
 

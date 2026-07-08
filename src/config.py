@@ -37,7 +37,11 @@ COOLDOWN_AFTER_MAX_LOSS = 3600  # 1 hour cooldown after blowing a full chain
 MAX_CHAIN_DURATION_HOURS = 48   # Force chain reset after 2 days (prevents 8-day chains)
 MAX_POSITION_PCT = 0.25       # EMERGENCY BRAKE: Never risk more than 25% of account in one position
 DAILY_LOSS_LIMIT_USD = 1000.0   # Effectively disabled - high limit
-MAX_HOLD_CANDLES = 54         # Maximum candles to hold position before timeout close (2.25 hours at 2.5m)
+MAX_HOLD_CANDLES = 120        # Maximum candles to hold position before timeout close (5.0 hours at 2.5m scan interval)
+BREAKEVEN_HOLD_CANDLES = 72   # Close early if still negative after this many candles (3.0 hours at 2.5m scan interval)
+                               # NOTE: candles_held counts SCAN_INTERVAL_SECS (2.5m) cycles, NOT 5m klines.
+                               # 30-day backtest: 72% of 10%+ moves take >3h to peak, so this must stay
+                               # comfortably below MAX_HOLD_CANDLES or winners get cut before they mature.
 
 # Scanner parameters
 SCAN_INTERVAL_SECS = 150      # 2.5 minutes (150 seconds)
@@ -48,7 +52,6 @@ MIN_QUOTE_VOLUME_24H = 2_000_000  # $2M USDT 24h minimum (filtering pipeline)
 LOW_VOLUME_THRESHOLD = 500_000    # $500k - if 24h volume below this, widen SL by 1.5x
 ORDERBOOK_DEPTH_MIN_USD = 1000    # Minimum $1k orderbook depth within 1% of mid price
 ORDERBOOK_DEPTH_PCT = 0.01        # Check depth within 1% of mid price
-SL_LIMIT_BUFFER_PCT = 0.005       # 0.5% buffer below trigger for STOP_LIMIT orders
 MAX_SPREAD_PCT = 0.05            # Reject pairs with spread > 0.05%
 MAX_SLIPPAGE_PCT = 0.1           # Reject pairs with estimated slippage > 0.1%
 MIN_ATR_PCT = 0.3                # Minimum ATR% (volatility filter) - 0.3% for 1m candles (was 1.5% for 5m)
