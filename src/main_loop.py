@@ -657,16 +657,12 @@ async def main_loop():
                 log("No signals above threshold")
                 continue
 
-            # Get best signal
-            best = signals[0]
-
-            log(f"BEST SIGNAL: {best.symbol} {best.direction} | Score={best.score:.2f} | "
-                f"RSI={best.rsi:.1f} BB={best.bb_pct_b:.2f} Z={best.zscore:.2f}")
-
             # Update balance for dynamic position sizing
             # Lock in balance at chain start (level 0), but also fetch if balance is missing
             if manager.level == 0 or manager.chain_start_balance == 0.0:
                 manager.update_chain_start_balance()
+
+            size_usd = manager.position_size_usd()
 
             # Enter position
             try:
@@ -675,28 +671,44 @@ async def main_loop():
                 all_open = executor.get_all_open_positions()
                 if all_open:
                     symbols = [f"{p['symbol']} ({p['positionAmt']})" for p in all_open]
-                    log(f"BLOCKED: Cannot enter {best.symbol} - {len(all_open)} position(s) already open: {', '.join(symbols)}", "error")
+                    log(f"BLOCKED: Cannot enter - {len(all_open)} position(s) already open: {', '.join(symbols)}", "error")
                     log(f"This should have been caught by state verification - skipping entry this cycle", "warning")
                     # Continue to next cycle instead of stopping bot
                     continue
 
-                # Set leverage and margin type
-                leverage_ok = executor.set_leverage(best.symbol, config.LEVERAGE)
-                if not leverage_ok:
-                    log(f"Skipping {best.symbol}: Leverage {config.LEVERAGE}x not supported", "warning")
+                # Try candidates in ranked order until one clears leverage/margin/depth checks.
+                # Previously only signals[0] was tried, so one unsupported symbol (e.g. leverage
+                # not offered) burned the whole cycle even when lower-ranked signals were tradeable.
+                MAX_CANDIDATES_TO_TRY = 5
+                best = None
+                for candidate in signals[:MAX_CANDIDATES_TO_TRY]:
+                    log(f"TRYING SIGNAL: {candidate.symbol} {candidate.direction} | Score={candidate.score:.2f} | "
+                        f"RSI={candidate.rsi:.1f} BB={candidate.bb_pct_b:.2f} Z={candidate.zscore:.2f}")
+
+                    leverage_ok = executor.set_leverage(candidate.symbol, config.LEVERAGE)
+                    if not leverage_ok:
+                        log(f"Skipping {candidate.symbol}: Leverage {config.LEVERAGE}x not supported, trying next signal", "warning")
+                        continue
+
+                    try:
+                        executor.set_margin_type(candidate.symbol, "CROSSED")
+                    except Exception as margin_error:
+                        log(f"Skipping {candidate.symbol}: Failed to set margin type - {margin_error}, trying next signal", "warning")
+                        continue
+
+                    if not executor.check_orderbook_depth(candidate.symbol, size_usd):
+                        log(f"Skipping {candidate.symbol}: Insufficient orderbook depth, trying next signal", "warning")
+                        continue
+
+                    best = candidate
+                    break
+
+                if best is None:
+                    log(f"No viable signal after trying {min(MAX_CANDIDATES_TO_TRY, len(signals))} candidates this cycle")
                     continue
 
-                try:
-                    executor.set_margin_type(best.symbol, "CROSSED")
-                except Exception as margin_error:
-                    log(f"Skipping {best.symbol}: Failed to set margin type - {margin_error}", "warning")
-                    continue
-
-                # ORDERBOOK DEPTH CHECK: Verify sufficient liquidity before entry
-                size_usd = manager.position_size_usd()
-                if not executor.check_orderbook_depth(best.symbol, size_usd):
-                    log(f"Skipping {best.symbol}: Insufficient orderbook depth", "warning")
-                    continue
+                log(f"BEST SIGNAL: {best.symbol} {best.direction} | Score={best.score:.2f} | "
+                    f"RSI={best.rsi:.1f} BB={best.bb_pct_b:.2f} Z={best.zscore:.2f}")
 
                 # Place market entry
                 entry_order = executor.place_market_order(

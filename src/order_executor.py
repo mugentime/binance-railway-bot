@@ -535,6 +535,48 @@ class OrderExecutor:
                         import time
                         time.sleep(1)
 
+        # RESCUE ATTEMPT: If SL still failed after retries, the market likely gapped past
+        # the naive stop level between entry fill and SL placement (thin liquidity on these
+        # micro-cap pairs). Retry once more with a stop derived from the LIVE mark price
+        # instead of the stale entry-based price, so it can't already be crossed.
+        if not sl_success:
+            log(f"SL still unprotected after {max_retries} attempts - retrying with a wider stop "
+                f"from the current mark price", "warning")
+            try:
+                position = self.get_position(symbol)
+                live_mark_price = float(position["markPrice"]) if position else None
+            except Exception as e:
+                live_mark_price = None
+                log(f"Could not fetch live mark price for widened SL retry: {e}", "error")
+
+            if live_mark_price:
+                RESCUE_BUFFER_PCT = 0.01  # extra clearance past current mark price
+                if sl_side == "SELL":  # LONG position SL: triggers when price falls below stopPrice
+                    rescue_price = min(sl_price_rounded, live_mark_price * (1 - RESCUE_BUFFER_PCT))
+                else:  # SHORT position SL: triggers when price rises above stopPrice
+                    rescue_price = max(sl_price_rounded, live_mark_price * (1 + RESCUE_BUFFER_PCT))
+
+                rescue_price_rounded = self._round_to_tick_size(rescue_price, tick_size)
+                rescue_price_str = f"{rescue_price_rounded:.{price_precision}f}"
+
+                sl_params["stopPrice"] = rescue_price_str
+                sl_params = self._sign_params(sl_params)
+
+                try:
+                    resp = self.client.post(
+                        f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                        params=sl_params,
+                        headers=self._headers()
+                    )
+                    resp.raise_for_status()
+                    rescue_order = resp.json()
+                    log(f"SL STOP_MARKET placed on rescue attempt: {symbol} trigger={rescue_price_str} "
+                        f"(orderId: {rescue_order.get('orderId')})", "warning")
+                    sl_success = True
+                    sl_error = None
+                except Exception as e:
+                    log(f"Rescue SL attempt also failed: {e}", "error")
+
         # FINAL CHECK: Raise exception if either TP or SL failed
         if not tp_success or not sl_success:
             errors = []
@@ -985,6 +1027,58 @@ class OrderExecutor:
             log(f"ERROR: Failed to verify/place SL for {symbol}: {e}", "error")
             import traceback
             traceback.print_exc()
+
+            # RESCUE ATTEMPT: same thin-liquidity-gap recovery as place_tp_sl_orders -
+            # retry once with a stop derived from the live mark price instead of the
+            # stale entry-based price, so it can't already be crossed.
+            if not sl_ok and config.SL_PCT < 1.0:
+                try:
+                    tick_size = self.symbol_info_cache[symbol]["tickSize"]
+                    price_precision = self.symbol_info_cache[symbol]["pricePrecision"]
+                    step_size = self.symbol_info_cache[symbol]["stepSize"]
+                    qty_precision = self.symbol_info_cache[symbol]["quantityPrecision"]
+                    quantity_rounded = self._round_to_step_size(quantity, step_size)
+                    quantity_str = f"{quantity_rounded:.{qty_precision}f}"
+                    sl_side = "SELL" if direction == "LONG" else "BUY"
+
+                    position = self.get_position(symbol)
+                    live_mark_price = float(position["markPrice"]) if position else None
+
+                    if live_mark_price:
+                        RESCUE_BUFFER_PCT = 0.01
+                        base_sl = self._round_to_tick_size(sl_price, tick_size)
+                        if sl_side == "SELL":
+                            rescue_price = min(base_sl, live_mark_price * (1 - RESCUE_BUFFER_PCT))
+                        else:
+                            rescue_price = max(base_sl, live_mark_price * (1 + RESCUE_BUFFER_PCT))
+
+                        rescue_price_rounded = self._round_to_tick_size(rescue_price, tick_size)
+                        rescue_price_str = f"{rescue_price_rounded:.{price_precision}f}"
+
+                        rescue_params = {
+                            "symbol": symbol,
+                            "side": sl_side,
+                            "positionSide": "BOTH",
+                            "type": "STOP_MARKET",
+                            "stopPrice": rescue_price_str,
+                            "quantity": quantity_str,
+                            "reduceOnly": "true",
+                            "workingType": "MARK_PRICE",
+                        }
+                        rescue_params = self._sign_params(rescue_params)
+
+                        resp = self.client.post(
+                            f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                            params=rescue_params,
+                            headers=self._headers()
+                        )
+                        resp.raise_for_status()
+                        rescue_order = resp.json()
+                        log(f"SL STOP_MARKET placed on rescue attempt: {symbol} trigger={rescue_price_str} "
+                            f"(orderId: {rescue_order.get('orderId')})", "warning")
+                        sl_ok = True
+                except Exception as rescue_e:
+                    log(f"Rescue SL attempt also failed for {symbol}: {rescue_e}", "error")
 
         return (tp_ok, sl_ok)
 
