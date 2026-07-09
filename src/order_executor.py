@@ -471,16 +471,21 @@ class OrderExecutor:
             sl_success = True  # Mark as success since it's intentionally disabled
             # Don't return early - need to check TP success at the end
         else:
-            # STOP LOSS - STOP_MARKET (guaranteed fill on trigger, no resting limit price
-            # that can be skipped over during a fast gap on thin books)
+            # STOP LOSS - CONDITIONAL algo order, STOP_MARKET type (guaranteed fill on
+            # trigger, no resting limit price that can be skipped over during a fast gap
+            # on thin books). Binance migrated all conditional order types (STOP_MARKET,
+            # TAKE_PROFIT_MARKET, STOP, TAKE_PROFIT, TRAILING_STOP_MARKET) to the Algo
+            # Order service on 2025-12-09 - the plain /fapi/v1/order endpoint now rejects
+            # them with -4120 "Please use the Algo Order API endpoints instead."
             sl_side = "SELL" if direction == "LONG" else "BUY"
 
             sl_params = {
                 "symbol": symbol,
                 "side": sl_side,
                 "positionSide": "BOTH",  # Required for hedge mode compatibility
+                "algoType": "CONDITIONAL",
                 "type": "STOP_MARKET",
-                "stopPrice": sl_price_str,  # Trigger price
+                "triggerPrice": sl_price_str,
                 "quantity": quantity_str,
                 "reduceOnly": "true",
                 "workingType": "MARK_PRICE",
@@ -495,14 +500,14 @@ class OrderExecutor:
             for attempt in range(1, max_retries + 1):
                 try:
                     resp = self.client.post(
-                        f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                        f"{config.BINANCE_BASE_URL}/fapi/v1/algoOrder",
                         params=sl_params,
                         headers=self._headers()
                     )
                     resp.raise_for_status()
                     sl_order = resp.json()
-                    order_id = sl_order.get("orderId")
-                    log(f"SL STOP_MARKET order placed: {symbol} trigger={sl_price_str} (orderId: {order_id})")
+                    algo_id = sl_order.get("algoId")
+                    log(f"SL STOP_MARKET algo order placed: {symbol} trigger={sl_price_str} (algoId: {algo_id})")
                     sl_success = True
                     break  # Success - exit retry loop
                 except httpx.HTTPStatusError as e:
@@ -513,7 +518,7 @@ class OrderExecutor:
                         error_msg = error_data.get('msg', '')
 
                         log(f"SL order FAILED (attempt {attempt}/{max_retries}): Binance error {error_code}: {error_msg}", "error")
-                        log(f"SL params: stopPrice={sl_price_str}, quantity={quantity_str}, side={sl_side}", "error")
+                        log(f"SL params: triggerPrice={sl_price_str}, quantity={quantity_str}, side={sl_side}", "error")
                         sl_error = f"Binance error {error_code}: {error_msg}"
 
                         # Wait before retry (unless last attempt)
@@ -535,10 +540,10 @@ class OrderExecutor:
                         import time
                         time.sleep(1)
 
-        # RESCUE ATTEMPT: If SL still failed after retries, the market likely gapped past
-        # the naive stop level between entry fill and SL placement (thin liquidity on these
-        # micro-cap pairs). Retry once more with a stop derived from the LIVE mark price
-        # instead of the stale entry-based price, so it can't already be crossed.
+        # RESCUE ATTEMPT: If SL still failed after retries (e.g. a genuine thin-liquidity
+        # gap already carried price past the entry-based stop level), retry once more with
+        # a stop derived from the LIVE mark price instead of the stale entry-based price,
+        # so it can't already be crossed.
         if not sl_success:
             log(f"SL still unprotected after {max_retries} attempts - retrying with a wider stop "
                 f"from the current mark price", "warning")
@@ -559,19 +564,19 @@ class OrderExecutor:
                 rescue_price_rounded = self._round_to_tick_size(rescue_price, tick_size)
                 rescue_price_str = f"{rescue_price_rounded:.{price_precision}f}"
 
-                sl_params["stopPrice"] = rescue_price_str
+                sl_params["triggerPrice"] = rescue_price_str
                 sl_params = self._sign_params(sl_params)
 
                 try:
                     resp = self.client.post(
-                        f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                        f"{config.BINANCE_BASE_URL}/fapi/v1/algoOrder",
                         params=sl_params,
                         headers=self._headers()
                     )
                     resp.raise_for_status()
                     rescue_order = resp.json()
                     log(f"SL STOP_MARKET placed on rescue attempt: {symbol} trigger={rescue_price_str} "
-                        f"(orderId: {rescue_order.get('orderId')})", "warning")
+                        f"(algoId: {rescue_order.get('algoId')})", "warning")
                     sl_success = True
                     sl_error = None
                 except Exception as e:
@@ -825,16 +830,17 @@ class OrderExecutor:
         Returns: True if SL exists or was successfully placed, False otherwise
         """
         try:
-            # SL orders are placed as regular STOP_MARKET reduceOnly orders
-            regular_orders = self.get_open_orders(symbol)
+            # SL orders are placed as CONDITIONAL algo orders (Binance migrated all
+            # conditional order types off /fapi/v1/order to the Algo Order service)
+            algo_orders = self.get_algo_open_orders(symbol)
 
-            # Check for existing STOP_MARKET order (SL)
+            # Check for existing STOP_MARKET conditional order (SL)
             has_sl = False
 
-            for order in regular_orders:
-                if order.get('type') == 'STOP_MARKET' and order.get('reduceOnly'):
+            for order in algo_orders:
+                if order.get('algoType') == 'CONDITIONAL' and order.get('orderType') == 'STOP_MARKET':
                     has_sl = True
-                    log(f"✓ SL order exists: {symbol} @ {order.get('stopPrice', 'N/A')} (orderId: {order.get('orderId', 'N/A')})")
+                    log(f"✓ SL order exists: {symbol} @ {order.get('triggerPrice', 'N/A')} (algoId: {order.get('algoId', 'N/A')})")
                     break
 
             if has_sl:
@@ -870,8 +876,9 @@ class OrderExecutor:
                 "symbol": symbol,
                 "side": sl_side,
                 "positionSide": "BOTH",  # Required for hedge mode compatibility
+                "algoType": "CONDITIONAL",
                 "type": "STOP_MARKET",
-                "stopPrice": sl_price_str,
+                "triggerPrice": sl_price_str,
                 "quantity": quantity_str,
                 "reduceOnly": "true",
                 "workingType": "MARK_PRICE",
@@ -879,15 +886,15 @@ class OrderExecutor:
             sl_params = self._sign_params(sl_params)
 
             resp = self.client.post(
-                f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                f"{config.BINANCE_BASE_URL}/fapi/v1/algoOrder",
                 params=sl_params,
                 headers=self._headers()
             )
             resp.raise_for_status()
             sl_order = resp.json()
-            order_id = sl_order.get("orderId")
+            algo_id = sl_order.get("algoId")
 
-            log(f"OK: MISSING SL RECOVERED: {symbol} trigger={sl_price_str} (orderId: {order_id})", "warning")
+            log(f"OK: MISSING SL RECOVERED: {symbol} trigger={sl_price_str} (algoId: {algo_id})", "warning")
             return True
 
         except Exception as e:
@@ -963,14 +970,14 @@ class OrderExecutor:
             traceback.print_exc()
 
         try:
-            # CHECK SL ORDER (regular STOP_MARKET reduceOnly order)
+            # CHECK SL ORDER (CONDITIONAL algo order, STOP_MARKET type)
             log(f"Checking SL order for {symbol}...")
-            regular_orders = self.get_open_orders(symbol)
+            algo_orders = self.get_algo_open_orders(symbol)
 
-            for order in regular_orders:
-                if order.get('type') == 'STOP_MARKET' and order.get('reduceOnly'):
+            for order in algo_orders:
+                if order.get('algoType') == 'CONDITIONAL' and order.get('orderType') == 'STOP_MARKET':
                     sl_ok = True
-                    log(f"✓ SL order exists: {symbol} @ {order.get('stopPrice', 'N/A')} (orderId: {order.get('orderId', 'N/A')})")
+                    log(f"✓ SL order exists: {symbol} @ {order.get('triggerPrice', 'N/A')} (algoId: {order.get('algoId', 'N/A')})")
                     break
 
             if not sl_ok:
@@ -1003,8 +1010,9 @@ class OrderExecutor:
                     "symbol": symbol,
                     "side": sl_side,
                     "positionSide": "BOTH",
+                    "algoType": "CONDITIONAL",
                     "type": "STOP_MARKET",
-                    "stopPrice": sl_price_str,
+                    "triggerPrice": sl_price_str,
                     "quantity": quantity_str,
                     "reduceOnly": "true",
                     "workingType": "MARK_PRICE",
@@ -1012,15 +1020,15 @@ class OrderExecutor:
                 sl_params = self._sign_params(sl_params)
 
                 resp = self.client.post(
-                    f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                    f"{config.BINANCE_BASE_URL}/fapi/v1/algoOrder",
                     params=sl_params,
                     headers=self._headers()
                 )
                 resp.raise_for_status()
                 sl_order = resp.json()
-                order_id = sl_order.get("orderId")
+                algo_id = sl_order.get("algoId")
 
-                log(f"OK: MISSING SL RECOVERED: {symbol} trigger={sl_price_str} (orderId: {order_id})", "warning")
+                log(f"OK: MISSING SL RECOVERED: {symbol} trigger={sl_price_str} (algoId: {algo_id})", "warning")
                 sl_ok = True
 
         except Exception as e:
@@ -1028,9 +1036,9 @@ class OrderExecutor:
             import traceback
             traceback.print_exc()
 
-            # RESCUE ATTEMPT: same thin-liquidity-gap recovery as place_tp_sl_orders -
-            # retry once with a stop derived from the live mark price instead of the
-            # stale entry-based price, so it can't already be crossed.
+            # RESCUE ATTEMPT: retry once with a stop derived from the live mark price
+            # instead of the stale entry-based price, so it can't already be crossed
+            # (covers a genuine thin-liquidity gap between entry fill and SL placement).
             if not sl_ok and config.SL_PCT < 1.0:
                 try:
                     tick_size = self.symbol_info_cache[symbol]["tickSize"]
@@ -1059,8 +1067,9 @@ class OrderExecutor:
                             "symbol": symbol,
                             "side": sl_side,
                             "positionSide": "BOTH",
+                            "algoType": "CONDITIONAL",
                             "type": "STOP_MARKET",
-                            "stopPrice": rescue_price_str,
+                            "triggerPrice": rescue_price_str,
                             "quantity": quantity_str,
                             "reduceOnly": "true",
                             "workingType": "MARK_PRICE",
@@ -1068,14 +1077,14 @@ class OrderExecutor:
                         rescue_params = self._sign_params(rescue_params)
 
                         resp = self.client.post(
-                            f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                            f"{config.BINANCE_BASE_URL}/fapi/v1/algoOrder",
                             params=rescue_params,
                             headers=self._headers()
                         )
                         resp.raise_for_status()
                         rescue_order = resp.json()
                         log(f"SL STOP_MARKET placed on rescue attempt: {symbol} trigger={rescue_price_str} "
-                            f"(orderId: {rescue_order.get('orderId')})", "warning")
+                            f"(algoId: {rescue_order.get('algoId')})", "warning")
                         sl_ok = True
                 except Exception as rescue_e:
                     log(f"Rescue SL attempt also failed for {symbol}: {rescue_e}", "error")

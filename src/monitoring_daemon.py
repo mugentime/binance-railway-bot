@@ -99,15 +99,16 @@ class MonitoringDaemon:
         except Exception as e:
             log(f"Error checking TP orders for {symbol}: {e}", "error")
 
-        # Check SL (regular STOP_MARKET reduceOnly order)
+        # Check SL (CONDITIONAL algo order, STOP_MARKET type - Binance migrated all
+        # conditional order types off /fapi/v1/order to the Algo Order service)
         has_sl = False
         sl_price = None
         try:
-            orders = self.executor.get_open_orders(symbol)
-            for order in orders:
-                if order.get('type') == 'STOP_MARKET' and order.get('reduceOnly'):
+            algo_orders = self.executor.get_algo_open_orders(symbol)
+            for order in algo_orders:
+                if order.get('algoType') == 'CONDITIONAL' and order.get('orderType') == 'STOP_MARKET':
                     has_sl = True
-                    sl_price = float(order.get('stopPrice', 0))
+                    sl_price = float(order.get('triggerPrice', 0))
                     break
         except Exception as e:
             log(f"Error checking SL orders for {symbol}: {e}", "error")
