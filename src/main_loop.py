@@ -370,6 +370,7 @@ async def main_loop():
         manager.cooldown_blacklist = saved_state.get("cooldown_blacklist", {})
         manager.max_adverse_excursion_pct = saved_state.get("max_adverse_excursion_pct", 0.0)
         manager.mae_candle = saved_state.get("mae_candle", 0)
+        manager.trailing_active = saved_state.get("trailing_active", False)
         manager.consecutive_losses = saved_state.get("consecutive_losses", 0)
         manager.regime_flipped = saved_state.get("regime_flipped", False)
         manager.chain_pnl_history = saved_state.get("chain_pnl_history", [])
@@ -565,6 +566,30 @@ async def main_loop():
 
                     # Overnight kill logic removed - let positions run their normal TP/SL cycle
 
+                    # TRAILING STOP: once the position is in profit past the activation threshold,
+                    # arm Binance's native server-side trailing stop exactly once. Binance then
+                    # trails it tick-by-tick — the 2.5m loop never has to move it (a loop-driven
+                    # trailing stop can't follow price, which is why past attempts failed). The
+                    # +10% TP LIMIT stays in place, so a full run toward +10% is never cut short.
+                    if config.TRAILING_ENABLED and not manager.trailing_active and manager.entry_price:
+                        if manager.current_direction == "LONG":
+                            favorable_pct = (mark_price - manager.entry_price) / manager.entry_price
+                        else:  # SHORT
+                            favorable_pct = (manager.entry_price - mark_price) / manager.entry_price
+
+                        if favorable_pct >= config.TRAILING_ACTIVATION_PCT:
+                            log(f"TRAILING ARM: {manager.current_symbol} is +{favorable_pct*100:.2f}% "
+                                f"in favor (>= {config.TRAILING_ACTIVATION_PCT*100:.2f}% activation) -> "
+                                f"placing native trailing stop (callback {config.TRAILING_CALLBACK_RATE}%)", "warning")
+                            if executor.place_trailing_stop(
+                                symbol=manager.current_symbol,
+                                direction=manager.current_direction,
+                                quantity=manager.entry_quantity,
+                                callback_rate=config.TRAILING_CALLBACK_RATE,
+                            ):
+                                manager.trailing_active = True
+                                save_state(manager)
+
                     # CRITICAL: Verify SL exists every 5 candles (safety check)
                     if candles_held % 5 == 0 and candles_held > 0:
                         log(f"Periodic SL verification check (candle {candles_held})...")
@@ -577,6 +602,15 @@ async def main_loop():
                         )
                         if not sl_ok:
                             log(f"WARNING: SL verification failed for {manager.current_symbol}", "warning")
+
+                        # If we believe a trailing stop is armed but it's gone from the exchange,
+                        # clear the flag so the block above re-arms it next cycle (still in profit).
+                        if config.TRAILING_ENABLED and manager.trailing_active:
+                            if not executor.has_trailing_stop(manager.current_symbol):
+                                log(f"WARNING: trailing stop for {manager.current_symbol} is gone — "
+                                    f"clearing flag to re-arm next cycle", "warning")
+                                manager.trailing_active = False
+                                save_state(manager)
 
                     # Break-even protection: after BREAKEVEN_HOLD_CANDLES (3h), close if still negative.
                     # 30-day data: 72% of 10%+ moves take >3h to peak, so this must not fire earlier

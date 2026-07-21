@@ -25,6 +25,17 @@ MAKER_FEE = 0.0002            # 0.02%
 TP_PCT = 0.10                 # 10.0% gross take profit
 SL_PCT = 0.04                 # 4.0% price-based stop loss (prevents catastrophes)
 
+# Trailing stop — native Binance TRAILING_STOP_MARKET (server-side, follows price tick-by-tick).
+# The 2.5m bot loop can NEVER trail a stop properly, so trailing is offloaded to Binance's engine:
+# the bot arms ONE trailing order the moment a position crosses the activation threshold below,
+# then Binance moves it continuously on its own. The +10% TP LIMIT stays in place, so a full run
+# is never cut short — the trailing only closes on a real callback-sized retrace from the peak.
+# Values are % of PRICE (× LEVERAGE = ROI %).
+TRAILING_ENABLED = True
+TRAILING_ACTIVATION_PCT = 0.012   # arm once price moves +1.2% in favor from entry (≈ +24% ROI at 20x)
+TRAILING_CALLBACK_RATE = 1.0      # Binance callbackRate: close on a 1.0% retrace from the running peak
+                                   # (≈ 20% ROI give-back). Binance hard limits: min 0.1, max 5.
+
 # Strategy: inverted momentum / mean-reversion
 # SHORT on overbought (RSI>65, BB>0.8), LONG on oversold (RSI<35, BB<0.2)
 

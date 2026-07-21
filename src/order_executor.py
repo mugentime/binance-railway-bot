@@ -595,6 +595,86 @@ class OrderExecutor:
             log(f"TP placed: {tp_success} | SL placed: {sl_success}", "error")
             raise Exception(f"Order placement incomplete - {error_msg}")
 
+    def has_trailing_stop(self, symbol: str) -> bool:
+        """Return True if a native TRAILING_STOP_MARKET algo order is already open for symbol."""
+        try:
+            for order in self.get_algo_open_orders(symbol):
+                if order.get('orderType') == 'TRAILING_STOP_MARKET':
+                    return True
+        except Exception as e:
+            log(f"Could not check trailing stop for {symbol}: {e}", "warning")
+        return False
+
+    def place_trailing_stop(self, symbol: str, direction: str, quantity: float,
+                            callback_rate: float) -> bool:
+        """
+        Arm a native Binance TRAILING_STOP_MARKET (server-side trailing) as a reduceOnly algo
+        order. Activation is IMMEDIATE (no activationPrice sent) — the caller MUST only invoke
+        this once the position is already in profit, so the stop locks in gains from the current
+        mark price and then trails by callback_rate as price keeps moving in favor. Binance's
+        matching engine updates the trail tick-by-tick, so the 2.5-minute bot loop never has to
+        move it (this is the whole point — a loop-driven trailing stop can't follow price).
+
+        Uses the Algo Order endpoint because Binance migrated all conditional/trailing order
+        types off /fapi/v1/order on 2025-12-09 (plain endpoint now returns -4120).
+
+        Args:
+            callback_rate: trailing distance as a percent (Binance hard limits: min 0.1, max 5)
+        Returns: True if placed (or already present), False on failure.
+        """
+        # Never stack duplicates
+        if self.has_trailing_stop(symbol):
+            log(f"Trailing stop already active for {symbol} — not re-placing")
+            return True
+
+        # Clamp to Binance's allowed callbackRate range [0.1, 5], 1-decimal precision
+        cr = max(0.1, min(5.0, round(callback_rate, 1)))
+
+        step_size = self.symbol_info_cache[symbol]["stepSize"]
+        qty_precision = self.symbol_info_cache[symbol]["quantityPrecision"]
+        quantity_rounded = self._round_to_step_size(quantity, step_size)
+        quantity_str = f"{quantity_rounded:.{qty_precision}f}"
+
+        # Close side: LONG closes with SELL, SHORT closes with BUY
+        close_side = "SELL" if direction == "LONG" else "BUY"
+
+        params = {
+            "symbol": symbol,
+            "side": close_side,
+            "positionSide": "BOTH",  # one-way mode
+            "algoType": "CONDITIONAL",
+            "type": "TRAILING_STOP_MARKET",
+            "callbackRate": f"{cr}",
+            "quantity": quantity_str,
+            "reduceOnly": "true",
+            "workingType": "MARK_PRICE",
+        }
+        params = self._sign_params(params)
+
+        try:
+            resp = self.client.post(
+                f"{config.BINANCE_BASE_URL}/fapi/v1/algoOrder",
+                params=params,
+                headers=self._headers(),
+            )
+            resp.raise_for_status()
+            order = resp.json()
+            log(f"TRAILING STOP armed: {symbol} {direction} | callbackRate={cr}% | "
+                f"qty={quantity_str} | activation=IMMEDIATE (already in profit) "
+                f"(algoId: {order.get('algoId')})", "warning")
+            return True
+        except httpx.HTTPStatusError as e:
+            try:
+                error_data = e.response.json()
+                log(f"Trailing stop FAILED for {symbol}: Binance error "
+                    f"{error_data.get('code')}: {error_data.get('msg')}", "error")
+            except Exception:
+                log(f"Trailing stop FAILED for {symbol}: {e.response.text}", "error")
+            return False
+        except Exception as e:
+            log(f"Trailing stop FAILED for {symbol}: {e}", "error")
+            return False
+
     def close_position_market(self, symbol: str, direction: str, quantity: float) -> dict:
         """
         Close position at market for timeout
