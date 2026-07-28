@@ -387,22 +387,6 @@ async def main_loop():
         if manager.cooldown_blacklist:
             log(f"Blacklist restored: {len(manager.cooldown_blacklist)} symbols on cooldown")
 
-        # ONE-SHOT chain-accounting correction (deployed 2026-07-28). The old
-        # price-based chain PnL had drifted and stranded the chain at level 6 while
-        # the account was actually net-positive (verified vs Binance realized PnL),
-        # so it never reset. Reset to the level implied by the REAL realized PnL of
-        # the current chain. Guarded + time-boxed so it fires once and cannot
-        # misfire on a legitimately deep chain later. Remove after it has fired.
-        if manager.level >= 6 and time.time() < 1785500000:
-            log(f"ONE-SHOT CORRECTION: chain stranded at level {manager.level} but "
-                f"account is net-positive per Binance — resetting chain to level 1", "warning")
-            manager.level = 1
-            manager.chain_pnl_history = [-6.33, 6.27]
-            manager.chain_start_time = time.time()
-            manager.consecutive_losses = 0
-            manager.regime_flipped = False
-            save_state(manager)
-
     # Reconcile bot state with exchange reality
     if manager.in_position and not all_open_startup:
         # Bot thinks open but exchange has nothing — determine outcome
