@@ -182,11 +182,35 @@ class MartingaleManager:
         else:  # SHORT
             return self.entry_price * (1 + config.SL_PCT)
 
+    def _actual_realized_pnl(self, fallback: float) -> float:
+        """
+        Return the TRUE net realized PnL of the position being closed, taken from
+        Binance (sum of realizedPnl minus USDT commission for this round trip).
+        This is what feeds chain_pnl_history, so the martingale chain resets on
+        REAL profitability instead of a drifting price-based estimate. Falls back
+        to `fallback` (the price-based estimate) if the executor is unavailable or
+        the exchange query fails.
+        """
+        if self.executor is None or not self.current_symbol or not self.entry_candle_time:
+            return fallback
+        since_ms = int(self.entry_candle_time * 1000)
+        actual = self.executor.get_realized_pnl_since(self.current_symbol, since_ms)
+        if actual is None:
+            return fallback
+        log(f"CHAIN PnL (real from Binance): {format_usd(actual)} "
+            f"| price-estimate was {format_usd(fallback)}")
+        return actual
+
     def close_win(self, exit_price: float):
         """Close winning position"""
         pnl_pct = abs(exit_price - self.entry_price) / self.entry_price
         pnl_usd = self.current_size_usd * pnl_pct
-        net_pnl = pnl_usd - (self.current_size_usd * (config.TAKER_FEE + config.MAKER_FEE))
+        est_pnl = pnl_usd - (self.current_size_usd * (config.TAKER_FEE + config.MAKER_FEE))
+        # Chain accounting MUST use Binance's real realized PnL, not this price-based
+        # estimate — the estimate drifts (single-fill exit price + approximated fees)
+        # and that drift once stranded the chain at level 6 while the account was
+        # actually net-positive, so it never reset. Estimate is only a fallback.
+        net_pnl = self._actual_realized_pnl(est_pnl)
 
         trade = TradeRecord(
             timestamp=time.time(),
@@ -244,7 +268,9 @@ class MartingaleManager:
         """Close losing position"""
         pnl_pct = abs(exit_price - self.entry_price) / self.entry_price
         pnl_usd = self.current_size_usd * pnl_pct
-        net_pnl = -(pnl_usd + (self.current_size_usd * (config.TAKER_FEE + config.TAKER_FEE)))
+        est_pnl = -(pnl_usd + (self.current_size_usd * (config.TAKER_FEE + config.TAKER_FEE)))
+        # Use Binance's real realized PnL for chain accounting (see close_win).
+        net_pnl = self._actual_realized_pnl(est_pnl)
 
         trade = TradeRecord(
             timestamp=time.time(),

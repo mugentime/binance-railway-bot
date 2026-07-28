@@ -1188,6 +1188,35 @@ class OrderExecutor:
             return trades[0]
         return None
 
+    def get_realized_pnl_since(self, symbol: str, since_ms: int) -> Optional[float]:
+        """
+        Net realized PnL (Binance realizedPnl minus USDT commission) for `symbol`
+        fills at/after `since_ms`. Used to record the TRUE per-trade PnL into the
+        martingale chain instead of a drifting price-based estimate. Returns None
+        on any failure so callers fall back to their estimate.
+        """
+        try:
+            params = {"symbol": symbol, "startTime": int(since_ms), "limit": 1000}
+            params = self._sign_params(params)
+            resp = self.client.get(
+                f"{config.BINANCE_BASE_URL}/fapi/v1/userTrades",
+                params=params,
+                headers=self._headers()
+            )
+            resp.raise_for_status()
+            trades = resp.json()
+            if not trades:
+                return None
+            realized = sum(float(t.get("realizedPnl", 0.0) or 0.0) for t in trades)
+            commission = sum(
+                float(t.get("commission", 0.0) or 0.0)
+                for t in trades if t.get("commissionAsset") == "USDT"
+            )
+            return realized - commission
+        except Exception as e:
+            log(f"Could not fetch realized PnL for {symbol} since {since_ms}: {e}", "warning")
+            return None
+
     def get_account_balance(self) -> float:
         """Get available USDT balance"""
         params = {}
