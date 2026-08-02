@@ -145,6 +145,17 @@ def is_overnight_hours() -> bool:
     cst_time = now_utc + CST
     return 0 <= cst_time.hour < 8
 
+def is_weekend_pause() -> bool:
+    """
+    Returns True Friday-Sunday (UTC). The bot opens NO new positions Fri/Sat/Sun.
+    Weekend thin liquidity drives deep losing chains: 2026-08-02 loss analysis
+    showed chains that span the weekend hit the 48h duration limit deep in the
+    red - the worst chain (-$93) STARTED Friday 07-31 and ran through the weekend,
+    so the pause covers Friday too. weekday(): Mon=0 .. Fri=4, Sat=5, Sun=6.
+    """
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).weekday() in (4, 5, 6)
+
 def verify_and_sync_state(executor: OrderExecutor, manager: MartingaleManager) -> bool:
     """
     Verify bot state matches Binance reality and auto-correct discrepancies
@@ -673,6 +684,11 @@ async def main_loop():
             # Block entries during overnight hours (00:00-08:00 CST)
             if is_overnight_hours():
                 log("OVERNIGHT HOURS: Skipping scan (no new entries 00:00-08:00 CST)")
+                continue
+
+            # Block new entries Friday-Sunday (UTC) - weekend low-liquidity avoidance
+            if is_weekend_pause():
+                log("WEEKEND PAUSE: no new entries Fri-Sun (UTC)")
                 continue
 
             # Scan and score pairs

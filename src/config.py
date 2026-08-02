@@ -42,7 +42,7 @@ TRAILING_CALLBACK_RATE = 1.0      # Binance callbackRate: close on a 1.0% retrac
 # Martingale parameters
 BASE_SIZE_PCT = 0.05          # 5% of account balance per trade at level 0 (increased from 3% for faster growth)
 MARTINGALE_MULTIPLIER = 1.25  # Position size multiplier per level (1.25x = 25% increase)
-MAX_LEVEL = 10                # Max 10 levels
+MAX_LEVEL = 5                 # Max 5 levels (was 10): caps martingale tail. Recovery breaks past ~L5, and a single SL at L8 = ~24% of account (the 2026-08-01 UAIUSDT -$48).
 LEVERAGE = 20                 # 20x leverage
 COOLDOWN_AFTER_MAX_LOSS = 3600  # 1 hour cooldown after blowing a full chain
 MAX_CHAIN_DURATION_HOURS = 48   # Force chain reset after 2 days (prevents 8-day chains)
