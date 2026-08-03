@@ -147,14 +147,16 @@ def is_overnight_hours() -> bool:
 
 def is_weekend_pause() -> bool:
     """
-    Returns True Friday-Sunday (UTC). The bot opens NO new positions Fri/Sat/Sun.
-    Weekend thin liquidity drives deep losing chains: 2026-08-02 loss analysis
-    showed chains that span the weekend hit the 48h duration limit deep in the
-    red - the worst chain (-$93) STARTED Friday 07-31 and ran through the weekend,
-    so the pause covers Friday too. weekday(): Mon=0 .. Fri=4, Sat=5, Sun=6.
+    Returns True Friday-Sunday in CST (UTC-6) - the user's local weekend, matching
+    is_overnight_hours(). MUST use CST, not UTC: a UTC check releases 6h early and
+    lets a Sunday-evening-CST trade through (e.g. SOON LONG 08-02 18:00 CST =
+    Mon 00:00 UTC slipped in when the UTC pause lifted). Weekend thin liquidity
+    drives deep losing chains (2026-08-02 loss analysis: the -$93 chain started
+    Friday and ran through the weekend). weekday(): Mon=0 .. Fri=4, Sat=5, Sun=6.
     """
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc).weekday() in (4, 5, 6)
+    from datetime import datetime, timezone, timedelta
+    cst_time = datetime.now(timezone.utc) + timedelta(hours=-6)
+    return cst_time.weekday() in (4, 5, 6)
 
 def verify_and_sync_state(executor: OrderExecutor, manager: MartingaleManager) -> bool:
     """
