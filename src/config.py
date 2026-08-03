@@ -121,6 +121,10 @@ CURATED_PAIR_LIST = [
 
 # Excluded pairs (stablecoins and slow-moving pairs)
 EXCLUDED_SYMBOLS = [
+    # Blacklisted by user 2026-08-03: consistent net loser (-$29 over 7 days),
+    # whipsaws through the 4% SL on thin liquidity. Still in CURATED_PAIR_LIST but
+    # the scanner skips EXCLUDED_SYMBOLS (pair_scanner.py:129), so this wins.
+    "SOONUSDT",
     # Stablecoins and pegged assets
     "USDCUSDT",  # Stablecoin pair
     "BUSDUSDT",  # Stablecoin pair
