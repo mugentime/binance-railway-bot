@@ -33,8 +33,12 @@ SL_PCT = 0.04                 # 4.0% price-based stop loss (prevents catastrophe
 # Values are % of PRICE (× LEVERAGE = ROI %).
 TRAILING_ENABLED = True
 TRAILING_ACTIVATION_PCT = 0.012   # arm once price moves +1.2% in favor from entry (≈ +24% ROI at 20x)
-TRAILING_CALLBACK_RATE = 1.0      # Binance callbackRate: close on a 1.0% retrace from the running peak
-                                   # (≈ 20% ROI give-back). Binance hard limits: min 0.1, max 5.
+TRAILING_CALLBACK_RATE = 4.0      # Binance callbackRate: close on a 4.0% retrace from the running peak.
+                                   # Was 1.0 — too tight: meme coins wobble 1% constantly, so it closed
+                                   # EVERY winner at ~+1% (0/18 wins reached the 10% TP over 6 days),
+                                   # collapsing realized R:R to ~0.5:1 and breaking the martingale's
+                                   # 2.5:1 recovery math. 4% lets winners run toward the +10% TP before
+                                   # locking in. Binance hard limits: min 0.1, max 5.
 
 # Strategy: inverted momentum / mean-reversion
 # SHORT on overbought (RSI>65, BB>0.8), LONG on oversold (RSI<35, BB<0.2)
