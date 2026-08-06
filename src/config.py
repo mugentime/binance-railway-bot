@@ -62,8 +62,9 @@ BREAKEVEN_HOLD_CANDLES = 72   # Close early if still negative after this many ca
 SCAN_INTERVAL_SECS = 150      # 2.5 minutes (150 seconds)
 KLINE_INTERVAL = "5m"        # 5 minute candles
 KLINE_LIMIT = 50              # Candles to fetch per pair
-MIN_24H_VOLUME_USD = 10_000_000  # $10M+ required to filter out low-liquidity meme coins
-MIN_QUOTE_VOLUME_24H = 2_000_000  # $2M USDT 24h minimum (filtering pipeline)
+MIN_24H_VOLUME_USD = 10_000_000  # $10M+ required to filter out low-liquidity meme coins (now applies to curated list too)
+MIN_QUOTE_VOLUME_24H = 10_000_000  # $10M USDT 24h minimum (raised from $2M 2026-08-06: $2M let thin pairs
+                                    # like INXUSDT $9.5M / SOONUSDT $4.8M through, causing stop-slippage losses)
 LOW_VOLUME_THRESHOLD = 500_000    # $500k - if 24h volume below this, widen SL by 1.5x
 ORDERBOOK_DEPTH_MIN_USD = 1000    # Minimum $1k orderbook depth within 1% of mid price
 ORDERBOOK_DEPTH_PCT = 0.01        # Check depth within 1% of mid price

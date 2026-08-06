@@ -133,11 +133,13 @@ class PairScanner:
             if not symbol.isascii():
                 continue
 
-            # Volume filter (only if dynamic discovery)
-            if not config.USE_CURATED_PAIR_LIST:
-                volume = tickers.get(symbol, 0)
-                if volume < config.MIN_24H_VOLUME_USD:
-                    continue
+            # Volume filter (applies to CURATED list too as of 2026-08-06): the curated
+            # list previously bypassed this, letting thin pairs (INXUSDT $9.5M, SOONUSDT
+            # $4.8M) in and causing stop-execution slippage losses. tickers holds
+            # quoteVolume (USD) and is populated regardless of mode (see line ~90).
+            volume = tickers.get(symbol, 0)
+            if volume < config.MIN_24H_VOLUME_USD:
+                continue
 
             # Minimum order size filter (CRITICAL for level 0 trades)
             price = prices.get(symbol)
