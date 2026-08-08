@@ -77,7 +77,13 @@ FUTURES_MIN_FLOOR_USDT = _env_float("FUTURES_MIN_FLOOR_USDT", 0.0)
 DEDUPE_WINDOW_HOURS = _env_float("DEDUPE_WINDOW_HOURS", 23.0)
 DRY_RUN = os.environ.get("DRY_RUN", "0").strip().lower() in ("1", "true", "yes", "on")
 
-ASSET = "USDT"
+QUOTE_ASSET = "USDT"   # futures PnL / income is USDT-denominated
+# Assets we may bank the profit in, in PRIORITY order. USDT is last on purpose:
+# in multi-assets margin mode the USDT wallet can be NEGATIVE (a liability covered
+# by other collateral), so transferring USDT out fails. We skim whatever asset we
+# actually HOLD a positive balance of (e.g. USDC / FDUSD). Env-overridable.
+PROFIT_ASSETS = [a.strip().upper() for a in
+                 os.environ.get("PROFIT_ASSETS", "USDC,FDUSD,USDT").split(",") if a.strip()]
 RECV_WINDOW = 20000
 
 # --- HTTP client + server-time offset (mirrors OrderExecutor pattern) ---------------
@@ -175,28 +181,44 @@ def net_realized_pnl_24h() -> float:
     return net
 
 
-def available_futures_usdt() -> float:
+def futures_balances() -> dict[str, tuple[float, float]]:
+    """asset -> (walletBalance, availableBalance). In multi-assets mode availableBalance
+    is account-wide (roughly equal across assets); walletBalance is per-asset and can be
+    negative for the shorted asset."""
     balances = _signed("GET", FAPI, "/fapi/v2/balance", {})
-    for b in balances:
-        if b.get("asset") == ASSET:
-            return float(b.get("availableBalance", 0.0) or 0.0)
-    return 0.0
+    return {b["asset"]: (float(b.get("balance", 0.0) or 0.0),
+                         float(b.get("availableBalance", 0.0) or 0.0))
+            for b in balances if b.get("asset")}
 
 
-def find_flexible_product() -> tuple[str | None, float]:
-    """Return (productId, minPurchaseAmount) for a purchasable USDT Simple Earn
-    Flexible product, or (None, 0.0) if none is available."""
-    resp = _signed("GET", SAPI, "/sapi/v1/simple-earn/flexible/list", {"asset": ASSET, "size": 100})
+def find_flexible_product(asset: str) -> tuple[str | None, float]:
+    """Return (productId, minPurchaseAmount) for a purchasable Simple Earn Flexible
+    product in `asset`, or (None, 0.0) if none is available."""
+    resp = _signed("GET", SAPI, "/sapi/v1/simple-earn/flexible/list", {"asset": asset, "size": 100})
     rows = resp.get("rows", []) if isinstance(resp, dict) else []
     for r in rows:
-        if r.get("asset") == ASSET and r.get("canPurchase", False):
+        if r.get("asset") == asset and r.get("canPurchase", False):
             return r.get("productId"), float(r.get("minPurchaseAmount", 0.0) or 0.0)
     return None, 0.0
 
 
-def transfer_futures_to_spot(amount: float) -> int:
+def pick_skim_asset(amount: float, balances: dict[str, tuple[float, float]]
+                    ) -> tuple[str | None, str | None, float]:
+    """Choose the first PROFIT_ASSETS entry we HOLD enough of (positive walletBalance
+    >= amount) and that has a purchasable Earn product. Returns (asset, productId, minPurchase)."""
+    for asset in PROFIT_ASSETS:
+        wallet, _avail = balances.get(asset, (0.0, 0.0))
+        if wallet < amount:
+            continue  # can't transfer out an asset we don't actually hold
+        product_id, min_purchase = find_flexible_product(asset)
+        if product_id:
+            return asset, product_id, min_purchase
+    return None, None, 0.0
+
+
+def transfer_futures_to_spot(amount: float, asset: str) -> int:
     resp = _signed("POST", SAPI, "/sapi/v1/asset/transfer",
-                   {"type": "UMFUTURE_MAIN", "asset": ASSET, "amount": f"{amount:.2f}"})
+                   {"type": "UMFUTURE_MAIN", "asset": asset, "amount": f"{amount:.2f}"})
     tran_id = resp.get("tranId") if isinstance(resp, dict) else None
     if not tran_id:
         raise RuntimeError(f"Transfer returned no tranId: {resp!r}")
@@ -244,13 +266,14 @@ def run() -> int:
         log(f"NET 24h profit is ${net:+.4f} (down/flat day) - nothing to skim. Exiting.")
         return 0
 
-    # 3) Amount, capped by the bot's margin floor
+    # 3) Amount, capped by the account-wide margin floor
     amount = _round_down(net * WITHDRAW_FRACTION, 2)
-    available = available_futures_usdt()
-    headroom = _round_down(max(0.0, available - FUTURES_MIN_FLOOR_USDT), 2)
+    balances = futures_balances()
+    account_avail = max((av for _w, av in balances.values()), default=0.0)
+    headroom = _round_down(max(0.0, account_avail - FUTURES_MIN_FLOOR_USDT), 2)
     if amount > headroom:
         log(f"Capping skim ${amount:.2f} -> ${headroom:.2f} to keep availableBalance "
-            f"(${available:.2f}) above floor ${FUTURES_MIN_FLOOR_USDT:.2f}", "WARN")
+            f"(${account_avail:.2f}) above floor ${FUTURES_MIN_FLOOR_USDT:.2f}", "WARN")
         amount = headroom
 
     if amount < MIN_WITHDRAW_USDT:
@@ -258,41 +281,43 @@ def run() -> int:
             f"- nothing to do. Exiting.")
         return 0
 
-    # 4) Confirm a purchasable Earn product BEFORE moving funds (don't strand cash in Spot)
-    product_id, min_purchase = find_flexible_product()
-    if not product_id:
-        log("No purchasable USDT Simple Earn Flexible product found - not transferring. Exiting.",
-            "ERROR")
+    # 4) Pick an asset we actually HOLD (positive futures balance) that has an Earn product.
+    #    In multi-assets mode USDT may be NEGATIVE, so we bank the profit as USDC/FDUSD instead.
+    asset, product_id, min_purchase = pick_skim_asset(amount, balances)
+    if not asset:
+        held = ", ".join(f"{a}={balances.get(a, (0.0, 0.0))[0]:+.2f}" for a in PROFIT_ASSETS)
+        log(f"No futures asset with a positive balance >= ${amount:.2f} and a purchasable Earn "
+            f"product among {PROFIT_ASSETS} (held: {held}) - nothing to skim safely. Exiting.", "WARN")
         return 3
     if amount < min_purchase:
-        log(f"Skim ${amount:.2f} is below the Earn minimum ${min_purchase:.2f} for product "
+        log(f"Skim ${amount:.2f} is below the {asset} Earn minimum ${min_purchase:.2f} for product "
             f"{product_id} - leaving funds on futures for now. Exiting.", "WARN")
         return 0
 
-    log(f"PLAN: skim ${amount:.2f} (= {WITHDRAW_FRACTION:.0%} of ${net:.4f}) "
+    log(f"PLAN: skim ${amount:.2f} (= {WITHDRAW_FRACTION:.0%} of ${net:.4f}) as {asset} "
         f"Futures -> Spot -> Simple Earn Flexible product {product_id}")
 
     if DRY_RUN:
         log("DRY_RUN=1 - no funds moved. Exiting.")
         return 0
 
-    # 5) Transfer Futures -> Spot
-    tran_id = transfer_futures_to_spot(amount)
-    log(f"Transferred ${amount:.2f} USDT Futures -> Spot  (tranId={tran_id})")
+    # 5) Transfer Futures -> Spot (in the chosen asset)
+    tran_id = transfer_futures_to_spot(amount, asset)
+    log(f"Transferred {amount:.2f} {asset} Futures -> Spot  (tranId={tran_id})")
 
     # 6) Subscribe into Simple Earn Flexible
     try:
         purchase_id = subscribe_flexible(product_id, amount)
     except Exception as e:
         log(f"TRANSFER SUCCEEDED but Simple Earn subscribe FAILED: {e}", "ERROR")
-        log(f"${amount:.2f} USDT is SAFE in your Spot wallet (tranId={tran_id}); "
+        log(f"{amount:.2f} {asset} is SAFE in your Spot wallet (tranId={tran_id}); "
             f"subscribe it to Earn manually. Next run will NOT re-transfer (dedupe guard).",
             "ERROR")
         return 4
 
-    log(f"SUBSCRIBED ${amount:.2f} USDT into Simple Earn Flexible "
+    log(f"SUBSCRIBED {amount:.2f} {asset} into Simple Earn Flexible "
         f"(product={product_id}, purchaseId={purchase_id})")
-    log(f"DONE. Banked ${amount:.2f} of ${net:.4f} 24h profit into Earn.")
+    log(f"DONE. Banked {amount:.2f} {asset} of ${net:.4f} 24h profit into Earn.")
     log("=" * 70)
     return 0
 
