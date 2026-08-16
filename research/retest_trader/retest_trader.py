@@ -32,6 +32,7 @@ ENV (keys required; rest optional):
   MIN_VOL_24H=10000000  RVOL_MIN=1.5  RANGE6H_MIN=8  ATR_MULT=0.10  MIN_NOTIONAL_USDT=5
 """
 import os, sys, json, time, math, hmac, hashlib, urllib.parse
+from decimal import Decimal, ROUND_HALF_UP, ROUND_DOWN
 import numpy as np
 import httpx
 try:
@@ -70,6 +71,8 @@ RVOL_MIN         = _f("RVOL_MIN", 1.5)
 RANGE6H_MIN      = _f("RANGE6H_MIN", 8.0)
 ATR_MULT         = _f("ATR_MULT", 0.10)
 MIN_NOTIONAL_USDT = _f("MIN_NOTIONAL_USDT", 5.0)
+SL_LIMIT_BAND_PCT = _f("SL_LIMIT_BAND_PCT", 1.0)       # SL is a stop-LIMIT; limit sits this far past the trigger (caps fill slippage)
+HARD_STOP_BUFFER_PCT = _f("HARD_STOP_BUFFER_PCT", 0.5) # market backstop if price blows past the stop-limit band unfilled
 
 CLIENT = httpx.Client(timeout=30.0)
 TIME_OFFSET = 0
@@ -117,21 +120,46 @@ def klines5(sym, start_ms=None, limit=100):
 
 # ------------------------- exchange info / rounding -------------------------
 SYMINFO = {}
+def _dec_places(numstr):
+    return max(0, -Decimal(str(numstr)).normalize().as_tuple().exponent)
+
 def load_exchange_info():
     ex = pub("/fapi/v1/exchangeInfo", {})
     for s in ex["symbols"]:
         tick = step = None
         for f in s.get("filters", []):
-            if f["filterType"] == "PRICE_FILTER": tick = float(f["tickSize"])
-            elif f["filterType"] == "LOT_SIZE": step = float(f["stepSize"])
-        SYMINFO[s["symbol"]] = {"pP": s["pricePrecision"], "qP": s["quantityPrecision"],
-                                "tick": tick, "step": step}
+            if f["filterType"] == "PRICE_FILTER": tick = f["tickSize"]      # keep RAW string
+            elif f["filterType"] == "LOT_SIZE": step = f["stepSize"]
+        SYMINFO[s["symbol"]] = {"pP": int(s["pricePrecision"]), "qP": int(s["quantityPrecision"]),
+                                "tick": tick, "step": step, "maxlev": None,
+                                "tdec": _dec_places(tick) if tick else int(s["pricePrecision"]),
+                                "qdec": _dec_places(step) if step else int(s["quantityPrecision"])}
     log(f"exchange info cached: {len(SYMINFO)} symbols")
 
+def load_leverage_brackets():
+    """Per-symbol max leverage, so set_leverage never sends an invalid value (-4028 / -2027)."""
+    try:
+        lb = signed("GET", "/fapi/v1/leverageBracket", {})
+    except Exception as e:
+        log(f"leverageBracket fetch failed: {e}", "WARN"); return
+    n = 0
+    for row in (lb if isinstance(lb, list) else []):
+        sym = row.get("symbol"); br = row.get("brackets", [])
+        if sym in SYMINFO and br:
+            SYMINFO[sym]["maxlev"] = max(int(b.get("initialLeverage", 0)) for b in br)
+            n += 1
+    log(f"leverage brackets cached: {n} symbols")
+
 def pstr(price, sym):
-    t = SYMINFO[sym]["tick"]; return f"{round(price / t) * t:.{SYMINFO[sym]['pP']}f}"
+    """Round to tick, format to the TICK's decimals (NOT pricePrecision: 650/737 symbols have
+    pricePrecision > tick decimals, whose trailing digits trip -4014 on /fapi/v1/order)."""
+    t = Decimal(SYMINFO[sym]["tick"])
+    q = (Decimal(str(price)) / t).quantize(Decimal(1), rounding=ROUND_HALF_UP) * t
+    return f"{q:.{SYMINFO[sym]['tdec']}f}"
 def qstr(qty, sym):
-    s = SYMINFO[sym]["step"]; return f"{math.floor(qty / s) * s:.{SYMINFO[sym]['qP']}f}"
+    s = Decimal(SYMINFO[sym]["step"])
+    q = (Decimal(str(qty)) / s).to_integral_value(rounding=ROUND_DOWN) * s
+    return f"{q:.{SYMINFO[sym]['qdec']}f}"
 
 
 # ------------------------- detection (copied from ob-logger, + ATR5) -------------------------
@@ -201,10 +229,15 @@ def get_position(sym):
     return r[0] if r else None
 
 def set_leverage(sym, lev):
+    mx = SYMINFO.get(sym, {}).get("maxlev")
+    use = min(lev, mx) if mx else lev
+    if use != lev:
+        log(f"  leverage capped {lev}x -> {use}x (symbol max {mx}) {sym}")
     try:
-        signed("POST", "/fapi/v1/leverage", {"symbol": sym, "leverage": lev})
+        signed("POST", "/fapi/v1/leverage", {"symbol": sym, "leverage": use})
     except Exception as e:
-        log(f"set_leverage {sym} {lev}x failed: {e}", "WARN")
+        log(f"set_leverage {sym} {use}x failed: {e}", "WARN")
+    return use
 
 def place_limit_entry(sym, side, price, qty):
     return signed("POST", "/fapi/v1/order", {"symbol": sym, "side": side, "type": "LIMIT",
@@ -233,10 +266,16 @@ def place_tp(sym, direction, tp_price, qty):
         "timeInForce": "GTC", "reduceOnly": "true"})
 
 def place_sl(sym, direction, sl_price, qty):
+    """Stop-LIMIT (not stop-market): triggers at sl_price, then rests a LIMIT that will not fill
+    worse than sl_price +/- SL_LIMIT_BAND_PCT -> caps slippage. A hard market backstop (in the
+    main loop) closes the position if price blows past the band while the limit stays unfilled."""
     side = "SELL" if direction == "LONG" else "BUY"
+    band = SL_LIMIT_BAND_PCT / 100.0
+    limit_price = sl_price * (1 - band) if direction == "LONG" else sl_price * (1 + band)
     return signed("POST", "/fapi/v1/algoOrder", {"symbol": sym, "side": side, "positionSide": "BOTH",
-        "algoType": "CONDITIONAL", "type": "STOP_MARKET", "triggerPrice": pstr(sl_price, sym),
-        "quantity": qstr(qty, sym), "reduceOnly": "true", "workingType": "MARK_PRICE"})
+        "algoType": "CONDITIONAL", "type": "STOP", "triggerPrice": pstr(sl_price, sym),
+        "price": pstr(limit_price, sym), "quantity": qstr(qty, sym), "reduceOnly": "true",
+        "workingType": "MARK_PRICE", "timeInForce": "GTC"})
 
 def close_market(sym, direction, qty):
     side = "SELL" if direction == "LONG" else "BUY"
@@ -332,6 +371,7 @@ def main():
         return 2
     sync_time()
     load_exchange_info()
+    load_leverage_brackets()
     try:
         dual = signed("GET", "/fapi/v1/positionSide/dual", {}).get("dualSidePosition", False)
     except Exception as e:
@@ -342,7 +382,8 @@ def main():
     eq, av = equity_and_avail()
     log("=" * 72)
     log(f"retest_trader | DRY_RUN={DRY_RUN} ENABLED={ENABLED} | notional={NOTIONAL_PCT:.0f}% lev={LEVERAGE}x "
-        f"SL={SL_PCT}% TP={TP_PCT}% static | 1-at-a-time | max-hold {MAX_HOLD_MIN:.0f}m")
+        f"SL={SL_PCT}%(stop-limit band {SL_LIMIT_BAND_PCT}%,backstop {SL_PCT+SL_LIMIT_BAND_PCT+HARD_STOP_BUFFER_PCT:.1f}%) "
+        f"TP={TP_PCT}% | 1-at-a-time | max-hold {MAX_HOLD_MIN:.0f}m")
     log(f"account: equity ${eq:.2f} | available ${av:.2f} | entry=resting LIMIT on the pullback")
     if not DRY_RUN:
         log("*** LIVE MODE: REAL ORDERS WILL BE PLACED ***", "WARN")
@@ -387,6 +428,17 @@ def main():
                                         "notional": round(p["notional"], 2)})
                         trade_count += 1; posn = None; state = "IDLE"
                         log(f"trade_count={trade_count}" + ("  >>> 20 reached: consider NOTIONAL_PCT=250" if trade_count == 20 else ""))
+                    elif float(pos.get("markPrice", 0) or 0) > 0 and (float(pos["markPrice"]) / p["entry"] - 1) * 100 * p["d"] <= -(SL_PCT + SL_LIMIT_BAND_PCT + HARD_STOP_BUFFER_PCT):
+                        mv = (float(pos["markPrice"]) / p["entry"] - 1) * 100 * p["d"]
+                        log(f"HARD-STOP {p['sym']} move {mv:+.2f}% past stop-limit band -> market close", "WARN")
+                        try: close_market(p["sym"], p["dir"], abs(amt))
+                        except Exception as e: log(f"hard-stop close failed {p['sym']}: {e}", "ERROR")
+                        cancel_all(p["sym"])
+                        pnl = realized_since(p["sym"], p["entry_ms"] - 2000)
+                        record("real", {"symbol": p["sym"], "dir": p["dir"], "entry": p["entry"],
+                                        "pnl_usd": round(pnl, 4) if pnl is not None else None,
+                                        "exit_reason": "HARD_STOP", "notional": round(p["notional"], 2)})
+                        trade_count += 1; posn = None; state = "IDLE"
                     elif now_ms() - p["entry_ms"] > MAX_HOLD_MIN * 60 * 1000:
                         log(f"MAX-HOLD {p['sym']} -> market close")
                         try: close_market(p["sym"], p["dir"], abs(amt))
@@ -443,6 +495,7 @@ def main():
                         uni = universe()
                     except Exception as e:
                         log(f"universe fetch failed: {e}", "WARN"); uni = []
+                    log(f"scan: {len(uni)} symbols | state=IDLE | trades={trade_count} | waiting for a fresh C2 retest")
                     for sym in uni:
                         try:
                             sig = check_c2(sym)
