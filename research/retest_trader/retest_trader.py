@@ -55,6 +55,8 @@ def _i(n, d):
     except Exception: return int(d)
 def _b(n, d):
     return str(os.environ.get(n, d)).strip().lower() in ("1", "true", "yes", "on")
+def _symset(n, d):
+    return {s.strip().upper() for s in os.environ.get(n, d).split(",") if s.strip()}
 
 DRY_RUN          = _b("DRY_RUN", "1")
 ENABLED          = _b("ENABLED", "1")
@@ -71,6 +73,9 @@ RVOL_MIN         = _f("RVOL_MIN", 1.5)
 RANGE6H_MIN      = _f("RANGE6H_MIN", 8.0)
 ATR_MULT         = _f("ATR_MULT", 0.10)
 MIN_NOTIONAL_USDT = _f("MIN_NOTIONAL_USDT", 5.0)
+# Blacklisted repeat-loser symbols (live-observed, see research/orderbook_signals.jsonl P/L history).
+# CYSUSDT: 4L/0W since go-live 2026-08-14 - consistent net loser, blacklisted 2026-08-18.
+EXCLUDED_SYMBOLS = _symset("EXCLUDED_SYMBOLS", "CYSUSDT")
 SL_LIMIT_BAND_PCT = _f("SL_LIMIT_BAND_PCT", 1.0)       # SL is a stop-LIMIT; limit sits this far past the trigger (caps fill slippage)
 HARD_STOP_BUFFER_PCT = _f("HARD_STOP_BUFFER_PCT", 0.5) # market backstop if price blows past the stop-limit band unfilled
 
@@ -216,6 +221,7 @@ def universe():
             and s.get("quoteAsset") == "USDT" and s.get("status") == "TRADING"}
     tk = pub("/fapi/v1/ticker/24hr", {})
     return [t["symbol"] for t in tk if t["symbol"] in perp
+            and t["symbol"] not in EXCLUDED_SYMBOLS
             and float(t.get("quoteVolume", 0) or 0) >= MIN_VOL_24H and float(t.get("lowPrice", 0) or 0) > 0]
 
 
@@ -385,6 +391,7 @@ def main():
         f"SL={SL_PCT}%(stop-limit band {SL_LIMIT_BAND_PCT}%,backstop {SL_PCT+SL_LIMIT_BAND_PCT+HARD_STOP_BUFFER_PCT:.1f}%) "
         f"TP={TP_PCT}% | 1-at-a-time | max-hold {MAX_HOLD_MIN:.0f}m")
     log(f"account: equity ${eq:.2f} | available ${av:.2f} | entry=resting LIMIT on the pullback")
+    log(f"excluded symbols ({len(EXCLUDED_SYMBOLS)}): {', '.join(sorted(EXCLUDED_SYMBOLS)) or '(none)'}")
     if not DRY_RUN:
         log("*** LIVE MODE: REAL ORDERS WILL BE PLACED ***", "WARN")
     else:
