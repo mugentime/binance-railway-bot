@@ -10,7 +10,7 @@ STRATEGY (validated over 90 retests, see research/orderbook_signals.jsonl):
   Entry : on a C2 breakout (Bollinger-15m squeeze->breakout + RVOL5>=1.5 + 6h-range>=8%),
           REST a LIMIT at  broken_level + 0.10*ATR5*dir  for the retest window; it fills on
           the pullback back to that level (that IS the retest). Unfilled -> cancel, no entry.
-  Exit  : STATIC bracket  TP +3% / SL -3%  (no trailing, no martingale). Max-hold 3h.
+  Exit  : STATIC bracket  TP +3% / SL -2%  (no trailing, no martingale). Max-hold 3h.
   Sizing: FLAT. notional = NOTIONAL_PCT% of account equity at LEVERAGE.
           Ramp: start NOTIONAL_PCT=100 for the first ~20 real trades (plumbing check),
           then manually flip NOTIONAL_PCT=250 (env). NEVER escalate size within a chain.
@@ -27,7 +27,7 @@ SAFETY:
 ENV (keys required; rest optional):
   BINANCE_API_KEY / BINANCE_API_SECRET   (same key the bot uses; already has futures-trade perms)
   DRY_RUN=1  ENABLED=1
-  NOTIONAL_PCT=100  LEVERAGE=10  SL_PCT=3.0  TP_PCT=3.0
+  NOTIONAL_PCT=100  LEVERAGE=10  SL_PCT=2.0  TP_PCT=3.0
   MAX_HOLD_MIN=180  ENTRY_WINDOW_MIN=30  POLL_SECONDS=30  DETECT_SECONDS=300
   MIN_VOL_24H=10000000  RVOL_MIN=1.5  RANGE6H_MIN=8  ATR_MULT=0.10  MIN_NOTIONAL_USDT=5
 """
@@ -62,7 +62,7 @@ DRY_RUN          = _b("DRY_RUN", "1")
 ENABLED          = _b("ENABLED", "1")
 NOTIONAL_PCT     = _f("NOTIONAL_PCT", 100.0)
 LEVERAGE         = _i("LEVERAGE", 10)
-SL_PCT           = _f("SL_PCT", 3.0)
+SL_PCT           = _f("SL_PCT", 2.0)
 TP_PCT           = _f("TP_PCT", 3.0)
 MAX_HOLD_MIN     = _f("MAX_HOLD_MIN", 180.0)
 ENTRY_WINDOW_MIN = _f("ENTRY_WINDOW_MIN", 30.0)
