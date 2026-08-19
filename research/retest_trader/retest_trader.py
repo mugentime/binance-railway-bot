@@ -297,6 +297,16 @@ def realized_since(sym, since_ms):
     except Exception:
         return None
 
+def all_open_positions():
+    r = signed("GET", "/fapi/v2/positionRisk", {})
+    return [p for p in r if abs(float(p.get("positionAmt", 0) or 0)) > 1e-12]
+
+def open_orders_for(sym):
+    return signed("GET", "/fapi/v1/openOrders", {"symbol": sym})
+
+def open_algo_orders_for(sym):
+    return signed("GET", "/fapi/v1/openAlgoOrders", {"symbol": sym})
+
 
 def record(kind, d):
     """Structured trade line for harvesting from `railway logs` (mirrors ob-logger's SIGNAL)."""
@@ -371,6 +381,72 @@ def open_real_position(a, entry_price, qty_filled):
             "tp": tp, "sl": sl, "notional": a["notional"], "entry_ms": now_ms(), "paper": False}
 
 
+def reconcile_position(pos):
+    """Boot-time safety net: this process holds NO persistent state, so a restart while
+    IN_POSITION (e.g. a redeploy triggered by an env-var change) forgets everything and would
+    otherwise come up in IDLE while a real, possibly-unprotected position sits on the exchange.
+    Re-derive it from account truth and guarantee a TP+SL bracket exists before doing anything
+    else. Returns a posn dict to resume IN_POSITION with, or None if it had to be closed."""
+    sym = pos["symbol"]
+    amt = float(pos["positionAmt"])
+    direction = "LONG" if amt > 0 else "SHORT"
+    d = 1 if amt > 0 else -1
+    qty = abs(amt)
+    entry_price = float(pos["entryPrice"])
+    notional = abs(float(pos.get("notional", 0)) or qty * entry_price)
+    side = "SELL" if direction == "LONG" else "BUY"
+
+    try:
+        oo = open_orders_for(sym)
+    except Exception as e:
+        log(f"reconcile {sym}: open_orders fetch failed: {e}", "WARN"); oo = []
+    try:
+        ao = open_algo_orders_for(sym)
+    except Exception as e:
+        log(f"reconcile {sym}: open_algo_orders fetch failed: {e}", "WARN"); ao = []
+
+    has_tp = any(o.get("type") == "LIMIT" and o.get("side") == side and o.get("reduceOnly") for o in oo)
+    has_sl = any(o.get("orderType") == "STOP" and o.get("side") == side and o.get("reduceOnly") for o in ao)
+
+    tp = entry_price * (1 + TP_PCT / 100) if d > 0 else entry_price * (1 - TP_PCT / 100)
+    sl = entry_price * (1 - SL_PCT / 100) if d > 0 else entry_price * (1 + SL_PCT / 100)
+
+    if not has_sl:
+        log(f"RECONCILE {sym}: pre-existing position has NO STOP-LOSS on boot -> placing one now", "WARN")
+        sl_ok = False
+        for attempt in (1, 2, 3):
+            try:
+                place_sl(sym, direction, sl, qty)
+                log(f"  SL STOP @ {pstr(sl, sym)}")
+                sl_ok = True
+                break
+            except Exception as e:
+                log(f"  SL place failed {sym} (try {attempt}): {e}", "ERROR")
+                time.sleep(1)
+        if not sl_ok:
+            log(f"  STILL NAKED {sym} -> closing immediately for safety", "ERROR")
+            try:
+                close_market(sym, direction, qty)
+            except Exception as e:
+                log(f"  emergency close FAILED {sym}: {e}", "ERROR")
+            cancel_all(sym)
+            return None
+
+    if not has_tp:
+        log(f"RECONCILE {sym}: pre-existing position missing TP -> placing one now", "WARN")
+        try:
+            place_tp(sym, direction, tp, qty)
+            log(f"  TP LIMIT @ {pstr(tp, sym)}")
+        except Exception as e:
+            log(f"  TP place failed {sym}: {e}", "ERROR")
+
+    entry_ms = int(pos.get("updateTime") or now_ms())
+    log(f"RECONCILE {sym}: resumed IN_POSITION {direction} qty {qty} entry {entry_price:.6g} "
+        f"(had_tp={has_tp} had_sl={has_sl})")
+    return {"sym": sym, "dir": direction, "d": d, "entry": entry_price, "qty": qty,
+            "tp": tp, "sl": sl, "notional": notional, "entry_ms": entry_ms, "paper": False}
+
+
 def main():
     if not API_KEY or not API_SECRET:
         log("BINANCE_API_KEY / BINANCE_API_SECRET not set in environment.", "ERROR")
@@ -398,6 +474,23 @@ def main():
         log("DRY_RUN: no real orders; paper-tracking outcomes vs live klines")
 
     state = "IDLE"; armed = None; posn = None
+    try:
+        positions = all_open_positions()
+    except Exception as e:
+        log(f"reconcile: positionRisk fetch failed: {e}", "ERROR"); positions = []
+    if len(positions) == 1:
+        posn = reconcile_position(positions[0])
+        state = "IN_POSITION" if posn else "IDLE"
+    elif len(positions) > 1:
+        log(f"RECONCILE: {len(positions)} open positions found on boot (expected <=1, "
+            f"violates 1-at-a-time) -> protecting ALL, tracking only the largest", "ERROR")
+        reconciled = [r for r in (reconcile_position(p) for p in positions) if r]
+        if reconciled:
+            posn = max(reconciled, key=lambda x: x["notional"])
+            state = "IN_POSITION"
+            log(f"  tracking {posn['sym']} (largest by notional); the rest are now protected "
+                f"but NOT tracked by the state machine -- review manually", "ERROR")
+
     seen = set(); last_detect = 0.0; trade_count = 0
 
     while True:
