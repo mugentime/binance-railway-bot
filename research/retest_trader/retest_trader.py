@@ -66,7 +66,11 @@ SL_PCT           = _f("SL_PCT", 2.0)
 TP_PCT           = _f("TP_PCT", 3.0)
 MAX_HOLD_MIN     = _f("MAX_HOLD_MIN", 180.0)
 ENTRY_WINDOW_MIN = _f("ENTRY_WINDOW_MIN", 30.0)
-POLL_SECONDS     = _i("POLL_SECONDS", 30)
+POLL_SECONDS     = _i("POLL_SECONDS", 10)  # was 30; 2026-08-22 BEATUSDT hard-stop didn't fire until the
+                                            # first post-fill poll, by which point mark was already -5.22%
+                                            # (past the -3.5% backstop line) on a thin book. Faster polling
+                                            # doesn't fix backstop-order slippage itself, but shrinks the
+                                            # detection lag that let the move run further before it fired.
 DETECT_SECONDS   = _i("DETECT_SECONDS", 300)
 MIN_VOL_24H      = _f("MIN_VOL_24H", 10_000_000)
 RVOL_MIN         = _f("RVOL_MIN", 1.5)
@@ -288,14 +292,23 @@ def close_market(sym, direction, qty):
     return signed("POST", "/fapi/v1/order", {"symbol": sym, "side": side, "type": "MARKET",
         "quantity": qstr(qty, sym), "reduceOnly": "true", "newOrderRespType": "RESULT"})
 
-def realized_since(sym, since_ms):
-    try:
-        tr = signed("GET", "/fapi/v1/userTrades", {"symbol": sym, "startTime": int(since_ms), "limit": 1000})
-        rp = sum(float(t.get("realizedPnl", 0) or 0) for t in tr)
-        cm = sum(float(t.get("commission", 0) or 0) for t in tr if t.get("commissionAsset") == "USDT")
-        return rp - cm
-    except Exception:
-        return None
+def realized_since(sym, since_ms, retries=5, retry_delay=1.0):
+    """Binance's userTrades can lag a few hundred ms behind an order fill; called right after
+    close_market()/SL/TP resolution, an immediate query can race ahead of the fill being posted
+    and silently return an empty list (looks like a legit $0 trade, not an error). Retry until
+    trades show up or we give up (matches 2026-08-22 BEATUSDT incident: real -$7.27 logged as $0)."""
+    for attempt in range(retries):
+        try:
+            tr = signed("GET", "/fapi/v1/userTrades", {"symbol": sym, "startTime": int(since_ms), "limit": 1000})
+        except Exception:
+            tr = None
+        if tr:
+            rp = sum(float(t.get("realizedPnl", 0) or 0) for t in tr)
+            cm = sum(float(t.get("commission", 0) or 0) for t in tr if t.get("commissionAsset") == "USDT")
+            return rp - cm
+        if attempt < retries - 1:
+            time.sleep(retry_delay)
+    return None
 
 def all_open_positions():
     r = signed("GET", "/fapi/v2/positionRisk", {})
