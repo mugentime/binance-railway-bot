@@ -77,9 +77,15 @@ RVOL_MIN         = _f("RVOL_MIN", 1.5)
 RANGE6H_MIN      = _f("RANGE6H_MIN", 8.0)
 ATR_MULT         = _f("ATR_MULT", 0.10)
 MIN_NOTIONAL_USDT = _f("MIN_NOTIONAL_USDT", 5.0)
-# Blacklisted repeat-loser symbols (live-observed, see research/orderbook_signals.jsonl P/L history).
+# Blacklisted repeat-loser symbols (live-observed, real $ since go-live via /fapi/v1/income).
 # CYSUSDT: 4L/0W since go-live 2026-08-14 - consistent net loser, blacklisted 2026-08-18.
-EXCLUDED_SYMBOLS = _symset("EXCLUDED_SYMBOLS", "CYSUSDT")
+# BEATUSDT -$9.64 / PORTALUSDT -$6.71 / VELVETUSDT -$3.90 - same repeat-loser signature,
+# combined -$22.00 vs total strategy net +$8.50, blacklisted 2026-08-22.
+EXCLUDED_SYMBOLS = _symset("EXCLUDED_SYMBOLS", "CYSUSDT,BEATUSDT,PORTALUSDT,VELVETUSDT")
+# LONG-only: at n=98 (2026-08-22) LONG carries the entire edge (n=60, win 57%, +0.70%/trade,
+# t=1.75) while SHORT is net-negative (n=38, win 42%, -0.54%/trade, t=-1.29) and has been since
+# the first check at n=61 (2026-08-19) - a consistent skew, not small-n noise.
+LONG_ONLY = _b("LONG_ONLY", "1")
 SL_LIMIT_BAND_PCT = _f("SL_LIMIT_BAND_PCT", 1.0)       # SL is a stop-LIMIT; limit sits this far past the trigger (caps fill slippage)
 HARD_STOP_BUFFER_PCT = _f("HARD_STOP_BUFFER_PCT", 0.5) # market backstop if price blows past the stop-limit band unfilled
 
@@ -202,6 +208,8 @@ def check_c2(sym):
     if not (width[b - 1] < thr):
         return None
     long_bo = c15[b] > up[b]; short_bo = c15[b] < lo[b]
+    if LONG_ONLY:
+        short_bo = False
     if not (long_bo or short_bo):
         return None
     base = np.nanmean(v5[-22:-2]); rvol5 = v5[-2] / base if base > 0 else 0
