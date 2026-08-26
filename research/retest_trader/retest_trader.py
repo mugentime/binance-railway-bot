@@ -79,13 +79,12 @@ ATR_MULT         = _f("ATR_MULT", 0.10)
 MIN_NOTIONAL_USDT = _f("MIN_NOTIONAL_USDT", 5.0)
 # Blacklisted repeat-loser symbols (live-observed, real $ since go-live via /fapi/v1/income).
 # CYSUSDT: 4L/0W since go-live 2026-08-14 - consistent net loser, blacklisted 2026-08-18.
-# BEATUSDT -$9.64 / PORTALUSDT -$6.71 / VELVETUSDT -$3.90 - same repeat-loser signature,
-# combined -$22.00 vs total strategy net +$8.50, blacklisted 2026-08-22.
-EXCLUDED_SYMBOLS = _symset("EXCLUDED_SYMBOLS", "CYSUSDT,BEATUSDT,PORTALUSDT,VELVETUSDT")
-# LONG-only: at n=98 (2026-08-22) LONG carries the entire edge (n=60, win 57%, +0.70%/trade,
-# t=1.75) while SHORT is net-negative (n=38, win 42%, -0.54%/trade, t=-1.29) and has been since
-# the first check at n=61 (2026-08-19) - a consistent skew, not small-n noise.
-LONG_ONLY = _b("LONG_ONLY", "1")
+# REVERTED 2026-08-26: BEATUSDT/PORTALUSDT/VELVETUSDT blacklist + LONG_ONLY (added 2026-08-22)
+# dropped win-rate to 30% (7/23) post-pivot, worse than the pre-pivot mixed regime - reverting
+# to pre-08-22 conditions pending a market-regime filter (BTC went from +22% to +1.3% over the
+# same span, which tracks the collapse better than direction/symbol selection does).
+EXCLUDED_SYMBOLS = _symset("EXCLUDED_SYMBOLS", "CYSUSDT")
+LONG_ONLY = _b("LONG_ONLY", "0")
 SL_LIMIT_BAND_PCT = _f("SL_LIMIT_BAND_PCT", 1.0)       # SL is a stop-LIMIT; limit sits this far past the trigger (caps fill slippage)
 HARD_STOP_BUFFER_PCT = _f("HARD_STOP_BUFFER_PCT", 0.5) # market backstop if price blows past the stop-limit band unfilled
 
