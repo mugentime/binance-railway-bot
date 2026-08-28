@@ -28,7 +28,7 @@ ENV (keys required; rest optional):
   BINANCE_API_KEY / BINANCE_API_SECRET   (same key the bot uses; already has futures-trade perms)
   DRY_RUN=1  ENABLED=1
   NOTIONAL_PCT=100  LEVERAGE=10  SL_PCT=2.0  TP_PCT=3.0
-  MAX_HOLD_MIN=180  ENTRY_WINDOW_MIN=30  POLL_SECONDS=30  DETECT_SECONDS=300
+  MAX_HOLD_MIN=180  ENTRY_WINDOW_MIN=30  POLL_SECONDS=30  IN_POSITION_POLL_SECONDS=3  DETECT_SECONDS=300
   MIN_VOL_24H=10000000  RVOL_MIN=1.5  RANGE6H_MIN=8  ATR_MULT=0.10  MIN_NOTIONAL_USDT=5
 """
 import os, sys, json, time, math, hmac, hashlib, urllib.parse
@@ -71,6 +71,12 @@ POLL_SECONDS     = _i("POLL_SECONDS", 10)  # was 30; 2026-08-22 BEATUSDT hard-st
                                             # (past the -3.5% backstop line) on a thin book. Faster polling
                                             # doesn't fix backstop-order slippage itself, but shrinks the
                                             # detection lag that let the move run further before it fired.
+IN_POSITION_POLL_SECONDS = _i("IN_POSITION_POLL_SECONDS", 3)  # 2026-08-28: tighter loop specifically while
+                                            # IN_POSITION (hard-stop detection lag is the only thing this
+                                            # buys; IDLE/ARMED keep POLL_SECONDS -- no benefit polling those
+                                            # faster). Post-08-22-fix HARD_STOP trades still average -3.3%
+                                            # vs the intended -2% SL (23/146 live trades) -- this narrows the
+                                            # remaining detection window further, on top of the 30s->10s cut.
 DETECT_SECONDS   = _i("DETECT_SECONDS", 300)
 MIN_VOL_24H      = _f("MIN_VOL_24H", 10_000_000)
 RVOL_MIN         = _f("RVOL_MIN", 1.5)
@@ -485,7 +491,8 @@ def main():
     log("=" * 72)
     log(f"retest_trader | DRY_RUN={DRY_RUN} ENABLED={ENABLED} | notional={NOTIONAL_PCT:.0f}% lev={LEVERAGE}x "
         f"SL={SL_PCT}%(stop-limit band {SL_LIMIT_BAND_PCT}%,backstop {SL_PCT+SL_LIMIT_BAND_PCT+HARD_STOP_BUFFER_PCT:.1f}%) "
-        f"TP={TP_PCT}% | 1-at-a-time | max-hold {MAX_HOLD_MIN:.0f}m")
+        f"TP={TP_PCT}% | 1-at-a-time | max-hold {MAX_HOLD_MIN:.0f}m | "
+        f"poll idle/armed={POLL_SECONDS}s in_position={IN_POSITION_POLL_SECONDS}s")
     log(f"account: equity ${eq:.2f} | available ${av:.2f} | entry=resting LIMIT on the pullback")
     log(f"excluded symbols ({len(EXCLUDED_SYMBOLS)}): {', '.join(sorted(EXCLUDED_SYMBOLS)) or '(none)'}")
     if not DRY_RUN:
@@ -660,7 +667,8 @@ def main():
         except Exception as e:
             log(f"loop error: {e}", "ERROR")
 
-        time.sleep(max(2, POLL_SECONDS - (time.time() - loop0)))
+        interval = IN_POSITION_POLL_SECONDS if state == "IN_POSITION" else POLL_SECONDS
+        time.sleep(max(1, interval - (time.time() - loop0)))
 
 
 if __name__ == "__main__":
