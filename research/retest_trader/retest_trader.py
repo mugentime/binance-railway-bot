@@ -84,12 +84,16 @@ RANGE6H_MIN      = _f("RANGE6H_MIN", 8.0)
 ATR_MULT         = _f("ATR_MULT", 0.10)
 MIN_NOTIONAL_USDT = _f("MIN_NOTIONAL_USDT", 5.0)
 # Blacklisted repeat-loser symbols (live-observed, real $ since go-live via /fapi/v1/income).
-# CYSUSDT: 4L/0W since go-live 2026-08-14 - consistent net loser, blacklisted 2026-08-18.
-# REVERTED 2026-08-26: BEATUSDT/PORTALUSDT/VELVETUSDT blacklist + LONG_ONLY (added 2026-08-22)
-# dropped win-rate to 30% (7/23) post-pivot, worse than the pre-pivot mixed regime - reverting
-# to pre-08-22 conditions pending a market-regime filter (BTC went from +22% to +1.3% over the
-# same span, which tracks the collapse better than direction/symbol selection does).
-EXCLUDED_SYMBOLS = _symset("EXCLUDED_SYMBOLS", "CYSUSDT")
+# 2026-08-28 re-blacklist by an EXPLICIT rule over all 146 real round-trips (not cherry-picked):
+# symbols with n>=2 trades AND net <= -$2.00 AND win% <= 33%. That rule selects exactly:
+#   BEATUSDT(n6,33%,-$9.23) PORTALUSDT(n3,0%,-$6.71) VELVETUSDT(n5,20%,-$6.06)
+#   SKYAIUSDT(n2,0%,-$3.23) MONUSDT(n2,0%,-$3.15) AKEUSDT(n3,0%,-$3.01)
+#   PROMUSDT(n2,0%,-$2.42) UAIUSDT(n2,0%,-$2.06) + CYSUSDT(n9,33%,-$1.73, kept from 08-18).
+# CAVEAT: a near-identical blacklist was tried 08-22 and REVERTED 08-26 (underperformed, 30% win)
+# because it was bundled with LONG_ONLY; this pass keeps LONG+SHORT and blacklists on a stated
+# thresholded rule rather than by hand. Still an overfit risk on small per-symbol n -- revisit.
+EXCLUDED_SYMBOLS = _symset("EXCLUDED_SYMBOLS",
+    "CYSUSDT,BEATUSDT,PORTALUSDT,VELVETUSDT,SKYAIUSDT,MONUSDT,AKEUSDT,PROMUSDT,UAIUSDT")
 LONG_ONLY = _b("LONG_ONLY", "0")
 SL_LIMIT_BAND_PCT = _f("SL_LIMIT_BAND_PCT", 1.0)       # SL is a stop-LIMIT; limit sits this far past the trigger (caps fill slippage)
 HARD_STOP_BUFFER_PCT = _f("HARD_STOP_BUFFER_PCT", 0.5) # market backstop if price blows past the stop-limit band unfilled
