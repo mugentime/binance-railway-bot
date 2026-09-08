@@ -153,10 +153,22 @@ def already_skimmed_recently() -> bool:
     return len(active) > 0
 
 
+def _asset_price_usdt(asset: str) -> float:
+    """Public spot price for `asset` in USDT (no signing needed). Used to value
+    commission legs charged in a non-USDT asset (e.g. the BNB fee discount)."""
+    if asset in ("USDT", "USD", "USDC", "BUSD", "FDUSD"):
+        return 1.0
+    resp = CLIENT.get(f"{FAPI}/fapi/v1/ticker/price", params={"symbol": f"{asset}USDT"})
+    resp.raise_for_status()
+    return float(resp.json()["price"])
+
+
 def net_realized_pnl_24h() -> float:
     """NET realized futures PnL over the last LOOKBACK_HOURS, from /fapi/v1/income.
     Sums income for REALIZED_PNL, COMMISSION and FUNDING_FEE only (TRANSFER excluded,
-    so our own withdrawals never corrupt the figure)."""
+    so our own withdrawals never corrupt the figure). Commission can be charged in a
+    non-USDT asset (e.g. BNB fee discount) - each asset's commission is converted to
+    USDT at its current price rather than summed as a raw quantity."""
     end = _now_ms()
     start = end - int(LOOKBACK_HOURS * 3600 * 1000)
     records = _signed("GET", FAPI, "/fapi/v1/income",
@@ -167,17 +179,31 @@ def net_realized_pnl_24h() -> float:
         log("income returned 1000 records (the max) - 24h profit may be UNDER-counted; "
             "the skim will be conservative.", "WARN")
 
-    trading_types = {"REALIZED_PNL", "COMMISSION", "FUNDING_FEE"}
     realized = sum(float(r.get("income", 0.0) or 0.0)
                    for r in records if r.get("incomeType") == "REALIZED_PNL")
-    commission = sum(float(r.get("income", 0.0) or 0.0)
-                     for r in records if r.get("incomeType") == "COMMISSION")
     funding = sum(float(r.get("income", 0.0) or 0.0)
                   for r in records if r.get("incomeType") == "FUNDING_FEE")
-    net = sum(float(r.get("income", 0.0) or 0.0)
-              for r in records if r.get("incomeType") in trading_types)
-    log(f"Last {LOOKBACK_HOURS:.0f}h  realized=${realized:+.4f}  commission=${commission:+.4f}  "
-        f"funding=${funding:+.4f}  ->  NET=${net:+.4f}")
+
+    commission_by_asset: dict[str, float] = {}
+    for r in records:
+        if r.get("incomeType") != "COMMISSION":
+            continue
+        asset = r.get("asset") or "USDT"
+        commission_by_asset[asset] = commission_by_asset.get(asset, 0.0) + float(r.get("income", 0.0) or 0.0)
+
+    commission = 0.0
+    for asset, qty in commission_by_asset.items():
+        try:
+            price = _asset_price_usdt(asset)
+        except Exception as e:
+            log(f"Could not price {asset} commission ({e}); valuing 1:1 as USDT (conservative fallback)", "WARN")
+            price = 1.0
+        commission += qty * price
+
+    net = realized + commission + funding
+    commission_note = ", ".join(f"{qty:+.8f}{asset}" for asset, qty in commission_by_asset.items())
+    log(f"Last {LOOKBACK_HOURS:.0f}h  realized=${realized:+.4f}  commission=${commission:+.4f} "
+        f"[{commission_note}]  funding=${funding:+.4f}  ->  NET=${net:+.4f}")
     return net
 
 

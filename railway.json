@@ -1,7 +1,7 @@
 {
   "deploy": {
     "startCommand": "python src/profit_taker.py",
-    "cronSchedule": "10 0 * * *",
+    "cronSchedule": "0 6 * * *",
     "restartPolicyType": "NEVER"
   }
 }
