@@ -2,9 +2,9 @@
 """
 Daily Profit-Taking Action  -  FULLY INDEPENDENT of the trading bot.
 
-Skims HALF of the last 24h NET realized futures profit out of the USDⓈ-M Futures
-wallet and parks it in Binance Simple Earn Flexible (the "Earn" wallet), where it
-stops being at risk and earns yield.
+Skims HALF of the NET realized futures profit accrued since our last skim out of the
+USDⓈ-M Futures wallet and parks it in Binance Simple Earn Flexible (the "Earn"
+wallet), where it stops being at risk and earns yield.
 
 INDEPENDENCE GUARANTEE:
   This script imports NOTHING from the bot. It does not read or write state.json,
@@ -13,25 +13,32 @@ INDEPENDENCE GUARANTEE:
   It reuses the bot's *signing pattern* (see src/order_executor.py:41-66), not its code.
 
 FLOW (run-once program - compute, move funds, exit):
-  1. Dedupe: skip if a Futures->Spot transfer already happened in the last window
-     (uses Binance transfer history as source of truth - survives ephemeral filesystems).
-  2. Sum NET realized PnL over the last 24h from /fapi/v1/income
+  1. Find the timestamp of our own last Futures->Spot transfer (Binance transfer
+     history IS the ledger - survives ephemeral filesystems, no local state file).
+     If none exists yet, bootstrap with a BOOTSTRAP_LOOKBACK_HOURS window.
+  2. Sum NET realized PnL from that timestamp through now, from /fapi/v1/income
      (REALIZED_PNL + COMMISSION + FUNDING_FEE; TRANSFER excluded). Skip if <= 0.
   3. amount = 50% of that, rounded down, capped so the bot's margin floor is preserved.
   4. Transfer Futures -> Spot (universal transfer, type UMFUTURE_MAIN).
   5. Subscribe the USDT into Simple Earn Flexible.
+
+Using "time since our last transfer" instead of a fixed rolling 24h means a missed
+or blocked run's profit automatically rolls into the next run's window - no slice of
+profit ever falls out of the ledger permanently, regardless of the cause (cron
+misfire, downtime, calendar/timezone drift, or an off-schedule manual transfer).
 
 Designed for a once-a-day Railway cron service:  python src/profit_taker.py
 
 Binance API key needs "Permits Universal Transfer" enabled for the transfer to work.
 
 Env overrides (all optional):
-  WITHDRAW_FRACTION       default 0.5    (fraction of net 24h profit to skim)
-  LOOKBACK_HOURS          default 24     (profit measurement window)
-  MIN_WITHDRAW_USDT       default 1.0    (skip dust below this)
-  FUTURES_MIN_FLOOR_USDT  default 0.0    (keep at least this much availableBalance on futures)
-  DEDUPE_WINDOW_HOURS     default 23     (don't skim twice within this many hours)
-  DRY_RUN                 default 0      (set 1 to compute only, move NO funds)
+  WITHDRAW_FRACTION        default 0.5    (fraction of net profit-since-last-skim to skim)
+  BOOTSTRAP_LOOKBACK_HOURS default 24     (window used only if no prior transfer ever found)
+  MAX_WINDOW_HOURS         default 168    (cap on the profit window after a long lapse)
+  TRANSFER_LOOKUP_HOURS    default 2160   (how far back to search for our last transfer)
+  MIN_WITHDRAW_USDT        default 1.0    (skip dust below this)
+  FUTURES_MIN_FLOOR_USDT   default 0.0    (keep at least this much availableBalance on futures)
+  DRY_RUN                  default 0      (set 1 to compute only, move NO funds)
 """
 import os
 import sys
@@ -71,10 +78,11 @@ def _env_float(name: str, default: float) -> float:
         return default
 
 WITHDRAW_FRACTION = _env_float("WITHDRAW_FRACTION", 0.5)
-LOOKBACK_HOURS = _env_float("LOOKBACK_HOURS", 24.0)
+BOOTSTRAP_LOOKBACK_HOURS = _env_float("BOOTSTRAP_LOOKBACK_HOURS", 24.0)
+MAX_WINDOW_HOURS = _env_float("MAX_WINDOW_HOURS", 168.0)
+TRANSFER_LOOKUP_HOURS = _env_float("TRANSFER_LOOKUP_HOURS", 2160.0)
 MIN_WITHDRAW_USDT = _env_float("MIN_WITHDRAW_USDT", 1.0)
 FUTURES_MIN_FLOOR_USDT = _env_float("FUTURES_MIN_FLOOR_USDT", 0.0)
-DEDUPE_WINDOW_HOURS = _env_float("DEDUPE_WINDOW_HOURS", 23.0)
 DRY_RUN = os.environ.get("DRY_RUN", "0").strip().lower() in ("1", "true", "yes", "on")
 
 QUOTE_ASSET = "USDT"   # futures PnL / income is USDT-denominated
@@ -136,21 +144,24 @@ def _round_down(value: float, decimals: int = 2) -> float:
 
 
 # --- Binance operations -------------------------------------------------------------
-def already_skimmed_recently() -> bool:
-    """True if a (non-failed) Futures->Spot transfer already happened within the
-    dedupe window. Prevents a double cron fire from skimming the same 24h twice."""
+def last_transfer_timestamp() -> int | None:
+    """Timestamp (ms) of our most recent (non-failed) Futures->Spot transfer - the
+    ledger anchor the next profit window is measured from. Looks back
+    TRANSFER_LOOKUP_HOURS; returns None if this account has never had one (fresh
+    deploy)."""
     end = _now_ms()
-    start = end - int(DEDUPE_WINDOW_HOURS * 3600 * 1000)
+    start = end - int(TRANSFER_LOOKUP_HOURS * 3600 * 1000)
     resp = _signed("GET", SAPI, "/sapi/v1/asset/transfer",
                    {"type": "UMFUTURE_MAIN", "startTime": start, "endTime": end, "size": 100})
     rows = resp.get("rows", []) if isinstance(resp, dict) else []
     active = [r for r in rows if str(r.get("status", "")).upper() != "FAILED"]
-    if active:
-        last = active[0]
-        log(f"Found {len(active)} recent Futures->Spot transfer(s); most recent "
-            f"amount={last.get('amount')} status={last.get('status')} "
-            f"tranId={last.get('tranId')}")
-    return len(active) > 0
+    if not active:
+        return None
+    last = max(active, key=lambda r: r["timestamp"])
+    log(f"Last Futures->Spot transfer: {last.get('amount')} {last.get('asset')} at "
+        f"{time.strftime('%Y-%m-%d %H:%M:%SZ', time.gmtime(last['timestamp'] / 1000))} "
+        f"(tranId={last.get('tranId')})")
+    return int(last["timestamp"])
 
 
 def _asset_price_usdt(asset: str) -> float:
@@ -163,20 +174,18 @@ def _asset_price_usdt(asset: str) -> float:
     return float(resp.json()["price"])
 
 
-def net_realized_pnl_24h() -> float:
-    """NET realized futures PnL over the last LOOKBACK_HOURS, from /fapi/v1/income.
+def net_realized_pnl(start_ms: int, end_ms: int) -> float:
+    """NET realized futures PnL between start_ms and end_ms, from /fapi/v1/income.
     Sums income for REALIZED_PNL, COMMISSION and FUNDING_FEE only (TRANSFER excluded,
     so our own withdrawals never corrupt the figure). Commission can be charged in a
     non-USDT asset (e.g. BNB fee discount) - each asset's commission is converted to
     USDT at its current price rather than summed as a raw quantity."""
-    end = _now_ms()
-    start = end - int(LOOKBACK_HOURS * 3600 * 1000)
     records = _signed("GET", FAPI, "/fapi/v1/income",
-                      {"startTime": start, "endTime": end, "limit": 1000})
+                      {"startTime": start_ms, "endTime": end_ms, "limit": 1000})
     if not isinstance(records, list):
         raise RuntimeError(f"Unexpected /fapi/v1/income response: {records!r}")
     if len(records) >= 1000:
-        log("income returned 1000 records (the max) - 24h profit may be UNDER-counted; "
+        log("income returned 1000 records (the max) - profit may be UNDER-counted; "
             "the skim will be conservative.", "WARN")
 
     realized = sum(float(r.get("income", 0.0) or 0.0)
@@ -202,7 +211,8 @@ def net_realized_pnl_24h() -> float:
 
     net = realized + commission + funding
     commission_note = ", ".join(f"{qty:+.8f}{asset}" for asset, qty in commission_by_asset.items())
-    log(f"Last {LOOKBACK_HOURS:.0f}h  realized=${realized:+.4f}  commission=${commission:+.4f} "
+    hours = (end_ms - start_ms) / 3_600_000
+    log(f"Window {hours:.1f}h  realized=${realized:+.4f}  commission=${commission:+.4f} "
         f"[{commission_note}]  funding=${funding:+.4f}  ->  NET=${net:+.4f}")
     return net
 
@@ -281,15 +291,27 @@ def run() -> int:
     log(f"Daily profit-taking run  (DRY_RUN={DRY_RUN}, fraction={WITHDRAW_FRACTION})")
     _sync_time()
 
-    # 1) Idempotency guard
-    if already_skimmed_recently():
-        log(f"Already skimmed within the last {DEDUPE_WINDOW_HOURS:.0f}h - nothing to do. Exiting.")
-        return 0
+    # 1) Ledger anchor: the profit window runs from our last transfer through now,
+    #    so a missed/blocked/misaligned prior run's profit rolls forward instead of
+    #    silently vanishing.
+    now = _now_ms()
+    last_ts = last_transfer_timestamp()
+    if last_ts is None:
+        window_start = now - int(BOOTSTRAP_LOOKBACK_HOURS * 3600 * 1000)
+        log(f"No prior Futures->Spot transfer found in the last {TRANSFER_LOOKUP_HOURS:.0f}h "
+            f"- bootstrapping with a {BOOTSTRAP_LOOKBACK_HOURS:.0f}h window.")
+    else:
+        window_start = last_ts
+        window_hours = (now - last_ts) / 3_600_000
+        if window_hours > MAX_WINDOW_HOURS:
+            log(f"{window_hours:.1f}h since the last skim (> MAX_WINDOW_HOURS={MAX_WINDOW_HOURS:.0f}h) "
+                f"- capping the window to avoid an oversized catch-up.", "WARN")
+            window_start = now - int(MAX_WINDOW_HOURS * 3600 * 1000)
 
-    # 2) Profit
-    net = net_realized_pnl_24h()
+    # 2) Profit since that anchor
+    net = net_realized_pnl(window_start, now)
     if net <= 0:
-        log(f"NET 24h profit is ${net:+.4f} (down/flat day) - nothing to skim. Exiting.")
+        log(f"NET profit since the last skim is ${net:+.4f} (down/flat) - nothing to skim. Exiting.")
         return 0
 
     # 3) Amount, capped by the account-wide margin floor
@@ -337,7 +359,8 @@ def run() -> int:
     except Exception as e:
         log(f"TRANSFER SUCCEEDED but Simple Earn subscribe FAILED: {e}", "ERROR")
         log(f"{amount:.2f} {asset} is SAFE in your Spot wallet (tranId={tran_id}); "
-            f"subscribe it to Earn manually. Next run will NOT re-transfer (dedupe guard).",
+            f"subscribe it to Earn manually. Next run's window starts from this "
+            f"transfer's timestamp, so it will NOT re-count this profit.",
             "ERROR")
         return 4
 
