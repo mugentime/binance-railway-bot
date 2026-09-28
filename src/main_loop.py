@@ -458,6 +458,14 @@ async def main_loop():
             quantity=manager.entry_quantity
         )
 
+    # Resilience: a transient Binance API error (HTTP 418 IP ban, 429, 5xx, timeout)
+    # must NOT permanently kill the bot. When state can't be verified we skip that
+    # cycle instead of exiting; any open position stays protected by its exchange-side
+    # SL/TP resting orders. Only after a long, persistent outage do we exit non-zero so
+    # Railway (restartPolicyType=ALWAYS) restarts us with a fresh process/connection.
+    consecutive_verify_failures = 0
+    MAX_VERIFY_FAILURES = 30  # ~30 cycles (>1h at 2.5m) before forcing a clean restart
+
     try:
         while True:
             # Wait for next candle
@@ -473,16 +481,26 @@ async def main_loop():
                 log(f"Failed to sync server time after retries: {e}", "error")
                 log("Continuing with current timestamp (may cause drift)", "warning")
 
-            # CRITICAL: Verify state is synchronized with exchange (with retry)
+            # CRITICAL: Verify state is synchronized with exchange (with retry).
+            # verify_and_sync_state() returns False ONLY on an API exception (transient);
+            # genuine state mismatches are reconciled in-place and return True. So a
+            # False/exception here means "couldn't reach the exchange this cycle" ->
+            # skip and retry next cycle, never a permanent shutdown.
+            state_ok = None
             try:
                 state_ok = retry_with_backoff(lambda: verify_and_sync_state(executor, manager))
-                if not state_ok:
-                    log("State verification failed - stopping bot for safety", "error")
-                    return
             except Exception as e:
                 log(f"Failed to verify state after retries: {e}", "error")
-                log("Skipping this cycle for safety", "warning")
+
+            if not state_ok:
+                consecutive_verify_failures += 1
+                log(f"State verification failed (transient API error) - skipping cycle "
+                    f"[{consecutive_verify_failures}/{MAX_VERIFY_FAILURES} consecutive]", "warning")
+                if consecutive_verify_failures >= MAX_VERIFY_FAILURES:
+                    log("Persistent verification failure - exiting for a clean Railway restart", "error")
+                    raise SystemExit(1)
                 continue
+            consecutive_verify_failures = 0
 
             # Clean expired blacklist entries
             manager.clean_expired_blacklist()
