@@ -46,7 +46,11 @@ TRAILING_CALLBACK_RATE = 4.0      # Binance callbackRate: close on a 4.0% retrac
 # Martingale parameters
 BASE_SIZE_PCT = 0.05          # 5% of account balance per trade at level 0 (increased from 3% for faster growth)
 MARTINGALE_MULTIPLIER = 1.25  # Position size multiplier per level (1.25x = 25% increase)
-MAX_LEVEL = 5                 # Max 5 levels (was 10): caps martingale tail. Recovery breaks past ~L5, and a single SL at L8 = ~24% of account (the 2026-08-01 UAIUSDT -$48).
+MAX_LEVEL = 2                 # Was 5 → 2 (2026-10-21). Monte Carlo (4000 bootstrapped orderings of the
+                              # martingale-only trade sequence) found L2 best risk-adjusted: P(drawdown<-50%)
+                              # drops from 33% (L5) to 8% (L2) while MEDIAN return stays ~flat (+93% vs +105%).
+                              # L5 had the highest median but a 1-in-3 chance of a >50% DD. L3 is worst-of-both.
+                              # Was 10 originally: recovery breaks past ~L5, single SL at L8 = ~24% of account.
 LEVERAGE = 20                 # 20x leverage
 COOLDOWN_AFTER_MAX_LOSS = 3600  # 1 hour cooldown after blowing a full chain
 MAX_CHAIN_DURATION_HOURS = 48   # Force chain reset after 2 days (prevents 8-day chains)
@@ -75,8 +79,11 @@ ATR_PERIOD = 20                  # ATR calculation period (20 candles)
 QUOTE_ASSET = "USDT"
 
 # Cooldown blacklist parameters
-COOLDOWN_CANDLES = 4          # Number of candles to block a pair after loss
-COOLDOWN_DURATION_SECS = COOLDOWN_CANDLES * SCAN_INTERVAL_SECS  # 4 * 150sec = 600 seconds (10 min)
+COOLDOWN_CANDLES = 144        # Was 4 (10 min) → 144 (~6h) on 2026-10-21: CONCENTRATION LIMIT. The 10-min
+                              # cooldown let the bot reload the same losing pair endlessly (CHIP = 43 trades,
+                              # 37% win, -$39 net, present in nearly every blowout chain). ~6h after a loss
+                              # forces diversification into the ~100-pair curated list instead of re-piling.
+COOLDOWN_DURATION_SECS = COOLDOWN_CANDLES * SCAN_INTERVAL_SECS  # 144 * 150sec = 21600 seconds (6 hours)
 
 # SMA Trend Filter (vars kept for reference; SMA computation removed from pair_scanner)
 SMA_PERIOD = 50
