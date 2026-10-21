@@ -780,8 +780,12 @@ async def main_loop():
                 log(f"BEST SIGNAL: {best.symbol} {best.direction} | Score={best.score:.2f} | "
                     f"RSI={best.rsi:.1f} BB={best.bb_pct_b:.2f} Z={best.zscore:.2f}")
 
-                # Place market entry
-                entry_order = executor.place_market_order(
+                # Place entry: maker (LIMIT post-only, timeout+retry+MARKET fallback) if
+                # enabled, else the original MARKET (taker). Both return avgPrice/executedQty.
+                _entry_fn = (executor.place_maker_entry
+                             if getattr(config, "USE_MAKER_ENTRIES", False)
+                             else executor.place_market_order)
+                entry_order = _entry_fn(
                     symbol=best.symbol,
                     side="BUY" if best.direction == "LONG" else "SELL",
                     notional_usd=size_usd,

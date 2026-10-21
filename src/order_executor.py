@@ -400,6 +400,133 @@ class OrderExecutor:
 
         return order
 
+    def _get_best_bid_ask(self, symbol: str) -> tuple:
+        """Return (best_bid, best_ask) from the order book top."""
+        resp = self.client.get(
+            f"{config.BINANCE_BASE_URL}/fapi/v1/depth",
+            params={"symbol": symbol, "limit": 5},
+        )
+        resp.raise_for_status()
+        ob = resp.json()
+        best_bid = float(ob["bids"][0][0]) if ob.get("bids") else 0.0
+        best_ask = float(ob["asks"][0][0]) if ob.get("asks") else 0.0
+        return best_bid, best_ask
+
+    def _query_order(self, symbol: str, order_id) -> dict:
+        params = self._sign_params({"symbol": symbol, "orderId": order_id})
+        r = self.client.get(f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                            params=params, headers=self._headers())
+        r.raise_for_status()
+        return r.json()
+
+    def _cancel_order(self, symbol: str, order_id) -> None:
+        """Best-effort cancel of a single resting order (never raises)."""
+        try:
+            params = self._sign_params({"symbol": symbol, "orderId": order_id})
+            self.client.delete(f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                               params=params, headers=self._headers())
+        except Exception as e:
+            log(f"Cancel of order {order_id} ({symbol}) failed (may already be gone): {e}", "warning")
+
+    def place_maker_entry(self, symbol: str, side: str, notional_usd: float) -> dict:
+        """Place an entry as a LIMIT post-only (GTX, maker) order to pay maker fee
+        (0.02%) instead of taker (0.05%). A post-only order can rest unfilled or fill
+        only partially, so: poll up to MAKER_ENTRY_TIMEOUT_SECS, cancel + reprice to the
+        new touch and retry up to MAKER_ENTRY_RETRIES, then MARKET-fallback whatever
+        notional is still unfilled (so the martingale chain is never stranded). Partial
+        fills are summed and the REAL filled qty/avg is returned, so the caller's TP/SL
+        (sized to executedQty) stays correct. Return shape matches place_market_order."""
+        info = self.symbol_info_cache[symbol]
+        tick = info["tickSize"]; pp = info["pricePrecision"]; qp = info["quantityPrecision"]
+
+        filled_qty = 0.0
+        filled_quote = 0.0  # sum(price*qty) over all partials -> weighted avg price
+        mkt_qty = 0.0       # how much of the fill came from the MARKET fallback (taker)
+
+        for attempt in range(1, config.MAKER_ENTRY_RETRIES + 1):
+            remaining = notional_usd - filled_quote
+            if remaining < 1.0:
+                break
+            best_bid, best_ask = self._get_best_bid_ask(symbol)
+            if best_bid <= 0 or best_ask <= 0:
+                log(f"Maker entry {symbol}: empty book -> MARKET fallback", "warning")
+                break
+            # Post-only on the maker side (join the touch): BUY at bid, SELL at ask.
+            price = self._round_to_tick_size(best_bid if side == "BUY" else best_ask, tick)
+            qty = round_down(remaining / price, qp)
+            if qty <= 0:
+                break
+
+            params = self._sign_params({
+                "symbol": symbol, "side": side, "type": "LIMIT",
+                "timeInForce": "GTX",  # post-only: expired/rejected if it would cross (stays maker)
+                "price": f"{price:.{pp}f}", "quantity": f"{qty:.{qp}f}",
+                "newOrderRespType": "RESULT",
+            })
+            try:
+                resp = self.client.post(f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                                        params=params, headers=self._headers())
+                resp.raise_for_status()
+                order = resp.json()
+            except httpx.HTTPStatusError as e:
+                body = getattr(e.response, "text", "")
+                # -5022: post-only would immediately match (price moved); reprice & retry.
+                log(f"Maker entry {symbol} attempt {attempt}/{config.MAKER_ENTRY_RETRIES} "
+                    f"rejected, repricing: {body}", "warning")
+                continue
+
+            order_id = order.get("orderId")
+            status = order.get("status", "")
+            log(f"Maker entry {symbol} {side} attempt {attempt}: LIMIT {qty} @ {price} "
+                f"(GTX post-only), status={status}")
+            if status in ("EXPIRED", "REJECTED"):
+                continue  # would have crossed -> reprice & retry
+
+            # Poll for fill up to the timeout.
+            waited = 0.0
+            while waited < config.MAKER_ENTRY_TIMEOUT_SECS:
+                time.sleep(config.MAKER_ENTRY_POLL_SECS)
+                waited += config.MAKER_ENTRY_POLL_SECS
+                od = self._query_order(symbol, order_id)
+                if od.get("status") in ("FILLED", "CANCELED", "EXPIRED", "REJECTED"):
+                    break
+
+            # Cancel anything still resting, then read the FINAL executed amounts.
+            od = self._query_order(symbol, order_id)
+            if od.get("status") in ("NEW", "PARTIALLY_FILLED"):
+                self._cancel_order(symbol, order_id)
+                od = self._query_order(symbol, order_id)
+            eq = float(od.get("executedQty", 0) or 0)
+            cq = float(od.get("cumQuote", 0) or 0)
+            if eq > 0:
+                filled_qty += eq
+                filled_quote += cq if cq > 0 else eq * price
+
+        # MARKET-fallback the unfilled remainder so the chain is never left short.
+        remaining = notional_usd - filled_quote
+        if remaining >= 1.0:
+            log(f"Maker entry {symbol}: ${remaining:.2f} unfilled after "
+                f"{config.MAKER_ENTRY_RETRIES} maker attempts -> MARKET fallback (taker)", "warning")
+            mkt = self.place_market_order(symbol, side, remaining)
+            meq = float(mkt.get("executedQty", 0) or 0)
+            mcq = float(mkt.get("cumQuote", 0) or 0)
+            mavg = float(mkt.get("avgPrice", 0) or 0)
+            if meq > 0:
+                filled_qty += meq
+                filled_quote += mcq if mcq > 0 else meq * mavg
+                mkt_qty += meq
+
+        if filled_qty <= 0:
+            raise Exception(f"Maker entry {symbol} {side}: nothing filled (maker + MARKET fallback)")
+
+        avg_price = filled_quote / filled_qty
+        maker_frac = (filled_qty - mkt_qty) / filled_qty if filled_qty else 0
+        log(f"ENTRY filled {symbol} {side}: qty={filled_qty} avg={avg_price:.6f} "
+            f"(target ${notional_usd:.2f}, {maker_frac*100:.0f}% maker)")
+        return {"symbol": symbol, "status": "FILLED", "origType": "MAKER_ENTRY",
+                "executedQty": f"{filled_qty}", "avgPrice": f"{avg_price}",
+                "cumQuote": f"{filled_quote}"}
+
     def place_tp_sl_orders(self, symbol: str, direction: str,
                           tp_price: float, sl_price: float, quantity: float):
         """
