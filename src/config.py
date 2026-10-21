@@ -22,6 +22,16 @@ BINANCE_BASE_URL = "https://fapi.binance.com"
 # Risk/Reward: 2.5:1 (excellent for martingale)
 TAKER_FEE = 0.0005            # 0.05%
 MAKER_FEE = 0.0002            # 0.02%
+
+# Maker entries (added 2026-10-21): place entries as LIMIT post-only (maker, 0.02%)
+# instead of MARKET (taker, 0.05%). Fees ate -$30 of the martingale's +$69 gross in the
+# 08-30→10-21 run, so halving entry fees is the biggest net-P&L lever. A post-only order
+# can go unfilled/partial → MUST have timeout+retry+MARKET-fallback or it strands the chain
+# with orphaned/partial fills. Toggle False to instantly revert to taker entries.
+USE_MAKER_ENTRIES = True          # False = old MARKET (taker) entries
+MAKER_ENTRY_TIMEOUT_SECS = 45     # wait this long for a post-only entry to fill before repricing
+MAKER_ENTRY_POLL_SECS = 3         # poll fill status every N seconds
+MAKER_ENTRY_RETRIES = 3           # reprice-and-retry this many times, then MARKET-fallback the remainder
 TP_PCT = 0.10                 # 10.0% gross take profit
 SL_PCT = 0.04                 # 4.0% price-based stop loss (prevents catastrophes)
 
