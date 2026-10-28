@@ -1,6 +1,6 @@
 {
   "deploy": {
-    "startCommand": "python src/main_loop.py",
+    "startCommand": "python src/ab_live.py --live",
     "restartPolicyType": "ALWAYS",
     "restartPolicyMaxRetries": 10
   }
