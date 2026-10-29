@@ -40,6 +40,8 @@ ROLLING = os.environ.get("ROLLING", "0") == "1"                # True = cicla si
 INITIAL_EQUITY = float(os.environ.get("INITIAL_EQUITY", "0"))  # baseline $ del stop (fijo por env -> restart-safe)
 STOP_HIGH_MULT = float(os.environ.get("STOP_HIGH_MULT", "0"))  # 2.0 = frena al DOBLAR; 0 = off
 STOP_LOW_MULT = float(os.environ.get("STOP_LOW_MULT", "0"))    # 0.10 = frena si cae a 10% (~arruinado); 0 = off
+MIN_COINS = int(os.environ.get("MIN_COINS", "5"))              # piso de diversificacion: SIEMPRE >= este nro de monedas
+PER_COIN_CAP = float(os.environ.get("PER_COIN_CAP", "0")) or (MAX_NOTIONAL / max(1, MIN_COINS))  # tope nocional por moneda
 
 DEFAULT_PAIRS = ["SOMIUSDT","FLUXUSDT","DUSKUSDT","WALUSDT","AVNTUSDT","NIGHTUSDT","CHRUSDT","DEEPUSDT"]
 _env_pairs = os.environ.get("FORWARD_PAIRS", "").strip()
@@ -85,10 +87,10 @@ def stop_reason(eq):
     return None
 
 
-def sma_allows(sym, price):
-    """True si precio >= SMA diaria de SMA_DAYS. Cachea 1h. SMA_DAYS=0 -> siempre True."""
+def sma_value(sym):
+    """SMA diaria de SMA_DAYS (cacheada 1h). None si SMA_DAYS<=0 (sin filtro)."""
     if SMA_DAYS <= 0:
-        return True
+        return None
     now = time.time()
     c = _sma_cache.get(sym)
     if not c or now - c[1] > 3600:
@@ -99,7 +101,31 @@ def sma_allows(sym, price):
         closes = [float(k[4]) for k in kl[:-1]]        # cierres de días completos
         sma = sum(closes[-SMA_DAYS:]) / min(SMA_DAYS, len(closes))
         _sma_cache[sym] = (sma, now)
-    return price >= _sma_cache[sym][0]
+    return _sma_cache[sym][0]
+
+
+def select_coins(ex, syms):
+    """DIVERSIFICA: elige >= MIN_COINS monedas por tick. Rankea por fuerza de tendencia
+    (precio/SMA). Prefiere las que estan SOBRE su SMA (ratio>=1); si en tendencia hay
+    menos de MIN_COINS, COMPLETA con las 'menos malas' (top ratio) hasta el piso, para
+    nunca concentrarse en 1-2 nombres. Devuelve [(sym, price, ratio)] ordenada por ratio desc.
+    SMA_DAYS<=0 -> sin filtro, rankea todo (ratio 1.0)."""
+    ranked = []
+    for s in syms:
+        try:
+            price = ex.get_current_price(s)
+        except Exception as e:
+            flog(f"  {s}: sin precio ({e}) -> fuera del ranking"); continue
+        sma = sma_value(s)
+        ratio = (price / sma) if sma else 1.0
+        ranked.append((s, price, ratio))
+    ranked.sort(key=lambda x: x[2], reverse=True)
+    if SMA_DAYS <= 0:
+        return ranked
+    passers = [r for r in ranked if r[2] >= 1.0]
+    if len(passers) >= MIN_COINS:
+        return passers                               # bastantes en tendencia: usa todas
+    return ranked[:min(MIN_COINS, len(ranked))]      # piso: top MIN_COINS aunque esten bajo SMA
 
 
 def total_notional(ex, syms):
@@ -125,8 +151,8 @@ def place_tp_limit(ex, symbol, qty, tp_price):
 
 
 def setup(ex, dry):
-    flog(f"SETUP {len(PAIRS)} pares | {LEVERAGE}x CROSSED | SMA{SMA_DAYS} | maxAdds {MAX_ADDS} | "
-         f"lote ${LOT_USD} | budget ${BUDGET_USD} (notl max ${MAX_NOTIONAL:.0f})")
+    flog(f"SETUP {len(PAIRS)} pares | {LEVERAGE}x CROSSED | SMA{SMA_DAYS} rank | minCoins {MIN_COINS} | "
+         f"cap ${PER_COIN_CAP:.0f}/moneda | lote ${LOT_USD} | budget ${BUDGET_USD} (notl max ${MAX_NOTIONAL:.0f})")
     ok = []
     for s in PAIRS:
         if s not in ex.symbol_info_cache:
@@ -147,29 +173,41 @@ def setup(ex, dry):
 
 def buy_tick(ex, syms, dry, tick):
     flog(f"--- TICK {tick} ---")
-    notl = total_notional(ex, syms) if not dry else 0.0
-    for s in syms:
-        try:
-            avail = account_available(ex) if not dry else BUDGET_USD
-            price = ex.get_current_price(s)
-            if not sma_allows(s, price):
-                flog(f"  {s}: SKIP (precio {price} < SMA{SMA_DAYS}, veto tendencia)"); continue
-            if notl + LOT_USD > MAX_NOTIONAL:
-                flog(f"  {s}: SKIP (budget: notional ${notl:.0f}+{LOT_USD} > ${MAX_NOTIONAL:.0f})"); continue
-            if avail < LOT_USD / LEVERAGE + 0.5:
-                flog(f"  {s}: SKIP (colateral libre ${avail:.2f})"); continue
+    selected = select_coins(ex, syms)
+    flog(f"  seleccion {len(selected)}/{len(syms)} (piso {MIN_COINS}, cap ${PER_COIN_CAP:.0f}/moneda): "
+         + ", ".join(f"{s.replace('USDT','')}@{r:.3f}" for s, _, r in selected))
+    if dry:
+        for s, price, ratio in selected:
             info = ex.symbol_info_cache[s]
             qty = round_down(LOT_USD / price, info["quantityPrecision"])
-            if dry:
-                flog(f"  [DRY] {s}: BUY ${LOT_USD}={qty}@{price:.6f} -> TP {price*(1+TP_PCT):.6f}")
-                notl += LOT_USD; continue
+            tag = "sobreSMA" if ratio >= 1 else "bajoSMA(piso)"
+            flog(f"  [DRY] {s}: BUY ${LOT_USD}={qty}@{price:.6f} r={ratio:.3f} {tag} -> TP {price*(1+TP_PCT):.6f}")
+        return
+    notl_map = {}
+    try:
+        for p in ex.get_all_open_positions():
+            if p["symbol"] in syms:
+                notl_map[p["symbol"]] = abs(float(p["positionAmt"])) * float(p["markPrice"])
+    except Exception:
+        pass
+    notl_total = sum(notl_map.values())
+    for s, price, ratio in selected:
+        try:
+            coin_notl = notl_map.get(s, 0.0)
+            if coin_notl + LOT_USD > PER_COIN_CAP + 1e-6:
+                flog(f"  {s}: SKIP (cap/moneda ${coin_notl:.0f}+{LOT_USD}>{PER_COIN_CAP:.0f})"); continue
+            if notl_total + LOT_USD > MAX_NOTIONAL + 1e-6:
+                flog(f"  {s}: SKIP (budget total ${notl_total:.0f}>{MAX_NOTIONAL:.0f})"); continue
+            avail = account_available(ex)
+            if avail < LOT_USD / LEVERAGE + 0.5:
+                flog(f"  {s}: SKIP (colateral libre ${avail:.2f})"); continue
             ex.place_market_order(s, "BUY", LOT_USD)
             pos = ex.get_position(s)
             amt = abs(float(pos["positionAmt"])); avg = float(pos["entryPrice"]) or price
             ex.cancel_all_orders(s)
             tp = place_tp_limit(ex, s, amt, avg * (1 + TP_PCT))
-            notl += LOT_USD
-            flog(f"  {s}: BUY ${LOT_USD} | pos={amt} avg={avg:.6f} | TP {tp}")
+            notl_total += LOT_USD; notl_map[s] = coin_notl + LOT_USD
+            flog(f"  {s}: BUY ${LOT_USD} r={ratio:.3f} | pos={amt} avg={avg:.6f} | TP {tp}")
         except Exception as e:
             flog(f"  {s}: ERROR compra ({e})")
 
@@ -245,7 +283,8 @@ def main():
     dry = not args.live
     flog("#" * 60)
     flog(f"A/B LIVE variante {VARIANT} | modo={'LIVE' if not dry else 'DRY'} | "
-         f"${LOT_USD}/30min | {LEVERAGE}x | SMA{SMA_DAYS} | maxAdds {MAX_ADDS} | h{CLOSE_ALL_H}")
+         f"${LOT_USD}/30min | {LEVERAGE}x | SMA{SMA_DAYS} rank | minCoins {MIN_COINS} | "
+         f"cap ${PER_COIN_CAP:.0f}/moneda | TP+{TP_PCT*100:.0f}% | h{CLOSE_ALL_H}")
     ex = OrderExecutor()
     try:
         avail = account_available(ex)
