@@ -349,6 +349,12 @@ def main():
         flog("[DRY] fin. Para ir en vivo: python src/momentum_live.py --live")
         return
 
+    # LIVE: startup identity check — log the account balance so the operator can confirm
+    # THIS service is wired to the intended account (match against known balances).
+    avail = _available(ex)
+    flog(f"LIVE START | available collateral=${avail:.2f} | verify this matches the intended account")
+    flog(f"RUNNING COMMIT: {os.environ.get('RAILWAY_GIT_COMMIT_SHA','local')[:12]}")
+
     # LIVE: indefinite rolling loop
     tick = 0
     while True:

@@ -1,6 +1,6 @@
 {
   "deploy": {
-    "startCommand": "python src/ab_live.py --live",
+    "startCommand": "python src/momentum_live.py --live",
     "restartPolicyType": "ALWAYS",
     "restartPolicyMaxRetries": 10
   }
