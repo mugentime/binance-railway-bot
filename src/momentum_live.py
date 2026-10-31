@@ -39,9 +39,11 @@ DEFAULT_PAIRS = ["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","ADAUSDT","DO
 _envp = os.environ.get("SYMBOLS", "").strip()
 PAIRS = [p.strip().upper() for p in _envp.split(",") if p.strip()] if _envp else DEFAULT_PAIRS
 
-LOT_USD    = float(os.environ.get("LOT_USD", "6"))      # notional per entry
-LEVERAGE   = int(os.environ.get("LEVERAGE", "10"))
-MAX_POS    = int(os.environ.get("MAX_POS", "4"))        # max concurrent positions
+LOT_USD    = float(os.environ.get("MOM_LOT_USD", "6"))  # notional per entry
+# NOTE: dedicated MOM_* keys so we never inherit stale A/B vars (e.g. the old LEVERAGE=5 still set
+# on the repurposed sub services). Reading "LEVERAGE" directly would silently trade at the wrong size.
+LEVERAGE   = int(os.environ.get("MOM_LEVERAGE", "10"))
+MAX_POS    = int(os.environ.get("MOM_MAX_POS", "4"))    # max concurrent positions
 RSI_ENTRY  = float(os.environ.get("RSI_ENTRY", "80"))
 RSI_LEN    = int(os.environ.get("RSI_LEN", "14"))
 EMA_LEN    = int(os.environ.get("EMA_LEN", "200"))
