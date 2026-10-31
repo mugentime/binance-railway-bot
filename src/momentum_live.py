@@ -26,7 +26,6 @@ import sys, os, time, json, argparse, urllib.request
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import pandas as pd
 import numpy as np
 from order_executor import OrderExecutor
 import config as _cfg
@@ -87,30 +86,38 @@ def fetch_klines(sym, limit=320):
         raw = json.loads(r.read().decode())
     # drop the last (in-progress) candle -> only CLOSED candles
     raw = raw[:-1]
-    df = pd.DataFrame(raw, columns=["ot","o","h","l","c","v","ct","qv","n","tb","tq","ig"])
-    for col in ("o","h","l","c"):
-        df[col] = df[col].astype(float)
-    return df
+    o = np.array([float(r[1]) for r in raw]); h = np.array([float(r[2]) for r in raw])
+    l = np.array([float(r[3]) for r in raw]); c = np.array([float(r[4]) for r in raw])
+    ot = np.array([int(r[0]) for r in raw], dtype=np.int64)
+    return {"o": o, "h": h, "l": l, "c": c, "ot": ot}
 
-def _wilder(s, n):
-    return s.ewm(alpha=1.0/n, adjust=False).mean()
+def _ewm(x, alpha):
+    """Exponential weighted mean, adjust=False (matches pandas ewm used in the backtest)."""
+    y = np.empty(len(x), dtype=float)
+    y[0] = x[0]
+    for i in range(1, len(x)):
+        y[i] = alpha * x[i] + (1.0 - alpha) * y[i - 1]
+    return y
 
-def indicators(df):
-    c, h, l = df["c"], df["h"], df["l"]
-    d = c.diff()
-    up = d.clip(lower=0); dn = (-d.clip(upper=0))
-    rs = _wilder(up, RSI_LEN) / _wilder(dn, RSI_LEN).replace(0, np.nan)
-    rsi = (100 - 100/(1+rs)).fillna(50)
-    ema = c.ewm(span=EMA_LEN, adjust=False).mean()
-    pc = c.shift(1)
-    tr = pd.concat([h-l, (h-pc).abs(), (l-pc).abs()], axis=1).max(axis=1)
+def _wilder(x, n): return _ewm(x, 1.0 / n)
+
+def indicators(kl):
+    c, h, l = kl["c"], kl["h"], kl["l"]
+    d = np.diff(c, prepend=c[0])                      # first delta = 0 (warmup, negligible over 320)
+    up = np.where(d > 0, d, 0.0); dn = np.where(d < 0, -d, 0.0)
+    au = _wilder(up, RSI_LEN); ad = _wilder(dn, RSI_LEN)
+    rs = au / np.where(ad == 0, np.nan, ad)
+    rsi = np.nan_to_num(100.0 - 100.0 / (1.0 + rs), nan=50.0)
+    ema = _ewm(c, 2.0 / (EMA_LEN + 1))
+    pc = np.concatenate([[c[0]], c[:-1]])
+    tr = np.maximum(h - l, np.maximum(np.abs(h - pc), np.abs(l - pc)))
     atr = _wilder(tr, ATR_LEN)
     return {
-        "close": float(c.iloc[-1]),
-        "rsi": float(rsi.iloc[-1]), "rsi_prev": float(rsi.iloc[-2]),
-        "ema": float(ema.iloc[-1]),
-        "atr": float(atr.iloc[-1]),
-        "candle_ot": int(df["ot"].iloc[-1]),
+        "close": float(c[-1]),
+        "rsi": float(rsi[-1]), "rsi_prev": float(rsi[-2]),
+        "ema": float(ema[-1]),
+        "atr": float(atr[-1]),
+        "candle_ot": int(kl["ot"][-1]),
     }
 
 def entry_signal(ind):
