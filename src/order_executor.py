@@ -723,10 +723,10 @@ class OrderExecutor:
             raise Exception(f"Order placement incomplete - {error_msg}")
 
     def has_trailing_stop(self, symbol: str) -> bool:
-        """Return True if a native TRAILING_STOP_MARKET algo order is already open for symbol."""
+        """Return True if a native TRAILING_STOP_MARKET order is already open for symbol."""
         try:
-            for order in self.get_algo_open_orders(symbol):
-                if order.get('orderType') == 'TRAILING_STOP_MARKET':
+            for order in self.get_open_orders(symbol):
+                if order.get('type') == 'TRAILING_STOP_MARKET':
                     return True
         except Exception as e:
             log(f"Could not check trailing stop for {symbol}: {e}", "warning")
@@ -742,8 +742,10 @@ class OrderExecutor:
         matching engine updates the trail tick-by-tick, so the 2.5-minute bot loop never has to
         move it (this is the whole point — a loop-driven trailing stop can't follow price).
 
-        Uses the Algo Order endpoint because Binance migrated all conditional/trailing order
-        types off /fapi/v1/order on 2025-12-09 (plain endpoint now returns -4120).
+        Uses the plain /fapi/v1/order endpoint (type=TRAILING_STOP_MARKET, reduceOnly) — the
+        /fapi/v1/algoOrder endpoint is for TWAP/VP execution algos only and rejects CONDITIONAL
+        TRAILING_STOP_MARKET with HTTP 400 every time (confirmed: 100% failure rate in live logs
+        since 2026-11-04, on every position that reached the runner phase on both sub accounts).
 
         Args:
             callback_rate: trailing distance as a percent (Binance hard limits: min 0.1, max 5)
@@ -769,7 +771,6 @@ class OrderExecutor:
             "symbol": symbol,
             "side": close_side,
             "positionSide": "BOTH",  # one-way mode
-            "algoType": "CONDITIONAL",
             "type": "TRAILING_STOP_MARKET",
             "callbackRate": f"{cr}",
             "quantity": quantity_str,
@@ -780,7 +781,7 @@ class OrderExecutor:
 
         try:
             resp = self.client.post(
-                f"{config.BINANCE_BASE_URL}/fapi/v1/algoOrder",
+                f"{config.BINANCE_BASE_URL}/fapi/v1/order",
                 params=params,
                 headers=self._headers(),
             )
@@ -788,7 +789,7 @@ class OrderExecutor:
             order = resp.json()
             log(f"TRAILING STOP armed: {symbol} {direction} | callbackRate={cr}% | "
                 f"qty={quantity_str} | activation=IMMEDIATE (already in profit) "
-                f"(algoId: {order.get('algoId')})", "warning")
+                f"(orderId: {order.get('orderId')})", "warning")
             return True
         except httpx.HTTPStatusError as e:
             try:

@@ -145,13 +145,16 @@ def place_reduce_limit(ex, sym, qty, price):
     return f["price"]
 
 def place_stop_market(ex, sym, qty, stop_price):
-    """Protective STOP_MARKET (reduceOnly) via Algo endpoint (Binance moved conditional orders there)."""
+    """Protective STOP_MARKET (reduceOnly) on the plain order endpoint — /fapi/v1/algoOrder only
+    supports TWAP/VP execution algos, not conditional STOP_MARKET, and rejects it with HTTP 400
+    every time (confirmed in live logs: 100% failure rate since 2026-11-04, every SL/trail attempt
+    on every position). The already-working TP1 LIMIT order uses this same /fapi/v1/order endpoint."""
     f = _fmt(ex, sym, price=stop_price, qty=qty)
-    params = {"symbol": sym, "side": "SELL", "positionSide": "BOTH", "algoType": "CONDITIONAL",
+    params = {"symbol": sym, "side": "SELL", "positionSide": "BOTH",
               "type": "STOP_MARKET", "stopPrice": f["price"], "quantity": f["qty"],
               "reduceOnly": "true", "workingType": "MARK_PRICE"}
     params = ex._sign_params(params)
-    r = ex.client.post(f"{_cfg.BINANCE_BASE_URL}/fapi/v1/algoOrder", params=params, headers=ex._headers())
+    r = ex.client.post(f"{_cfg.BINANCE_BASE_URL}/fapi/v1/order", params=params, headers=ex._headers())
     r.raise_for_status()
     return f["price"]
 
@@ -265,16 +268,9 @@ def _open_order_types(ex, sym):
     r = ex.client.get(f"{_cfg.BINANCE_BASE_URL}/fapi/v1/openOrders", params=params, headers=ex._headers())
     r.raise_for_status()
     for o in r.json():
-        if o.get("type") == "LIMIT": types.add("LIMIT")
-    # algo (conditional) orders
-    try:
-        p2 = ex._sign_params({"symbol": sym})
-        r2 = ex.client.get(f"{_cfg.BINANCE_BASE_URL}/fapi/v1/openAlgoOrders", params=p2, headers=ex._headers())
-        r2.raise_for_status()
-        for o in r2.json().get("orders", r2.json()) if isinstance(r2.json(), dict) else r2.json():
-            if "STOP" in str(o.get("orderType") or o.get("type") or ""): types.add("STOP")
-    except Exception:
-        pass
+        t = str(o.get("type") or "")
+        if t == "LIMIT": types.add("LIMIT")
+        if "STOP" in t: types.add("STOP")
     return types
 
 
