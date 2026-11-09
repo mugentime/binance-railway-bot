@@ -1,1 +1,1 @@
-web: python src/monitoring_daemon.py & python main_loop.py
+web: python src/paper_xsec.py --loop
