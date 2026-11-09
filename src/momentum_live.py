@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
-from order_executor import OrderExecutor
+from order_executor import OrderExecutor, QuantityTooSmallError
 import config as _cfg
 
 # ---------------- config (env-parameterized) ----------------
@@ -204,8 +204,9 @@ def callback_rate_from_atr(atr_abs, price):
 def manage(ex, sym, live_amt, st, dry):
     """Enforce the scale-out exit plan for an open position. Mutates state dict `st` entry for sym."""
     meta = st.get(sym)
-    if meta is None:
-        # adopted / unknown position -> reconstruct conservatively
+    if meta is None or "entry" not in meta:
+        # adopted / unknown position (or a stale same-candle dedup marker left over
+        # from a prior failed entry attempt on this symbol) -> reconstruct conservatively
         ind = indicators(fetch_klines(sym))
         pos = ex.get_position(sym)
         entry = float(pos.get("entryPrice", 0)) or ind["close"]
@@ -317,6 +318,12 @@ def try_entries(ex, universe, st, open_now, dry):
             save_state(st)
             flog(f"  {s}: BUY ${LOT_USD} qty={qty} avg={avg:.6f} | TP1 {tp}(x{SCALE_FRAC:.0%}) SL {sl}")
             open_now[s] = {"amt": qty, "entry": avg}
+        except QuantityTooSmallError as e:
+            # Deterministic for this candle (price/precision won't change intra-candle) —
+            # mark it processed so we don't re-attempt the same doomed signal every tick.
+            st[s] = {"last_candle": ind["candle_ot"]}
+            save_state(st)
+            flog(f"  {s}: ERROR compra ({e})")
         except Exception as e:
             flog(f"  {s}: ERROR compra ({e})")
 
@@ -372,8 +379,10 @@ def main():
                 try: manage(ex, s, info["amt"], st, dry=False)
                 except Exception as e: flog(f"  {s}: manage ERROR ({e})")
             # 2) clear state for symbols no longer open; cancel stray orders
+            # (skip pure same-candle dedup markers — entries with no "entry" key never
+            # had a position/orders placed, so there's nothing to cancel/clear yet)
             for s in list(st.keys()):
-                if s not in open_now:
+                if s not in open_now and "entry" in st[s]:
                     try: ex.cancel_all_orders(s)
                     except Exception: pass
                     st.pop(s, None)

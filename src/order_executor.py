@@ -11,6 +11,13 @@ import httpx
 import config
 from utils import log, round_down
 
+
+class QuantityTooSmallError(ValueError):
+    """Raised when notional_usd rounds down to qty<=0 for a symbol's lot size.
+    Deterministic for the current price/precision — retrying within the same
+    candle will not succeed, unlike a transient network/API error."""
+
+
 class OrderExecutor:
     def __init__(self):
         self.client = httpx.Client(timeout=30.0)
@@ -307,7 +314,7 @@ class OrderExecutor:
         if quantity <= 0:
             min_step = 10 ** (-qty_precision)
             min_notional = min_step * current_price
-            raise ValueError(
+            raise QuantityTooSmallError(
                 f"{symbol}: notional=${notional_usd:.2f} @ price={current_price:.4f} rounds down to "
                 f"qty=0 at quantityPrecision={qty_precision} (min tradeable notional ~${min_notional:.2f}) "
                 f"— notional_usd too small for this symbol's lot size at the current price, skipping order"
