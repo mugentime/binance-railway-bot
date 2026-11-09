@@ -751,25 +751,23 @@ class OrderExecutor:
     def place_trailing_stop(self, symbol: str, direction: str, quantity: float,
                             callback_rate: float) -> bool:
         """
-        Arm a native Binance TRAILING_STOP_MARKET (server-side trailing) as a closePosition
-        order. Activation is IMMEDIATE (no activationPrice sent) — the caller MUST only invoke
+        Arm a native Binance TRAILING_STOP_MARKET (server-side trailing) as a reduceOnly order.
+        Activation is IMMEDIATE (no activationPrice sent) — the caller MUST only invoke
         this once the position is already in profit, so the stop locks in gains from the current
         mark price and then trails by callback_rate as price keeps moving in favor. Binance's
         matching engine updates the trail tick-by-tick, so the 2.5-minute bot loop never has to
         move it (this is the whole point — a loop-driven trailing stop can't follow price).
 
-        Uses the plain /fapi/v1/order endpoint (type=TRAILING_STOP_MARKET) — the
+        Uses the plain /fapi/v1/order endpoint (type=TRAILING_STOP_MARKET, reduceOnly) — the
         /fapi/v1/algoOrder endpoint is for TWAP/VP execution algos only and rejects CONDITIONAL
         TRAILING_STOP_MARKET with HTTP 400 every time (confirmed: 100% failure rate in live logs
         since 2026-11-04, on every position that reached the runner phase on both sub accounts).
 
-        Uses closePosition=true instead of reduceOnly=true+quantity: confirmed live on 2026-11-09
-        that Binance's reduceOnly MIN_NOTIONAL exemption applies to LIMIT/MARKET reduceOnly
-        orders but not to conditional STOP_MARKET/TRAILING_STOP_MARKET orders — a runner-phase
-        trailing stop on a small remaining qty could fall below the $5 MIN_NOTIONAL floor and get
-        rejected exactly like the plain STOP_MARKET did. closePosition=true closes whatever the
-        live position actually is with no quantity param, so MIN_NOTIONAL (quantity*price) never
-        applies — same protective effect, no risk/behavior change.
+        NOTE (2026-11-09): briefly tried closePosition=true here on the same theory as the plain
+        STOP_MARKET fix, but Binance rejects closePosition on this endpoint outright (confirmed
+        on the sibling STOP_MARKET call: HTTP 400, {"code":-4120,"msg":"Order type not supported
+        for this endpoint. Please use the Algo Order API endpoints instead."}) — reverted to
+        reduceOnly=true+quantity, the form already confirmed working.
 
         Args:
             callback_rate: trailing distance as a percent (Binance hard limits: min 0.1, max 5)
@@ -783,6 +781,11 @@ class OrderExecutor:
         # Clamp to Binance's allowed callbackRate range [0.1, 5], 1-decimal precision
         cr = max(0.1, min(5.0, round(callback_rate, 1)))
 
+        step_size = self.symbol_info_cache[symbol]["stepSize"]
+        qty_precision = self.symbol_info_cache[symbol]["quantityPrecision"]
+        quantity_rounded = self._round_to_step_size(quantity, step_size)
+        quantity_str = f"{quantity_rounded:.{qty_precision}f}"
+
         # Close side: LONG closes with SELL, SHORT closes with BUY
         close_side = "SELL" if direction == "LONG" else "BUY"
 
@@ -792,7 +795,8 @@ class OrderExecutor:
             "positionSide": "BOTH",  # one-way mode
             "type": "TRAILING_STOP_MARKET",
             "callbackRate": f"{cr}",
-            "closePosition": "true",
+            "quantity": quantity_str,
+            "reduceOnly": "true",
             "workingType": "MARK_PRICE",
         }
         params = self._sign_params(params)
@@ -806,7 +810,7 @@ class OrderExecutor:
             resp.raise_for_status()
             order = resp.json()
             log(f"TRAILING STOP armed: {symbol} {direction} | callbackRate={cr}% | "
-                f"closePosition=true (qty~{quantity:.6f}) | activation=IMMEDIATE (already in profit) "
+                f"qty={quantity_str} | activation=IMMEDIATE (already in profit) "
                 f"(orderId: {order.get('orderId')})", "warning")
             return True
         except httpx.HTTPStatusError as e:
