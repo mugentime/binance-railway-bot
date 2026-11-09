@@ -60,6 +60,8 @@ def save_state(manager, filepath=None):
         "chain_pnl_history": manager.chain_pnl_history,
         "chain_start_balance": manager.chain_start_balance,
         "chain_start_time": manager.chain_start_time,
+        "symbol_stats": manager.symbol_stats,
+        "retired_symbols": manager.retired_symbols,
         "saved_at": datetime.utcnow().isoformat(),
     }
 

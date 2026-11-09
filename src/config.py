@@ -95,6 +95,25 @@ COOLDOWN_CANDLES = 144        # Was 4 (10 min) → 144 (~6h) on 2026-10-21: CONC
                               # forces diversification into the ~100-pair curated list instead of re-piling.
 COOLDOWN_DURATION_SECS = COOLDOWN_CANDLES * SCAN_INTERVAL_SECS  # 144 * 150sec = 21600 seconds (6 hours)
 
+# Repeat-loser cull (added 2026-11-08): the 6h cooldown stops immediate re-piling but a
+# structurally-broken symbol still gets re-selected forever. Real 08-30→11-08 data: a handful of
+# sub-35%-win symbols (CHIP -$37/227 trades, MAGMA -$24, IRYS, Q, ORDI, PROM, APR) = 58% of ALL
+# losses while BR (+$106, 47% win) carried the book; net was -$4.65. A win-rate cull (retire a
+# symbol once it has traded >= CULL_MIN_TRADES and its run win-rate < CULL_MIN_WINRATE) backtested
+# to ~+$84 net on the real history WITHOUT ever cutting BR or any winner — because it keys on the
+# martingale's actual survival metric (hit-rate, which the chain needs to recover), with a minimum
+# sample so it can't knife a winner mid-drawdown (a raw dollar-cap did: -$8 threshold killed BR).
+# Backtest is optimistic (assumes freed slots earn $0) so treat the size as directional; the
+# mechanism is strictly risk-reducing. Set ENABLE_LOSER_CULL=False to instantly revert.
+ENABLE_LOSER_CULL = True
+CULL_MIN_TRADES = 20          # need >= this many closed trades on a symbol before it can be culled (sample gate)
+CULL_MIN_WINRATE = 0.35       # retire the symbol if its run win-rate is below this (martingale can't recover under ~35%)
+# Seed the cull with symbols ALREADY proven structural losers on the current run (real 08-30->11-08
+# history: these 6 drove the bulk of losses at sub-35% win over large samples). Without a seed a fresh
+# deploy would re-bleed for ~weeks before the dynamic cull re-accumulates 20 trades each. The dynamic
+# cull adds any FUTURE losers on top. Clear this list (or ENABLE_LOSER_CULL=False) to revert.
+CULL_SEED_RETIRED = ["CHIPUSDT", "MAGMAUSDT", "ORDIUSDT", "PROMUSDT", "QUSDT", "APRUSDT"]
+
 # SMA Trend Filter (vars kept for reference; SMA computation removed from pair_scanner)
 SMA_PERIOD = 50
 SMA_SLOPE_LOOKBACK = 10

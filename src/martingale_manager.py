@@ -54,6 +54,12 @@ class MartingaleManager:
         # Cooldown blacklist - {symbol: cooldown_expiry_timestamp}
         self.cooldown_blacklist: Dict[str, float] = {}
 
+        # Per-symbol win/loss tally for the current run - {symbol: {"n": closes, "w": wins}}.
+        # Both this and `retired_symbols` are persisted in state.json so the repeat-loser cull
+        # survives restarts (see _record_symbol_outcome / get_retired_symbols).
+        self.symbol_stats: Dict[str, Dict[str, int]] = {}
+        self.retired_symbols: List[str] = []   # LATCHED: symbols the cull has retired for this run
+
         # Consecutive loss tracking for regime switching
         self.consecutive_losses: int = 0
         self.regime_flipped: bool = False  # True when regime is inverted
@@ -227,6 +233,7 @@ class MartingaleManager:
             score=self.current_score,
         )
         self.history.append(trade)
+        self._record_symbol_outcome(self.current_symbol, won=True)
 
         # Reset consecutive loss counter on win
         self.consecutive_losses = 0
@@ -287,6 +294,7 @@ class MartingaleManager:
             score=self.current_score,
         )
         self.history.append(trade)
+        self._record_symbol_outcome(self.current_symbol, won=False)
 
         # Add this trade's PnL to chain history
         self.chain_pnl_history.append(net_pnl)
@@ -443,6 +451,32 @@ class MartingaleManager:
     def get_blacklisted_symbols(self) -> List[str]:
         """Get currently blacklisted symbols"""
         return list(self.cooldown_blacklist.keys())
+
+    def _record_symbol_outcome(self, symbol: Optional[str], won: bool) -> None:
+        """Tally a closed trade per symbol and LATCH the symbol into retirement the first time its
+        RUNNING win-rate drops below the floor (after a minimum sample). Latching matches the
+        backtest: once retired it stays retired for the run (its stats also freeze, since a retired
+        symbol stops being selected), even if a later cumulative recompute would read differently."""
+        if not symbol:
+            return
+        st = self.symbol_stats.setdefault(symbol, {"n": 0, "w": 0})
+        st["n"] += 1
+        if won:
+            st["w"] += 1
+        if (config.ENABLE_LOSER_CULL and symbol not in self.retired_symbols
+                and st["n"] >= config.CULL_MIN_TRADES and st["w"] / st["n"] < config.CULL_MIN_WINRATE):
+            self.retired_symbols.append(symbol)
+            log(f"LOSER CULL: {symbol} retired for the run — {st['w']}/{st['n']} wins "
+                f"({100*st['w']/st['n']:.0f}% < {config.CULL_MIN_WINRATE*100:.0f}% floor). "
+                f"Excluded from selection until state reset.", "warning")
+
+    def get_retired_symbols(self) -> List[str]:
+        """Latched repeat-loser retirements (dynamic) UNIONed with the config seed list of already-
+        proven losers, for the selection blacklist in main_loop so the scanner stops feeding
+        structurally-broken (chain-non-recovering) pairs. Empty if cull disabled."""
+        if not config.ENABLE_LOSER_CULL:
+            return []
+        return list(set(self.retired_symbols) | set(config.CULL_SEED_RETIRED))
 
     def is_timed_out(self, current_time: float) -> bool:
         """Check if position has exceeded max hold time"""

@@ -381,6 +381,8 @@ async def main_loop():
         manager.entry_candle_time = saved_state.get("entry_candle_time")
         manager.last_max_loss_time = saved_state.get("last_max_loss_time", 0)
         manager.cooldown_blacklist = saved_state.get("cooldown_blacklist", {})
+        manager.symbol_stats = saved_state.get("symbol_stats", {})
+        manager.retired_symbols = saved_state.get("retired_symbols", [])
         manager.max_adverse_excursion_pct = saved_state.get("max_adverse_excursion_pct", 0.0)
         manager.mae_candle = saved_state.get("mae_candle", 0)
         manager.trailing_active = saved_state.get("trailing_active", False)
@@ -714,7 +716,7 @@ async def main_loop():
             # Scan and score pairs
             pair_data = await scanner.scan_all_pairs()
             log("Scoring signals...")
-            blacklisted = manager.get_blacklisted_symbols()
+            blacklisted = list(set(manager.get_blacklisted_symbols()) | set(manager.get_retired_symbols()))
             signals = scorer.score_all_pairs(pair_data, blacklisted, regime_flipped=manager.regime_flipped)
 
             # Filter by safety blocks
