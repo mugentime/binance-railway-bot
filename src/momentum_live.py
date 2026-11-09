@@ -211,6 +211,16 @@ def callback_rate_from_atr(atr_abs, price):
     return max(0.1, min(5.0, round(cr, 1)))
 
 
+# Never ride a position with no working protective order indefinitely. Added 2026-11-09 after
+# INITUSDT's STOP_MARKET was rejected 3x in a row with HTTP 400 ({"code":-4120,"msg":"Order type
+# not supported for this endpoint. Please use the Algo Order API endpoints instead."}) -- a
+# live, previously-unverified failure mode (no entry had filled since the 2026-11-04 endpoint
+# fix, so this path was never actually exercised against a real position until today). If a
+# protective order (SL or trailing stop) fails this many consecutive ticks in a row, flatten the
+# position at market instead of retrying forever unprotected.
+SL_FAIL_FLATTEN_AFTER = 2
+
+
 # ---------------- manage one open position (exchange-driven) ----------------
 def manage(ex, sym, live_amt, st, dry):
     """Enforce the scale-out exit plan for an open position. Mutates state dict `st` entry for sym."""
@@ -263,14 +273,43 @@ def manage(ex, sym, live_amt, st, dry):
                 except Exception: pass
                 try: place_reduce_limit(ex, sym, live_amt * SCALE_FRAC, entry + TP1_ATR * atr)
                 except Exception as e: flog(f"    {sym}: TP1 fallo ({e})")
-                try: place_stop_market(ex, sym, live_amt, entry - SL_ATR * atr)
-                except Exception as e: flog(f"    {sym}: SL fallo ({e})")
+                try:
+                    place_stop_market(ex, sym, live_amt, entry - SL_ATR * atr)
+                    meta["sl_fail"] = 0
+                except Exception as e:
+                    meta["sl_fail"] = meta.get("sl_fail", 0) + 1
+                    flog(f"    {sym}: SL fallo intento {meta['sl_fail']}/{SL_FAIL_FLATTEN_AFTER} ({e})")
+                    if meta["sl_fail"] >= SL_FAIL_FLATTEN_AFTER:
+                        flog(f"  {sym}: SL fallo {meta['sl_fail']}x seguidas -> cierro posicion "
+                             f"(nunca dejar una posicion sin stop)")
+                        try: ex.cancel_all_orders(sym)
+                        except Exception: pass
+                        ex.close_position_market(sym, "LONG", live_amt)
+                        st.pop(sym, None)
+                        return
+                save_state(st)
     else:
         # runner phase: make sure the trailing stop is still armed
         if not dry and not ex.has_trailing_stop(sym):
             cr = callback_rate_from_atr(atr, entry)
             flog(f"  {sym}: trail ausente -> re-armo {cr}%")
-            ex.place_trailing_stop(sym, "LONG", live_amt, cr)
+            # place_trailing_stop never raises -- it catches its own HTTP errors and returns
+            # True/False (see order_executor.py), so check the return value, not an exception.
+            ok = ex.place_trailing_stop(sym, "LONG", live_amt, cr)
+            if ok:
+                meta["sl_fail"] = 0
+            else:
+                meta["sl_fail"] = meta.get("sl_fail", 0) + 1
+                flog(f"    {sym}: trail fallo intento {meta['sl_fail']}/{SL_FAIL_FLATTEN_AFTER}")
+                if meta["sl_fail"] >= SL_FAIL_FLATTEN_AFTER:
+                    flog(f"  {sym}: trail fallo {meta['sl_fail']}x seguidas -> cierro posicion "
+                         f"(nunca dejar una posicion sin stop)")
+                    try: ex.cancel_all_orders(sym)
+                    except Exception: pass
+                    ex.close_position_market(sym, "LONG", live_amt)
+                    st.pop(sym, None)
+                    return
+            save_state(st)
 
 
 def _open_order_types(ex, sym):
