@@ -304,6 +304,15 @@ class OrderExecutor:
         qty_precision = self.symbol_info_cache[symbol]["quantityPrecision"]
         quantity = round_down(raw_qty, qty_precision)
 
+        if quantity <= 0:
+            min_step = 10 ** (-qty_precision)
+            min_notional = min_step * current_price
+            raise ValueError(
+                f"{symbol}: notional=${notional_usd:.2f} @ price={current_price:.4f} rounds down to "
+                f"qty=0 at quantityPrecision={qty_precision} (min tradeable notional ~${min_notional:.2f}) "
+                f"— notional_usd too small for this symbol's lot size at the current price, skipping order"
+            )
+
         log(f"Placing MARKET {side} order: {symbol} qty={quantity:.{qty_precision}f} "
             f"(notional=${notional_usd:.2f} @ price={current_price:.4f})")
 
