@@ -145,17 +145,30 @@ def place_reduce_limit(ex, sym, qty, price):
     return f["price"]
 
 def place_stop_market(ex, sym, qty, stop_price):
-    """Protective STOP_MARKET (reduceOnly) on the plain order endpoint — /fapi/v1/algoOrder only
-    supports TWAP/VP execution algos, not conditional STOP_MARKET, and rejects it with HTTP 400
-    every time (confirmed in live logs: 100% failure rate since 2026-11-04, every SL/trail attempt
-    on every position). The already-working TP1 LIMIT order uses this same /fapi/v1/order endpoint."""
-    f = _fmt(ex, sym, price=stop_price, qty=qty)
+    """Protective STOP_MARKET on the plain order endpoint — /fapi/v1/algoOrder only supports
+    TWAP/VP execution algos, not conditional STOP_MARKET, and rejects it with HTTP 400 every
+    time (confirmed in live logs: 100% failure rate since 2026-11-04, every SL/trail attempt on
+    every position). The already-working TP1 LIMIT order uses this same /fapi/v1/order endpoint.
+
+    Uses closePosition=true instead of reduceOnly=true+quantity: confirmed live on 2026-11-09
+    (INITUSDT) that Binance's reduceOnly exemption from the MIN_NOTIONAL filter applies to plain
+    LIMIT/MARKET reduceOnly orders but NOT to conditional STOP_MARKET/TRAILING_STOP_MARKET
+    orders — a full-qty SL at SL_ATR·ATR below entry can have notional below the $5 floor even
+    when the entry itself cleared it (stop price < entry price, same qty => lower notional),
+    and was rejected with HTTP 400 (slNotional=$4.97 < $5 MIN_NOTIONAL, verified via exchangeInfo).
+    closePosition=true closes whatever the live position actually is with no quantity param, so
+    the MIN_NOTIONAL filter (which only evaluates quantity*price) does not apply at all — same
+    protective effect, no risk/behavior change, just a request shape Binance will not reject."""
+    f = _fmt(ex, sym, price=stop_price)
     params = {"symbol": sym, "side": "SELL", "positionSide": "BOTH",
-              "type": "STOP_MARKET", "stopPrice": f["price"], "quantity": f["qty"],
-              "reduceOnly": "true", "workingType": "MARK_PRICE"}
+              "type": "STOP_MARKET", "stopPrice": f["price"], "closePosition": "true",
+              "workingType": "MARK_PRICE"}
     params = ex._sign_params(params)
     r = ex.client.post(f"{_cfg.BINANCE_BASE_URL}/fapi/v1/order", params=params, headers=ex._headers())
-    r.raise_for_status()
+    try:
+        r.raise_for_status()
+    except Exception as e:
+        raise RuntimeError(f"{e} | body={getattr(r, 'text', '')}") from e
     return f["price"]
 
 
