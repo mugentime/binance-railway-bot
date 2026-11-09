@@ -739,35 +739,43 @@ class OrderExecutor:
             raise Exception(f"Order placement incomplete - {error_msg}")
 
     def has_trailing_stop(self, symbol: str) -> bool:
-        """Return True if a native TRAILING_STOP_MARKET order is already open for symbol."""
+        """Return True if a native TRAILING_STOP_MARKET order is already open for symbol.
+        Checks both the plain open-orders listing (legacy order types) and the CONDITIONAL
+        algo-orders listing -- TRAILING_STOP_MARKET is placed as a CONDITIONAL algo order (see
+        place_trailing_stop) and does NOT appear in GET /fapi/v1/openOrders at all."""
         try:
             for order in self.get_open_orders(symbol):
                 if order.get('type') == 'TRAILING_STOP_MARKET':
                     return True
         except Exception as e:
             log(f"Could not check trailing stop for {symbol}: {e}", "warning")
+        try:
+            for order in self.get_algo_open_orders(symbol):
+                if order.get('algoType') == 'CONDITIONAL' and order.get('orderType') == 'TRAILING_STOP_MARKET':
+                    return True
+        except Exception as e:
+            log(f"Could not check algo trailing stop for {symbol}: {e}", "warning")
         return False
 
     def place_trailing_stop(self, symbol: str, direction: str, quantity: float,
                             callback_rate: float) -> bool:
         """
-        Arm a native Binance TRAILING_STOP_MARKET (server-side trailing) as a reduceOnly order.
-        Activation is IMMEDIATE (no activationPrice sent) — the caller MUST only invoke
-        this once the position is already in profit, so the stop locks in gains from the current
-        mark price and then trails by callback_rate as price keeps moving in favor. Binance's
-        matching engine updates the trail tick-by-tick, so the 2.5-minute bot loop never has to
-        move it (this is the whole point — a loop-driven trailing stop can't follow price).
+        Arm a native Binance TRAILING_STOP_MARKET (server-side trailing) as a CONDITIONAL algo
+        order via /fapi/v1/algoOrder. Activation is IMMEDIATE (no activationPrice sent) — the
+        caller MUST only invoke this once the position is already in profit, so the stop locks
+        in gains from the current mark price and then trails by callback_rate as price keeps
+        moving in favor. Binance's matching engine updates the trail tick-by-tick, so the
+        2.5-minute bot loop never has to move it (this is the whole point — a loop-driven
+        trailing stop can't follow price).
 
-        Uses the plain /fapi/v1/order endpoint (type=TRAILING_STOP_MARKET, reduceOnly) — the
-        /fapi/v1/algoOrder endpoint is for TWAP/VP execution algos only and rejects CONDITIONAL
-        TRAILING_STOP_MARKET with HTTP 400 every time (confirmed: 100% failure rate in live logs
-        since 2026-11-04, on every position that reached the runner phase on both sub accounts).
-
-        NOTE (2026-11-09): briefly tried closePosition=true here on the same theory as the plain
-        STOP_MARKET fix, but Binance rejects closePosition on this endpoint outright (confirmed
-        on the sibling STOP_MARKET call: HTTP 400, {"code":-4120,"msg":"Order type not supported
-        for this endpoint. Please use the Algo Order API endpoints instead."}) — reverted to
-        reduceOnly=true+quantity, the form already confirmed working.
+        ROOT CAUSE CONFIRMED 2026-11-09: the plain /fapi/v1/order endpoint (reduceOnly+quantity,
+        the form this function used until now) rejects TRAILING_STOP_MARKET with HTTP 400,
+        {"code":-4120,"msg":"Order type not supported for this endpoint. Please use the Algo
+        Order API endpoints instead."} -- same root cause and fix as place_stop_market
+        (momentum_live.py): Binance migrated all conditional order types off /fapi/v1/order to
+        the Algo Order service on 2025-12-09. A closePosition=true attempt on /fapi/v1/order was
+        also tried and also rejected with the same -4120 (closePosition isn't valid on that
+        endpoint either) -- the only working shape is algoType=CONDITIONAL on /fapi/v1/algoOrder.
 
         Args:
             callback_rate: trailing distance as a percent (Binance hard limits: min 0.1, max 5)
@@ -793,6 +801,7 @@ class OrderExecutor:
             "symbol": symbol,
             "side": close_side,
             "positionSide": "BOTH",  # one-way mode
+            "algoType": "CONDITIONAL",
             "type": "TRAILING_STOP_MARKET",
             "callbackRate": f"{cr}",
             "quantity": quantity_str,
@@ -803,7 +812,7 @@ class OrderExecutor:
 
         try:
             resp = self.client.post(
-                f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                f"{config.BINANCE_BASE_URL}/fapi/v1/algoOrder",
                 params=params,
                 headers=self._headers(),
             )
@@ -811,7 +820,7 @@ class OrderExecutor:
             order = resp.json()
             log(f"TRAILING STOP armed: {symbol} {direction} | callbackRate={cr}% | "
                 f"qty={quantity_str} | activation=IMMEDIATE (already in profit) "
-                f"(orderId: {order.get('orderId')})", "warning")
+                f"(algoId: {order.get('algoId')})", "warning")
             return True
         except httpx.HTTPStatusError as e:
             try:

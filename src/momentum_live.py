@@ -145,24 +145,32 @@ def place_reduce_limit(ex, sym, qty, price):
     return f["price"]
 
 def place_stop_market(ex, sym, qty, stop_price):
-    """Protective STOP_MARKET (reduceOnly) on the plain order endpoint — /fapi/v1/algoOrder only
-    supports TWAP/VP execution algos, not conditional STOP_MARKET, and rejects it with HTTP 400
-    every time (confirmed in live logs: 100% failure rate since 2026-11-04, every SL/trail attempt
-    on every position). The already-working TP1 LIMIT order uses this same /fapi/v1/order endpoint.
+    """Protective STOP_MARKET placed as a CONDITIONAL algo order via /fapi/v1/algoOrder.
 
-    NOTE (2026-11-09, INITUSDT): briefly tried closePosition=true here to dodge a suspected
-    MIN_NOTIONAL rejection on a low-notional SL — Binance rejected THAT with a clear, logged
-    body: {"code":-4120,"msg":"Order type not supported for this endpoint. Please use the Algo
-    Order API endpoints instead."}. closePosition is NOT valid on /fapi/v1/order; reverted to
-    reduceOnly=true+quantity (the form that already works for every other SL in production).
-    The error-body logging added in that attempt is kept so the *original* rejection's real
-    Binance code/msg gets captured on the very next retry instead of guessing again."""
+    ROOT CAUSE CONFIRMED 2026-11-09 (INITUSDT, first real entry since 2026-11-04): every
+    STOP_MARKET attempt via the plain /fapi/v1/order endpoint (reduceOnly+quantity, the form
+    this function used until now) was rejected with HTTP 400, {"code":-4120,"msg":"Order type
+    not supported for this endpoint. Please use the Algo Order API endpoints instead."} — a
+    previously-unverified failure, since no entry had filled since the 2026-11-04 fix that
+    introduced this endpoint, so it was never actually exercised against a real position until
+    today. order_executor.py's dead code (verify_and_place_missing_sl/place_tp_sl_orders,
+    written for the martingale bot, never wired into momentum_live.py) already documents the
+    exact same error and its cause: "Binance migrated all conditional order types (STOP_MARKET,
+    TAKE_PROFIT_MARKET, STOP, TAKE_PROFIT, TRAILING_STOP_MARKET) to the Algo Order service on
+    2025-12-09". That dead code's working request shape — algoType=CONDITIONAL, triggerPrice
+    (not stopPrice), POST to /fapi/v1/algoOrder — is reused here. The pre-2026-11-04 claim that
+    "/fapi/v1/algoOrder only supports TWAP/VP, rejects conditional STOP_MARKET" was apparently
+    based on a request missing the required algoType=CONDITIONAL param, not a real limitation.
+
+    NOTE: an open CONDITIONAL algo order does NOT show up in GET /fapi/v1/openOrders — callers
+    checking for its presence must also check get_algo_open_orders() (see _open_order_types())."""
     f = _fmt(ex, sym, price=stop_price, qty=qty)
     params = {"symbol": sym, "side": "SELL", "positionSide": "BOTH",
-              "type": "STOP_MARKET", "stopPrice": f["price"], "quantity": f["qty"],
+              "algoType": "CONDITIONAL", "type": "STOP_MARKET",
+              "triggerPrice": f["price"], "quantity": f["qty"],
               "reduceOnly": "true", "workingType": "MARK_PRICE"}
     params = ex._sign_params(params)
-    r = ex.client.post(f"{_cfg.BINANCE_BASE_URL}/fapi/v1/order", params=params, headers=ex._headers())
+    r = ex.client.post(f"{_cfg.BINANCE_BASE_URL}/fapi/v1/algoOrder", params=params, headers=ex._headers())
     try:
         r.raise_for_status()
     except Exception as e:
@@ -313,7 +321,10 @@ def manage(ex, sym, live_amt, st, dry):
 
 
 def _open_order_types(ex, sym):
-    """Return set of {'LIMIT','STOP'} describing which protective orders are live for sym."""
+    """Return set of {'LIMIT','STOP'} describing which protective orders are live for sym.
+    A CONDITIONAL algo STOP_MARKET (see place_stop_market) does NOT appear in the plain
+    /fapi/v1/openOrders listing -- it lives in the separate algo-orders listing, so both
+    must be checked or an active SL would look missing and get needlessly re-armed."""
     types = set()
     params = ex._sign_params({"symbol": sym})
     r = ex.client.get(f"{_cfg.BINANCE_BASE_URL}/fapi/v1/openOrders", params=params, headers=ex._headers())
@@ -322,6 +333,12 @@ def _open_order_types(ex, sym):
         t = str(o.get("type") or "")
         if t == "LIMIT": types.add("LIMIT")
         if "STOP" in t: types.add("STOP")
+    try:
+        for o in ex.get_algo_open_orders(sym):
+            if o.get("algoType") == "CONDITIONAL" and "STOP" in str(o.get("orderType") or ""):
+                types.add("STOP")
+    except Exception:
+        pass
     return types
 
 
