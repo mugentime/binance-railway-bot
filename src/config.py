@@ -114,6 +114,11 @@ CULL_MIN_WINRATE = 0.35       # retire the symbol if its run win-rate is below t
 # cull adds any FUTURE losers on top. Clear this list (or ENABLE_LOSER_CULL=False) to revert.
 CULL_SEED_RETIRED = ["CHIPUSDT", "MAGMAUSDT", "ORDIUSDT", "PROMUSDT", "QUSDT", "APRUSDT"]
 
+# Overnight pause (2026-11-10): was blocking new entries 00:00-08:00 CST (operator-sleep / thin
+# liquidity). Disabled to run the bot 24/7 so the hourly optimizer gets ~50% more trade data during
+# its 48h trial. Set True to restore the nightly pause. (Weekend pause is separate, still ON.)
+ENABLE_OVERNIGHT_PAUSE = False
+
 # SMA Trend Filter (vars kept for reference; SMA computation removed from pair_scanner)
 SMA_PERIOD = 50
 SMA_SLOPE_LOOKBACK = 10

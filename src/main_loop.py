@@ -138,7 +138,11 @@ def is_overnight_hours() -> bool:
     """
     Returns True if current time is during overnight hours (00:00-08:00 CST).
     During these hours, bot will NOT enter new positions.
+    Gated by config.ENABLE_OVERNIGHT_PAUSE — when False the bot trades 24/7.
     """
+    import config
+    if not getattr(config, "ENABLE_OVERNIGHT_PAUSE", True):
+        return False
     from datetime import datetime, timezone, timedelta
     CST = timedelta(hours=-6)
     now_utc = datetime.now(timezone.utc)
