@@ -82,20 +82,24 @@ class OrderExecutor:
         for symbol_data in exchange_info["symbols"]:
             symbol = symbol_data["symbol"]
 
-            # Extract tick size and lot size from filters
+            # Extract tick size, lot size and min notional from filters
             tick_size = None
             step_size = None
+            min_notional = None
             for f in symbol_data.get("filters", []):
                 if f["filterType"] == "PRICE_FILTER":
                     tick_size = float(f["tickSize"])
                 elif f["filterType"] == "LOT_SIZE":
                     step_size = float(f["stepSize"])
+                elif f["filterType"] == "MIN_NOTIONAL":
+                    min_notional = float(f["notional"])
 
             self.symbol_info_cache[symbol] = {
                 "quantityPrecision": symbol_data["quantityPrecision"],
                 "pricePrecision": symbol_data["pricePrecision"],
                 "tickSize": tick_size,
                 "stepSize": step_size,
+                "minNotional": min_notional if min_notional is not None else 5.0,
             }
 
         log(f"Cached info for {len(self.symbol_info_cache)} symbols")
@@ -309,16 +313,30 @@ class OrderExecutor:
         # Calculate quantity
         raw_qty = notional_usd / current_price
         qty_precision = self.symbol_info_cache[symbol]["quantityPrecision"]
+        min_step = 10 ** (-qty_precision)
         quantity = round_down(raw_qty, qty_precision)
 
         if quantity <= 0:
-            min_step = 10 ** (-qty_precision)
-            min_notional = min_step * current_price
+            min_tradeable = min_step * current_price
             raise QuantityTooSmallError(
                 f"{symbol}: notional=${notional_usd:.2f} @ price={current_price:.4f} rounds down to "
-                f"qty=0 at quantityPrecision={qty_precision} (min tradeable notional ~${min_notional:.2f}) "
+                f"qty=0 at quantityPrecision={qty_precision} (min tradeable notional ~${min_tradeable:.2f}) "
                 f"— notional_usd too small for this symbol's lot size at the current price, skipping order"
             )
+
+        # Rounding down to the lot-size step can push the order below Binance's
+        # MIN_NOTIONAL filter even when the requested notional_usd was comfortably
+        # above it (coarse step size on cheap symbols). Binance would reject this
+        # with -4164 and the signal would be wasted. Bump up by whole steps instead.
+        min_notional = self.symbol_info_cache[symbol]["minNotional"]
+        bumps = 0
+        while quantity * current_price < min_notional * 1.01 and bumps < 20:
+            quantity = round(quantity + min_step, qty_precision)
+            bumps += 1
+        if bumps:
+            log(f"{symbol}: qty bumped by {bumps} step(s) to {quantity:.{qty_precision}f} "
+                f"to clear MIN_NOTIONAL ${min_notional:.2f} (requested notional=${notional_usd:.2f})",
+                "warning")
 
         log(f"Placing MARKET {side} order: {symbol} qty={quantity:.{qty_precision}f} "
             f"(notional=${notional_usd:.2f} @ price={current_price:.4f})")
