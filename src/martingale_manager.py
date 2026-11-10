@@ -233,7 +233,7 @@ class MartingaleManager:
             score=self.current_score,
         )
         self.history.append(trade)
-        self._record_symbol_outcome(self.current_symbol, won=True)
+        self._record_symbol_outcome(self.current_symbol, won=True, net_pnl=net_pnl)
 
         # Reset consecutive loss counter on win
         self.consecutive_losses = 0
@@ -294,7 +294,7 @@ class MartingaleManager:
             score=self.current_score,
         )
         self.history.append(trade)
-        self._record_symbol_outcome(self.current_symbol, won=False)
+        self._record_symbol_outcome(self.current_symbol, won=False, net_pnl=net_pnl)
 
         # Add this trade's PnL to chain history
         self.chain_pnl_history.append(net_pnl)
@@ -452,23 +452,37 @@ class MartingaleManager:
         """Get currently blacklisted symbols"""
         return list(self.cooldown_blacklist.keys())
 
-    def _record_symbol_outcome(self, symbol: Optional[str], won: bool) -> None:
+    def _record_symbol_outcome(self, symbol: Optional[str], won: bool, net_pnl: float = 0.0) -> None:
         """Tally a closed trade per symbol and LATCH the symbol into retirement the first time its
         RUNNING win-rate drops below the floor (after a minimum sample). Latching matches the
         backtest: once retired it stays retired for the run (its stats also freeze, since a retired
-        symbol stops being selected), even if a later cumulative recompute would read differently."""
+        symbol stops being selected), even if a later cumulative recompute would read differently.
+
+        Also accumulates real net PnL per symbol (added 2026-11-10) so the aggregate across all
+        symbols gives a REAL, persisted (survives restarts via state.json) win-rate + net expectancy
+        sample that isn't capped by Railway's ~2h log-retrieval window — pure measurement, no effect
+        on the cull or any trading decision (which still key on n/w only)."""
         if not symbol:
             return
-        st = self.symbol_stats.setdefault(symbol, {"n": 0, "w": 0})
+        st = self.symbol_stats.setdefault(symbol, {"n": 0, "w": 0, "pnl": 0.0})
+        st.setdefault("pnl", 0.0)  # backfill symbols persisted before PnL tracking was added
         st["n"] += 1
         if won:
             st["w"] += 1
+        st["pnl"] += net_pnl
         if (config.ENABLE_LOSER_CULL and symbol not in self.retired_symbols
                 and st["n"] >= config.CULL_MIN_TRADES and st["w"] / st["n"] < config.CULL_MIN_WINRATE):
             self.retired_symbols.append(symbol)
             log(f"LOSER CULL: {symbol} retired for the run — {st['w']}/{st['n']} wins "
                 f"({100*st['w']/st['n']:.0f}% < {config.CULL_MIN_WINRATE*100:.0f}% floor). "
                 f"Excluded from selection until state reset.", "warning")
+
+        total_n = sum(s["n"] for s in self.symbol_stats.values())
+        total_w = sum(s["w"] for s in self.symbol_stats.values())
+        total_pnl = sum(s.get("pnl", 0.0) for s in self.symbol_stats.values())
+        log(f"AGGREGATE (persisted, since symbol_stats tracking began): {total_n} trades | "
+            f"WR {100*total_w/total_n:.1f}% | net PnL {format_usd(total_pnl)} | "
+            f"expectancy {format_usd(total_pnl/total_n)}/trade")
 
     def get_retired_symbols(self) -> List[str]:
         """Latched repeat-loser retirements (dynamic) UNIONed with the config seed list of already-

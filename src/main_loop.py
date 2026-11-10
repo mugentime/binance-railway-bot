@@ -399,6 +399,15 @@ async def main_loop():
         log(f"State restored: level={manager.level}, in_position={manager.in_position}, "
             f"chain_pnl_history={manager.chain_pnl_history}")
 
+        if manager.symbol_stats:
+            total_n = sum(s.get("n", 0) for s in manager.symbol_stats.values())
+            total_w = sum(s.get("w", 0) for s in manager.symbol_stats.values())
+            total_pnl = sum(s.get("pnl", 0.0) for s in manager.symbol_stats.values())
+            if total_n > 0:
+                log(f"AGGREGATE (persisted, since symbol_stats tracking began): {total_n} trades | "
+                    f"WR {100*total_w/total_n:.1f}% | net PnL {format_usd(total_pnl)} | "
+                    f"expectancy {format_usd(total_pnl/total_n)}/trade")
+
         if manager.level > config.MAX_LEVEL:
             log(f"WARNING: Loaded level={manager.level} exceeds MAX_LEVEL={config.MAX_LEVEL}. Resetting to 0.", "warning")
             manager.level = 0
