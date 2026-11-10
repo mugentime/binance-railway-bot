@@ -272,11 +272,23 @@ class PairScanner:
                         filter_stats["volume_filtered"] += 1
                         return  # Skip this pair
 
-                    # Calculate SMA-50 for trend filter
+                    # Calculate SMA-50 (short trend, kept for logging)
                     if len(closes) >= 50:
                         sma_50 = np.mean(closes[-50:])
                     else:
                         sma_50 = closes[-1]  # Fallback to current price if not enough data
+
+                    # Calculate EMA-200 (medium-term trend) for the HARD trend gate in the scorer.
+                    # EMA200 on 5m ≈ 17h: "price > EMA200" = longer uptrend even while locally oversold
+                    # (a 4h SMA50 is too short for a dip-buy filter — the dip is below it by definition).
+                    if len(closes) >= 200:
+                        k = 2.0 / (200 + 1)
+                        ema = float(closes[0])
+                        for px in closes[1:]:
+                            ema = float(px) * k + ema * (1 - k)
+                        ema_200 = ema
+                    else:
+                        ema_200 = None  # not enough history → scorer skips the gate for this pair
 
                     # Order book depth (2 weight)
                     await asyncio.sleep(0.1)  # Rate limit control (increased from 0.05s to 0.1s)
@@ -321,7 +333,8 @@ class PairScanner:
                         "slippage_short": estimated_slippage_short,
                         "atr_pct": atr_pct,  # Store ATR% for logging/analysis
                         "volume_24h": volume_24h_data.get(symbol, 0.0),  # 24h quote volume in USD
-                        "sma_50": sma_50,  # SMA-50 for trend filter
+                        "sma_50": sma_50,  # SMA-50 (short trend, logging)
+                        "ema_200": ema_200,  # EMA-200 medium trend for the hard trend gate (None if <200 candles)
                     }
 
                 except Exception as e:

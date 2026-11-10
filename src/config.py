@@ -75,7 +75,8 @@ BREAKEVEN_HOLD_CANDLES = 72   # Close early if still negative after this many ca
 # Scanner parameters
 SCAN_INTERVAL_SECS = 150      # 2.5 minutes (150 seconds)
 KLINE_INTERVAL = "5m"        # 5 minute candles
-KLINE_LIMIT = 50              # Candles to fetch per pair
+KLINE_LIMIT = 210             # Candles to fetch per pair (raised 50→210 on 2026-11-10 to compute EMA200
+                              # for the hard trend gate; /klines weight only goes 1→2 at this limit, safe)
 MIN_24H_VOLUME_USD = 10_000_000  # $10M+ required to filter out low-liquidity meme coins (now applies to curated list too)
 MIN_QUOTE_VOLUME_24H = 10_000_000  # $10M USDT 24h minimum (raised from $2M 2026-08-06: $2M let thin pairs
                                     # like INXUSDT $9.5M / SOONUSDT $4.8M through, causing stop-slippage losses)

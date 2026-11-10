@@ -252,20 +252,19 @@ class SignalScorer:
                 final_direction = "LONG" if long_pts > short_pts else "SHORT"
                 total_score = raw_score * config.LONG_PENALTY_MULTIPLIER if final_direction == "LONG" else raw_score
 
-            # ── TREND FILTER (50% penalty for counter-trend trades) ───────
+            # ── TREND FILTER (HARD GATE on EMA200: reject counter-trend entries) ──
+            # Backtest 2026-11-10 (34 curated pairs, 15m, TP10/SL4): taking ONLY trend-aligned
+            # entries cut per-trade bleed ~in half (-0.165%→-0.085%) and lifted win 43.5%→44%.
+            # Uses EMA200 (medium ~17h trend), NOT SMA50 — a 4h SMA is too short for a dip-buy
+            # filter (the dip is below it by definition). Skipped if EMA200 unavailable (<200 candles).
             current_price = closes[-1]
+            ema_200 = data.get("ema_200")
             trend_penalized = False
-
-            # Apply 50% penalty if trading against trend
-            if current_price < sma_50 and final_direction == "LONG":
-                total_score = total_score * 0.5  # 50% penalty
-                trend_penalized = True
-                log(f"🛡️ TREND FILTER: {symbol} LONG penalized 50% (price ${current_price:.6f} < SMA ${sma_50:.6f}), score {total_score*2:.1f}→{total_score:.1f}")
-
-            if current_price > sma_50 and final_direction == "SHORT":
-                total_score = total_score * 0.5  # 50% penalty
-                trend_penalized = True
-                log(f"🛡️ TREND FILTER: {symbol} SHORT penalized 50% (price ${current_price:.6f} > SMA ${sma_50:.6f}), score {total_score*2:.1f}→{total_score:.1f}")
+            if ema_200 is not None and (
+                (final_direction == "LONG" and current_price < ema_200) or
+                (final_direction == "SHORT" and current_price > ema_200)):
+                below_threshold.append(f"{symbol} (counter-trend {final_direction})")
+                continue  # HARD reject: never enter against the EMA200 trend
 
             # ── Entry gate ────────────────────────────────────────────────
             if total_score < config.ENTRY_THRESHOLD:
