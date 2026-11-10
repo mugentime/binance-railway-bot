@@ -881,7 +881,20 @@ class OrderExecutor:
                 raise
 
         order = resp.json()
-        avg_price = float(order.get('avgPrice', 0))
+        avg_price = float(order.get('avgPrice', 0) or 0)
+
+        # Binance's MARKET order response sometimes omits avgPrice or returns 0
+        # even on a 200 OK fill (seen repeatedly on EDGEUSDT/BRUSDT/STABLEUSDT
+        # break-even and timeout closes) — fall back to the actual last trade
+        # price/qty instead of a KeyError or a false $0.00 exit.
+        if avg_price == 0:
+            last_trade = self.get_last_trade(symbol)
+            if last_trade:
+                avg_price = float(last_trade["price"])
+                order["avgPrice"] = str(avg_price)
+                order["executedQty"] = last_trade["qty"]
+                log(f"avgPrice missing/zero in order response; using last trade price: {symbol} @ {avg_price}", "warning")
+
         log(f"Position closed at market: {symbol} @ {avg_price}")
 
         return order
