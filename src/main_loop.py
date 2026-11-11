@@ -556,13 +556,28 @@ async def main_loop():
                         else:
                             log(f"TIMEOUT CLOSE: {manager.current_symbol} @ {exit_price:.6f}")
 
-                        # Record win or loss based on actual exit price vs entry
+                        # Record win or loss using the TRUE realized PnL since entry
+                        # (same method check_position_closed() uses for the TP/SL path,
+                        # fixed in a prior run) rather than a raw exit-price-vs-entry
+                        # comparison: a market close that walks a thin order book across
+                        # multiple fills can have its last leg's price disagree in sign
+                        # with the position's actual net realized result (confirmed on a
+                        # real EDGEUSDT timeout close: realized PnL +$1.38 but the single
+                        # last-fill price implied a loss), which mislabels the trade and
+                        # corrupts the exact win-rate stat this task measures.
                         direction = manager.current_direction
                         entry = manager.entry_price
-                        timed_out_profitably = (
-                            exit_price > entry if direction == "LONG"
-                            else exit_price < entry
-                        )
+                        realized_pnl = None
+                        if manager.entry_candle_time:
+                            since_ms = int(manager.entry_candle_time * 1000)
+                            realized_pnl = executor.get_realized_pnl_since(manager.current_symbol, since_ms)
+                        if realized_pnl is not None:
+                            timed_out_profitably = realized_pnl > 0
+                        else:
+                            timed_out_profitably = (
+                                exit_price > entry if direction == "LONG"
+                                else exit_price < entry
+                            )
                         if timed_out_profitably:
                             log(f"TIMEOUT WIN: Closed at profit (entry={entry:.6f} exit={exit_price:.6f})")
                             manager.close_win(exit_price)
