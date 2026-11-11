@@ -406,6 +406,101 @@ def _available(ex):
         return 0.0
 
 
+# ---------------- real P&L reporting (equity is NOT the same as available collateral:
+# availableBalance excludes margin locked in open positions, so it drops every time a new
+# position opens even with zero P&L change — use totalMarginBalance for true mark-to-market
+# account equity, and /fapi/v1/income for real realized trade outcomes / win rate) --------
+PNL_SINCE_MS = int(os.environ.get("MOM_PNL_SINCE_MS", "1793750400000"))  # 2026-11-04T00:00:00Z default
+
+
+def _account_equity(ex):
+    """True mark-to-market equity (wallet + unrealized), not just free/available margin."""
+    try:
+        params = ex._sign_params({})
+        r = ex.client.get(f"{_cfg.BINANCE_BASE_URL}/fapi/v2/account", params=params, headers=ex._headers())
+        r.raise_for_status()
+        j = r.json()
+        return {
+            "wallet": float(j.get("totalWalletBalance", 0.0)),
+            "unrealized": float(j.get("totalUnrealizedProfit", 0.0)),
+            "margin_balance": float(j.get("totalMarginBalance", 0.0)),
+            "available": float(j.get("availableBalance", 0.0)),
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def _income_window(ex, itype, start_ms, end_ms, limit=1000):
+    """One /fapi/v1/income page. Binance caps the startTime..endTime span on this endpoint,
+    so callers must chunk; this fetches exactly one chunk and lets the caller paginate."""
+    params = ex._sign_params({"incomeType": itype, "startTime": start_ms, "endTime": end_ms, "limit": limit})
+    r = ex.client.get(f"{_cfg.BINANCE_BASE_URL}/fapi/v1/income", params=params, headers=ex._headers())
+    r.raise_for_status()
+    return r.json()
+
+
+def _income_summary(ex, since_ms=PNL_SINCE_MS, limit=1000):
+    """Real realized-trade outcomes since `since_ms`, via Binance's own income ledger —
+    not a backtest sim. incomeType=REALIZED_PNL gives one row per closing fill (so this
+    bot's scale-out design yields two rows per round-trip: the TP1 partial + the runner's
+    exit); COMMISSION/FUNDING_FEE are netted in separately for the true dollar outcome.
+    Binance caps startTime..endTime span on this endpoint, so this chunks in <=6-day
+    windows from since_ms to now rather than relying on one open-ended query."""
+    try:
+        now_ms = int(time.time() * 1000)
+        windows = []
+        lo = since_ms
+        step = 6 * 24 * 3600 * 1000
+        while lo < now_ms:
+            hi = min(lo + step, now_ms)
+            windows.append((lo, hi))
+            lo = hi
+        out = {"REALIZED_PNL": [], "COMMISSION": [], "FUNDING_FEE": []}
+        truncated = False
+        for itype in out:
+            for (lo, hi) in windows:
+                page = _income_window(ex, itype, lo, hi, limit)
+                if len(page) >= limit:
+                    truncated = True  # a single window hit the page cap — some rows in it may be missing
+                out[itype].extend(page)
+        realized = out["REALIZED_PNL"]
+        wins = [float(x["income"]) for x in realized if float(x["income"]) > 0]
+        losses = [float(x["income"]) for x in realized if float(x["income"]) < 0]
+        n = len(wins) + len(losses)
+        return {
+            "n_closed_legs": n,
+            "win_rate": (len(wins) / n * 100.0) if n else None,
+            "realized_pnl_total": sum(wins) + sum(losses),
+            "commission_total": sum(float(x["income"]) for x in out["COMMISSION"]),
+            "funding_total": sum(float(x["income"]) for x in out["FUNDING_FEE"]),
+            "net_total": (sum(wins) + sum(losses)
+                          + sum(float(x["income"]) for x in out["COMMISSION"])
+                          + sum(float(x["income"]) for x in out["FUNDING_FEE"])),
+            "truncated": truncated,
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def log_real_pnl(ex, tag="PNL"):
+    eq = _account_equity(ex)
+    pnl = _income_summary(ex)
+    if "error" in eq:
+        flog(f"{tag} | equity fetch FAILED ({eq['error']})")
+    else:
+        flog(f"{tag} | equity: wallet=${eq['wallet']:.2f} unrealized=${eq['unrealized']:.2f} "
+             f"marginBalance(true equity)=${eq['margin_balance']:.2f} available=${eq['available']:.2f}")
+    if "error" in pnl:
+        flog(f"{tag} | income fetch FAILED ({pnl['error']})")
+    else:
+        wr = f"{pnl['win_rate']:.1f}%" if pnl['win_rate'] is not None else "n/a (0 closed legs)"
+        trunc = " [TRUNCATED at limit, real total is more negative/positive than shown]" if pnl["truncated"] else ""
+        flog(f"{tag} | realized since {datetime.fromtimestamp(PNL_SINCE_MS/1000, tz=timezone.utc).strftime('%Y-%m-%d')}: "
+             f"closed_legs={pnl['n_closed_legs']} win_rate={wr} "
+             f"realized_pnl=${pnl['realized_pnl_total']:.2f} fees=${pnl['commission_total'] + pnl['funding_total']:.2f} "
+             f"net=${pnl['net_total']:.2f}{trunc}")
+
+
 # ---------------- main ----------------
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--live", action="store_true"); args = ap.parse_args()
@@ -433,6 +528,7 @@ def main():
     avail = _available(ex)
     flog(f"LIVE START | available collateral=${avail:.2f} | verify this matches the intended account")
     flog(f"RUNNING COMMIT: {os.environ.get('RAILWAY_GIT_COMMIT_SHA','local')[:12]}")
+    log_real_pnl(ex, tag="PNL@START")
 
     # LIVE: indefinite rolling loop
     tick = 0
@@ -441,6 +537,12 @@ def main():
             open_now = open_syms(ex, universe)
             flog(f"--- TICK {tick} | posiciones {len(open_now)}/{MAX_POS}: "
                  f"{', '.join(s.replace('USDT','') for s in open_now) or '—'} ---")
+            # Real equity + realized-PnL/win-rate snapshot, ~hourly (not every tick: two
+            # extra signed Binance calls each time) — so any run reviewing recent logs
+            # always has a fresh true-equity reading without needing a fresh deploy.
+            if tick % max(1, int(3600 / max(SCAN_SECS, 1))) == 0:
+                try: log_real_pnl(ex, tag="PNL")
+                except Exception as e: flog(f"PNL snapshot ERROR ({e})")
             # 1) manage/protect existing
             for s, info in list(open_now.items()):
                 try: manage(ex, s, info["amt"], st, dry=False)
