@@ -324,7 +324,19 @@ def check_position_closed(executor: OrderExecutor, manager: MartingaleManager, p
             last_trade = executor.get_last_trade(manager.current_symbol)
 
             if last_trade:
-                realized_pnl = float(last_trade["realizedPnl"])
+                # Use the TOTAL realized PnL across every fill since entry, not just the
+                # single most-recent fill: a position that closes via several partial fills
+                # (partial TP + remainder SL, maker entry repricing, etc.) can have a last
+                # fill whose realizedPnl sign disagrees with the position's actual net result,
+                # which mislabels the trade WIN/LOSS and corrupts the win-rate stats that
+                # close_win()/close_loss() both already compute correctly via this same call
+                # (see MartingaleManager._actual_realized_pnl). Mirrors that fallback pattern.
+                realized_pnl = None
+                if manager.entry_candle_time:
+                    since_ms = int(manager.entry_candle_time * 1000)
+                    realized_pnl = executor.get_realized_pnl_since(manager.current_symbol, since_ms)
+                if realized_pnl is None:
+                    realized_pnl = float(last_trade["realizedPnl"])
 
                 if realized_pnl > 0:
                     return "WIN"
