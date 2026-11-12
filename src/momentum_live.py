@@ -467,9 +467,16 @@ def _income_summary(ex, since_ms=PNL_SINCE_MS, limit=1000):
         wins = [float(x["income"]) for x in realized if float(x["income"]) > 0]
         losses = [float(x["income"]) for x in realized if float(x["income"]) < 0]
         n = len(wins) + len(losses)
+        avg_win = (sum(wins) / len(wins)) if wins else None
+        avg_loss = (sum(losses) / len(losses)) if losses else None  # negative number
         return {
             "n_closed_legs": n,
+            "n_wins": len(wins),
+            "n_losses": len(losses),
             "win_rate": (len(wins) / n * 100.0) if n else None,
+            "avg_win": avg_win,
+            "avg_loss": avg_loss,
+            "payoff_ratio": (avg_win / abs(avg_loss)) if (avg_win is not None and avg_loss) else None,
             "realized_pnl_total": sum(wins) + sum(losses),
             "commission_total": sum(float(x["income"]) for x in out["COMMISSION"]),
             "funding_total": sum(float(x["income"]) for x in out["FUNDING_FEE"]),
@@ -494,9 +501,13 @@ def log_real_pnl(ex, tag="PNL"):
         flog(f"{tag} | income fetch FAILED ({pnl['error']})")
     else:
         wr = f"{pnl['win_rate']:.1f}%" if pnl['win_rate'] is not None else "n/a (0 closed legs)"
+        aw = f"${pnl['avg_win']:.3f}" if pnl['avg_win'] is not None else "n/a"
+        al = f"${pnl['avg_loss']:.3f}" if pnl['avg_loss'] is not None else "n/a"
+        pr = f"{pnl['payoff_ratio']:.2f}" if pnl['payoff_ratio'] is not None else "n/a"
         trunc = " [TRUNCATED at limit, real total is more negative/positive than shown]" if pnl["truncated"] else ""
         flog(f"{tag} | realized since {datetime.fromtimestamp(PNL_SINCE_MS/1000, tz=timezone.utc).strftime('%Y-%m-%d')}: "
-             f"closed_legs={pnl['n_closed_legs']} win_rate={wr} "
+             f"closed_legs={pnl['n_closed_legs']} ({pnl['n_wins']}W/{pnl['n_losses']}L) win_rate={wr} "
+             f"avg_win={aw} avg_loss={al} payoff_ratio={pr} "
              f"realized_pnl=${pnl['realized_pnl_total']:.2f} fees=${pnl['commission_total'] + pnl['funding_total']:.2f} "
              f"net=${pnl['net_total']:.2f}{trunc}")
 
