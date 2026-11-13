@@ -38,7 +38,20 @@ DEFAULT_PAIRS = ["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","ADAUSDT","DO
 _envp = os.environ.get("SYMBOLS", "").strip()
 PAIRS = [p.strip().upper() for p in _envp.split(",") if p.strip()] if _envp else DEFAULT_PAIRS
 
-LOT_USD    = float(os.environ.get("MOM_LOT_USD", "6"))  # notional per entry
+LOT_USD    = float(os.environ.get("MOM_LOT_USD", "6"))  # notional per entry (fixed-$ fallback)
+# Compounding sizing: when MOM_LOT_FRAC>0, each entry's notional is that fraction of the LIVE
+# account's true equity (marginBalance) at the time of the entry, instead of the fixed MOM_LOT_USD
+# above -- so position size grows/shrinks with the account instead of staying flat. Chosen via a
+# real event-driven portfolio backtest (2026-11-13, operator-directed): swept 5%-50% of equity per
+# trade on the full live 162-symbol universe through the actual 1yr chronological history with one
+# shared compounding equity curve (not per-symbol-independent). CAGR rises with no peak in the
+# tested range (5%->244%, 50%->1,993,882%) because the sim has no slippage/market-impact/
+# correlated-crash model once position size would matter in the real order book -- past a point
+# the number stops being a real-world forecast, so "maximize it" isn't a safe objective. Picked
+# 15% instead: max historical drawdown 25.1% (vs 9.1% at 5%, 63.5% at 50%), while still roughly
+# 10x faster compounding than the 19% level that merely reproduces today's fixed $6/$32 sizing.
+LOT_FRAC   = float(os.environ.get("MOM_LOT_FRAC", "0.15"))
+LOT_CAP_USD = float(os.environ.get("MOM_LOT_CAP_USD", "2000"))  # hard ceiling vs a bad equity read
 # NOTE: dedicated MOM_* keys so we never inherit stale A/B vars (e.g. the old LEVERAGE=5 still set
 # on the repurposed sub services). Reading "LEVERAGE" directly would silently trade at the wrong size.
 LEVERAGE   = int(os.environ.get("MOM_LEVERAGE", "10"))
@@ -180,7 +193,9 @@ def place_stop_market(ex, sym, qty, stop_price):
 
 # ---------------- setup ----------------
 def setup(ex, dry):
-    flog(f"SETUP {len(PAIRS)} pares | {LEVERAGE}x CROSSED | ${LOT_USD}/trade | maxPos {MAX_POS} | "
+    sizing = (f"{LOT_FRAC:.0%} equity/trade (compounding, cap ${LOT_CAP_USD:.0f})"
+              if LOT_FRAC > 0 else f"${LOT_USD}/trade (fixed)")
+    flog(f"SETUP {len(PAIRS)} pares | {LEVERAGE}x CROSSED | {sizing} | maxPos {MAX_POS} | "
          f"RSI>{RSI_ENTRY:.0f}&>EMA{EMA_LEN} | TP1 {TP1_ATR}·ATR x{SCALE_FRAC:.0%} | SL {SL_ATR}·ATR | "
          f"trail {TRAIL_ATR}·ATR | holdcap {MAX_HOLD_H:.0f}h")
     ok = []
@@ -217,6 +232,21 @@ def open_syms(ex, universe):
 def callback_rate_from_atr(atr_abs, price):
     cr = (TRAIL_ATR * atr_abs / price) * 100.0
     return max(0.1, min(5.0, round(cr, 1)))
+
+
+def current_lot_usd(ex):
+    """Entry notional for the next trade. Compounding (MOM_LOT_FRAC>0): a fraction of live
+    true equity (marginBalance, not just free/available margin). Falls back to the fixed
+    MOM_LOT_USD if compounding is disabled (LOT_FRAC<=0) or the equity fetch fails -- never
+    skip an entry just because the sizing call had a transient error."""
+    if LOT_FRAC <= 0:
+        return LOT_USD
+    eq = _account_equity(ex)
+    if "error" in eq or eq.get("margin_balance", 0) <= 0:
+        flog(f"  WARN: equity fetch failed for compounding sizing ({eq.get('error', 'non-positive balance')}) "
+             f"-> falling back to fixed ${LOT_USD}")
+        return LOT_USD
+    return max(1.0, min(eq["margin_balance"] * LOT_FRAC, LOT_CAP_USD))
 
 
 # Never ride a position with no working protective order indefinitely. Added 2026-11-09 after
@@ -363,18 +393,19 @@ def try_entries(ex, universe, st, open_now, dry):
     if not cands:
         flog("  sin señales de entrada este tick"); return
     flog(f"  señales: {', '.join(s.replace('USDT','') for s,_ in cands)} (cupo {room})")
+    lot_usd = LOT_USD if dry else current_lot_usd(ex)
     for s, ind in cands[:room]:
         price = ind["close"]; atr = ind["atr"]
         if dry:
-            flog(f"  [DRY] {s}: BUY ${LOT_USD}@~{price:.6f} RSI {ind['rsi_prev']:.0f}->{ind['rsi']:.0f} "
+            flog(f"  [DRY] {s}: BUY ${lot_usd:.2f}@~{price:.6f} RSI {ind['rsi_prev']:.0f}->{ind['rsi']:.0f} "
                  f">EMA{EMA_LEN}({ind['ema']:.4f}) | TP1 {price+TP1_ATR*atr:.6f}(x{SCALE_FRAC:.0%}) "
                  f"SL {price-SL_ATR*atr:.6f} trail {callback_rate_from_atr(atr, price)}%")
             continue
         try:
             avail = _available(ex)
-            if avail < LOT_USD / LEVERAGE + 0.3:
-                flog(f"  {s}: SKIP colateral libre ${avail:.2f}"); continue
-            ex.place_market_order(s, "BUY", LOT_USD)
+            if avail < lot_usd / LEVERAGE + 0.3:
+                flog(f"  {s}: SKIP colateral libre ${avail:.2f} (lot=${lot_usd:.2f})"); continue
+            ex.place_market_order(s, "BUY", lot_usd)
             pos = ex.get_position(s)
             qty = abs(float(pos["positionAmt"])); avg = float(pos["entryPrice"]) or price
             ex.cancel_all_orders(s)
@@ -383,7 +414,7 @@ def try_entries(ex, universe, st, open_now, dry):
             st[s] = {"entry": avg, "entry_qty": qty, "atr": atr, "open_epoch": time.time(),
                      "scaled": False, "last_candle": ind["candle_ot"]}
             save_state(st)
-            flog(f"  {s}: BUY ${LOT_USD} qty={qty} avg={avg:.6f} | TP1 {tp}(x{SCALE_FRAC:.0%}) SL {sl}")
+            flog(f"  {s}: BUY ${lot_usd:.2f} qty={qty} avg={avg:.6f} | TP1 {tp}(x{SCALE_FRAC:.0%}) SL {sl}")
             open_now[s] = {"amt": qty, "entry": avg}
         except QuantityTooSmallError as e:
             # Deterministic for this candle (price/precision won't change intra-candle) —
