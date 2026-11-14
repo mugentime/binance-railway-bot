@@ -4,6 +4,7 @@ All Binance Futures trading API interactions (HMAC-SHA256 signed)
 """
 import hmac
 import hashlib
+import math
 import time
 import urllib.parse
 from typing import Dict, Optional
@@ -326,17 +327,23 @@ class OrderExecutor:
 
         # Rounding down to the lot-size step can push the order below Binance's
         # MIN_NOTIONAL filter even when the requested notional_usd was comfortably
-        # above it (coarse step size on cheap symbols). Binance would reject this
-        # with -4164 and the signal would be wasted. Bump up by whole steps instead.
+        # above it (coarse step size on cheap symbols, or a small notional_usd from
+        # compounding sizing). Binance would reject this with -4164 and the signal
+        # would be wasted. Compute the needed bump directly rather than looping one
+        # step at a time with an arbitrary cap -- a capped loop silently gives up and
+        # submits a doomed order when the gap is more steps than the cap allows (hit
+        # repeatedly on AKEUSDT etc. once MOM_LOT_FRAC started producing sub-$5
+        # notional_usd, needing 28-37 steps on a coarse integer-qty symbol).
         min_notional = self.symbol_info_cache[symbol]["minNotional"]
-        bumps = 0
-        while quantity * current_price < min_notional * 1.01 and bumps < 20:
-            quantity = round(quantity + min_step, qty_precision)
-            bumps += 1
-        if bumps:
-            log(f"{symbol}: qty bumped by {bumps} step(s) to {quantity:.{qty_precision}f} "
-                f"to clear MIN_NOTIONAL ${min_notional:.2f} (requested notional=${notional_usd:.2f})",
-                "warning")
+        target = min_notional * 1.01
+        shortfall = target - quantity * current_price
+        if shortfall > 0:
+            steps = math.ceil(shortfall / (min_step * current_price))
+            bumped = round(quantity + steps * min_step, qty_precision)
+            log(f"{symbol}: qty bumped by {steps} step(s) {quantity:.{qty_precision}f} -> "
+                f"{bumped:.{qty_precision}f} to clear MIN_NOTIONAL ${min_notional:.2f} "
+                f"(requested notional=${notional_usd:.2f})", "warning")
+            quantity = bumped
 
         log(f"Placing MARKET {side} order: {symbol} qty={quantity:.{qty_precision}f} "
             f"(notional=${notional_usd:.2f} @ price={current_price:.4f})")
