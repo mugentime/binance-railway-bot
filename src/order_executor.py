@@ -388,19 +388,34 @@ class OrderExecutor:
             log(f"Order status NEW, waiting 1s to check if it fills...")
             time.sleep(1)
 
-            # Query the order to get updated status
-            query_params = {"symbol": symbol, "orderId": order['orderId']}
-            query_params = self._sign_params(query_params)
-            query_resp = self.client.get(
-                f"{config.BINANCE_BASE_URL}/fapi/v1/order",
-                params=query_params,
-                headers=self._headers()
-            )
-            query_resp.raise_for_status()
-            order = query_resp.json()
-            executed_qty = float(order.get('executedQty', 0))
-            avg_price = float(order.get('avgPrice', 0))
-            order_status = order.get('status', '')
+            # Query the order to get updated status. A MARKET order almost always fills
+            # before this runs, so a failure here (seen live: a transient 400 on this GET
+            # right after a FILLED MARKET order, 2026-11-15 EVAAUSDT) must not raise and abort
+            # the whole call -- that would leave a position that's actually open on the
+            # exchange with no tracked state and no TP1/SL ever placed (stranded, unprotected,
+            # until the next tick's ADOPTADO fallback catches it minutes later). Fall back to
+            # the live position instead of trusting this one confirmatory call.
+            try:
+                query_params = {"symbol": symbol, "orderId": order['orderId']}
+                query_params = self._sign_params(query_params)
+                query_resp = self.client.get(
+                    f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                    params=query_params,
+                    headers=self._headers()
+                )
+                query_resp.raise_for_status()
+                order = query_resp.json()
+                executed_qty = float(order.get('executedQty', 0))
+                avg_price = float(order.get('avgPrice', 0))
+                order_status = order.get('status', '')
+            except Exception as e:
+                log(f"Order status query failed ({e}) -- checking live position directly", "warning")
+                for pos in self.get_all_open_positions():
+                    if pos['symbol'] == symbol and abs(float(pos['positionAmt'])) > 0:
+                        executed_qty = abs(float(pos['positionAmt']))
+                        avg_price = float(pos.get('entryPrice', 0))
+                        order_status = 'FILLED'
+                        break
 
         # Validate order execution
         # Priority 1: Check if order actually filled
@@ -410,24 +425,37 @@ class OrderExecutor:
             log(f"Order response: {order}", "error")
             raise Exception(f"Market order did not execute (qty={executed_qty}, status={order_status})")
 
-        # Priority 2: If avgPrice is 0 but order is FILLED, query again to get avgPrice
+        # Priority 2: If avgPrice is 0 but order is FILLED, query again to get avgPrice.
+        # BUG FOUND 2026-11-15 (EVAAUSDT): this confirmatory GET failed with a 400 right after
+        # a real FILLED market order (order_status already says FILLED here -- we are not
+        # guessing), and the unguarded raise_for_status() aborted place_market_order with an
+        # exception. The caller (momentum_live.py try_entries) treats any exception as "entry
+        # never happened" and skips saving state/placing TP1+SL -- but the position WAS open on
+        # Binance, so it sat with zero protective orders for ~5 minutes until the next tick's
+        # ADOPTADO fallback caught it. avgPrice is cosmetic (the caller re-fetches entryPrice
+        # from the live position immediately after anyway) -- a failure to confirm it must never
+        # abort an order we already know filled.
         if avg_price == 0 and order_status == 'FILLED':
             log(f"avgPrice not in response, querying order to get avgPrice...")
             import time
             time.sleep(0.5)  # Brief wait for Binance to process
 
-            query_params = {"symbol": symbol, "orderId": order['orderId']}
-            query_params = self._sign_params(query_params)
-            query_resp = self.client.get(
-                f"{config.BINANCE_BASE_URL}/fapi/v1/order",
-                params=query_params,
-                headers=self._headers()
-            )
-            query_resp.raise_for_status()
-            order = query_resp.json()
-            avg_price = float(order.get('avgPrice', 0))
+            try:
+                query_params = {"symbol": symbol, "orderId": order['orderId']}
+                query_params = self._sign_params(query_params)
+                query_resp = self.client.get(
+                    f"{config.BINANCE_BASE_URL}/fapi/v1/order",
+                    params=query_params,
+                    headers=self._headers()
+                )
+                query_resp.raise_for_status()
+                order = query_resp.json()
+                avg_price = float(order.get('avgPrice', 0))
+            except Exception as e:
+                log(f"avgPrice query failed ({e}) -- order is already FILLED, "
+                    f"falling back to position entryPrice instead of aborting", "warning")
 
-            # If still 0, get from position (last resort)
+            # If still 0 (query failed, or succeeded but returned 0), get from position (last resort)
             if avg_price == 0:
                 log(f"avgPrice still 0 after query, getting from position...")
                 positions = self.get_all_open_positions()
