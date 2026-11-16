@@ -52,6 +52,27 @@ LOT_USD    = float(os.environ.get("MOM_LOT_USD", "6"))  # notional per entry (fi
 # 10x faster compounding than the 19% level that merely reproduces today's fixed $6/$32 sizing.
 LOT_FRAC   = float(os.environ.get("MOM_LOT_FRAC", "0.15"))
 LOT_CAP_USD = float(os.environ.get("MOM_LOT_CAP_USD", "2000"))  # hard ceiling vs a bad equity read
+
+# Losing-edge circuit breaker (added 2026-11-16, operator-directed): every prior autotune run
+# that found net realized P&L negative logged "no autonomous lever exists for a losing edge" and
+# moved on -- there was genuinely no mechanism to act on sustained drawdown short of a human
+# reading the log. This is that lever: track true-equity (marginBalance) peak-since-tracking in
+# the state file, and automatically REDUCE risk on NEW entries (never touch existing positions,
+# stop-loss/trailing-stop logic, leverage, or MAX_POS -- those stay governed by their own,
+# separately-validated guardrails) as drawdown from that peak grows:
+#   - >= MOM_DD_DERISK_PCT drawdown: halve the compounding fraction for new entries (floor
+#     MOM_MIN_LOT_FRAC) -- the bot keeps trading at reduced size, preserving the "must stay
+#     active" forward-test requirement.
+#   - >= MOM_DD_PAUSE_PCT drawdown: stop opening NEW entries entirely until equity recovers
+#     enough to drop the drawdown back under that threshold (peak only ever rises, so this
+#     self-resolves as equity recovers -- no separate resume threshold needed).
+# Fails open on any equity-read error (dd_pct=0.0) -- a transient API hiccup must never block
+# trading. Defaults are conservative, not yet validated by backtest (this account's whole
+# realized-P&L history to date is a single non-recurring sample, too small to fit a threshold
+# to) -- they exist so a losing streak has a real ceiling instead of none at all.
+DD_DERISK_PCT = float(os.environ.get("MOM_DD_DERISK_PCT", "0.20"))
+DD_PAUSE_PCT  = float(os.environ.get("MOM_DD_PAUSE_PCT", "0.35"))
+MIN_LOT_FRAC  = float(os.environ.get("MOM_MIN_LOT_FRAC", "0.03"))
 # NOTE: dedicated MOM_* keys so we never inherit stale A/B vars (e.g. the old LEVERAGE=5 still set
 # on the repurposed sub services). Reading "LEVERAGE" directly would silently trade at the wrong size.
 LEVERAGE   = int(os.environ.get("MOM_LEVERAGE", "10"))
@@ -204,7 +225,8 @@ def setup(ex, dry):
               if LOT_FRAC > 0 else f"${LOT_USD}/trade (fixed)")
     flog(f"SETUP {len(PAIRS)} pares | {LEVERAGE}x CROSSED | {sizing} | maxPos {MAX_POS} | "
          f"RSI>{RSI_ENTRY:.0f}&>EMA{EMA_LEN} | TP1 {TP1_ATR}·ATR x{SCALE_FRAC:.0%} | SL {SL_ATR}·ATR | "
-         f"trail {TRAIL_ATR}·ATR | holdcap {MAX_HOLD_H:.0f}h")
+         f"trail {TRAIL_ATR}·ATR | holdcap {MAX_HOLD_H:.0f}h | "
+         f"DDguard derisk@{DD_DERISK_PCT:.0%}/pause@{DD_PAUSE_PCT:.0%}")
     ok = []
     for s in PAIRS:
         if s not in ex.symbol_info_cache:
@@ -241,19 +263,35 @@ def callback_rate_from_atr(atr_abs, price):
     return max(0.1, min(5.0, round(cr, 1)))
 
 
-def current_lot_usd(ex):
-    """Entry notional for the next trade. Compounding (MOM_LOT_FRAC>0): a fraction of live
-    true equity (marginBalance, not just free/available margin). Falls back to the fixed
-    MOM_LOT_USD if compounding is disabled (LOT_FRAC<=0) or the equity fetch fails -- never
-    skip an entry just because the sizing call had a transient error."""
-    if LOT_FRAC <= 0:
-        return LOT_USD
+def equity_drawdown(ex, st):
+    """True-equity (marginBalance) peak-tracking drawdown guard -- see MOM_DD_DERISK_PCT/
+    MOM_DD_PAUSE_PCT above. The peak is persisted in the state file (under the reserved key
+    "_equity_peak", wrapped in a dict so the per-symbol state-cleanup loop in main() -- which
+    does `"entry" in st[s]` for every key -- never crashes on it) so a drawdown already
+    underway survives a restart/redeploy. Fails open (dd_pct=0.0, mb=None) on an equity-fetch
+    error: a transient API hiccup must never block trading, and the next successful read
+    re-establishes the correct peak/drawdown. Returns (dd_pct, margin_balance, peak)."""
     eq = _account_equity(ex)
-    if "error" in eq or eq.get("margin_balance", 0) <= 0:
-        flog(f"  WARN: equity fetch failed for compounding sizing ({eq.get('error', 'non-positive balance')}) "
-             f"-> falling back to fixed ${LOT_USD}")
+    mb = eq.get("margin_balance")
+    if "error" in eq or not mb or mb <= 0:
+        return 0.0, None, (st.get("_equity_peak") or {}).get("peak")
+    prev_peak = (st.get("_equity_peak") or {}).get("peak")
+    peak = mb if prev_peak is None or mb > prev_peak else prev_peak
+    st["_equity_peak"] = {"peak": peak}
+    return ((peak - mb) / peak if peak > 0 else 0.0), mb, peak
+
+
+def current_lot_usd(mb, dd_pct):
+    """Entry notional for the next trade, from a precomputed true-equity reading (mb) and
+    drawdown fraction (dd_pct) -- see equity_drawdown(). Compounding (MOM_LOT_FRAC>0): a
+    fraction of true equity, automatically halved (floored at MOM_MIN_LOT_FRAC) once drawdown
+    from the tracked peak reaches MOM_DD_DERISK_PCT. Falls back to the fixed MOM_LOT_USD if
+    compounding is disabled (LOT_FRAC<=0) or the equity read failed (mb is None) -- never
+    skip an entry just because the sizing/drawdown read had a transient error."""
+    if LOT_FRAC <= 0 or not mb or mb <= 0:
         return LOT_USD
-    return max(1.0, min(eq["margin_balance"] * LOT_FRAC, LOT_CAP_USD))
+    frac = max(LOT_FRAC * 0.5, MIN_LOT_FRAC) if dd_pct >= DD_DERISK_PCT else LOT_FRAC
+    return max(1.0, min(mb * frac, LOT_CAP_USD))
 
 
 # Never ride a position with no working protective order indefinitely. Added 2026-11-09 after
@@ -392,6 +430,11 @@ def try_entries(ex, universe, st, open_now, dry):
     room = MAX_POS - len(open_now)
     if room <= 0:
         flog(f"  sin cupo ({len(open_now)}/{MAX_POS} posiciones)"); return
+    dd_pct, mb, peak = (0.0, None, None) if dry else equity_drawdown(ex, st)
+    if not dry and dd_pct >= DD_PAUSE_PCT:
+        flog(f"  ENTRADAS PAUSADAS: drawdown {dd_pct:.1%} desde peak ${peak:.2f} (equity actual ${mb:.2f}) "
+             f">= {DD_PAUSE_PCT:.0%} -- posiciones existentes siguen protegidas, solo se bloquean entradas nuevas")
+        return
     cands = []
     for s in universe:
         if s in open_now:
@@ -408,7 +451,10 @@ def try_entries(ex, universe, st, open_now, dry):
     if not cands:
         flog("  sin señales de entrada este tick"); return
     flog(f"  señales: {', '.join(s.replace('USDT','') for s,_ in cands)} (cupo {room})")
-    lot_usd = LOT_USD if dry else current_lot_usd(ex)
+    lot_usd = LOT_USD if dry else current_lot_usd(mb, dd_pct)
+    if not dry and dd_pct >= DD_DERISK_PCT:
+        flog(f"  DERISK activo: drawdown {dd_pct:.1%} desde peak ${peak:.2f} >= {DD_DERISK_PCT:.0%} "
+             f"-> tamaño reducido a ${lot_usd:.2f}")
     for s, ind in cands[:room]:
         price = ind["close"]; atr = ind["atr"]
         if dry:
