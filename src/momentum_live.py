@@ -148,6 +148,13 @@ def _fmt(ex, sym, price=None, qty=None):
         out["qty"] = f"{ex._round_to_step_size(qty, info['stepSize']):.{info['quantityPrecision']}f}"
     return out
 
+def tp1_qty(ex, sym, live_amt):
+    """Rounded TP1 partial-exit quantity, or 0.0 if live_amt*SCALE_FRAC rounds down to zero at
+    this symbol's step size (small position vs. a coarse step, e.g. PAXG/XAUT at ~$4-6 notional
+    sizing) -- in that case a reduceOnly LIMIT at this qty is permanently invalid (Binance 400s
+    it every time), so callers must skip placing it rather than retry forever."""
+    return float(_fmt(ex, sym, qty=live_amt * SCALE_FRAC)["qty"])
+
 def place_reduce_limit(ex, sym, qty, price):
     f = _fmt(ex, sym, price=price, qty=qty)
     params = {"symbol": sym, "side": "SELL", "positionSide": "BOTH", "type": "LIMIT",
@@ -305,12 +312,20 @@ def manage(ex, sym, live_amt, st, dry):
                 oo = _open_order_types(ex, sym)
             except Exception:
                 oo = set()
+            tpq = tp1_qty(ex, sym, live_amt)
+            tp1_viable = tpq > 0
+            if not tp1_viable:
+                oo.add("LIMIT")  # structurally un-placeable here -- don't treat it as "missing"
             if not dry and ("LIMIT" not in oo or "STOP" not in oo):
                 flog(f"  {sym}: re-armo bracket (TP1 {TP1_ATR}·ATR, SL {SL_ATR}·ATR)")
                 try: ex.cancel_all_orders(sym)
                 except Exception: pass
-                try: place_reduce_limit(ex, sym, live_amt * SCALE_FRAC, entry + TP1_ATR * atr)
-                except Exception as e: flog(f"    {sym}: TP1 fallo ({e})")
+                if tp1_viable:
+                    try: place_reduce_limit(ex, sym, tpq, entry + TP1_ATR * atr)
+                    except Exception as e: flog(f"    {sym}: TP1 fallo ({e})")
+                else:
+                    flog(f"    {sym}: TP1 omitido (qty {live_amt}*{SCALE_FRAC:.0%} redondea a 0 -- "
+                         f"posicion demasiado pequeña para este step size, corre como runner completo)")
                 try:
                     place_stop_market(ex, sym, live_amt, entry - SL_ATR * atr)
                     meta["sl_fail"] = 0
@@ -409,7 +424,14 @@ def try_entries(ex, universe, st, open_now, dry):
             pos = ex.get_position(s)
             qty = abs(float(pos["positionAmt"])); avg = float(pos["entryPrice"]) or price
             ex.cancel_all_orders(s)
-            tp = place_reduce_limit(ex, s, qty * SCALE_FRAC, avg + TP1_ATR * atr)
+            # TP1 is a nice-to-have partial exit -- never let a failure (or a too-small qty that
+            # rounds to 0 at this symbol's step size) stop the protective SL below from being
+            # placed. A naked post-fill position is the one outcome the guardrails forbid.
+            tp = None
+            tpq = tp1_qty(ex, s, qty)
+            if tpq > 0:
+                try: tp = place_reduce_limit(ex, s, tpq, avg + TP1_ATR * atr)
+                except Exception as e: flog(f"  {s}: TP1 fallo al abrir ({e})")
             sl = place_stop_market(ex, s, qty, avg - SL_ATR * atr)
             st[s] = {"entry": avg, "entry_qty": qty, "atr": atr, "open_epoch": time.time(),
                      "scaled": False, "last_candle": ind["candle_ot"]}
