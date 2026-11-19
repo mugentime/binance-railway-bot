@@ -113,7 +113,22 @@ CULL_MIN_WINRATE = 0.35       # retire the symbol if its run win-rate is below t
 # history: these 6 drove the bulk of losses at sub-35% win over large samples). Without a seed a fresh
 # deploy would re-bleed for ~weeks before the dynamic cull re-accumulates 20 trades each. The dynamic
 # cull adds any FUTURE losers on top. Clear this list (or ENABLE_LOSER_CULL=False) to revert.
-CULL_SEED_RETIRED = ["CHIPUSDT", "MAGMAUSDT", "ORDIUSDT", "PROMUSDT", "QUSDT", "APRUSDT"]
+#
+# 2026-11-19: added ARIAUSDT and AGTUSDT from a Railway-routed backtest (88-symbol curated universe,
+# 46.9 real days of 5m candles, pair_scanner.py's ATR%/24h-volume filters + signal_scorer.py's exact
+# scoring + live TP/SL/trailing/breakeven/timeout/cooldown mechanics replicated). Both clear the
+# EXISTING CULL_MIN_TRADES/CULL_MIN_WINRATE bar on backtest data the live cull has been structurally
+# unable to accumulate (11 days live, max ~5-9 closes/symbol): ARIAUSDT n=25, WR=28.0%, net
+# -1.476%/trade; AGTUSDT n=31, WR=32.3%, net -0.702%/trade -- both <35% WR at >=20 trades, the bot's
+# own existing retirement rule. (BRUSDT, n=25/WR=28%/-0.350%%/trade in this same backtest window, was
+# deliberately NOT added: it has a real, larger historical sample as a proven winner -- 08-30->11-08:
+# +$106 net, 47% win -- so one 47-day backtest window disagreeing is treated as a regime wobble, not
+# a structural verdict, pending more live data.) The same backtest run swept ENTRY_THRESHOLD
+# 20/25/30/35/40/45/50 over all 480/468/462/454/453/437/439 trades respectively: win rate stayed
+# 30.8-36.1% and net expectancy stayed NEGATIVE (-0.275% to -0.434%/trade) at every level -- raising
+# the threshold alone does not clear the 50% gate or fix expectancy, so ENTRY_THRESHOLD was
+# deliberately left unchanged this run (honesty-over-action).
+CULL_SEED_RETIRED = ["CHIPUSDT", "MAGMAUSDT", "ORDIUSDT", "PROMUSDT", "QUSDT", "APRUSDT", "ARIAUSDT", "AGTUSDT"]
 
 # Overnight pause (2026-11-10): was blocking new entries 00:00-08:00 CST (operator-sleep / thin
 # liquidity). Disabled to run the bot 24/7 so the hourly optimizer gets ~50% more trade data during
