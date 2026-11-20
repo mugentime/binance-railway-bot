@@ -152,8 +152,14 @@ CULL_SEED_RETIRED = ["CHIPUSDT", "MAGMAUSDT", "ORDIUSDT", "PROMUSDT", "QUSDT", "
 
 # Overnight pause (2026-11-10): was blocking new entries 00:00-08:00 CST (operator-sleep / thin
 # liquidity). Disabled to run the bot 24/7 so the hourly optimizer gets ~50% more trade data during
-# its 48h trial. Set True to restore the nightly pause. (Weekend pause is separate, still ON.)
+# its 48h trial. Set True to restore the nightly pause. (Weekend pause is separate, see below.)
 ENABLE_OVERNIGHT_PAUSE = False
+
+# Weekend pause (2026-11-20): was blocking new entries Friday-Sunday CST (thin-liquidity weekend
+# risk control added after a 2026-08-02 -$93 losing chain that started Friday and ran through the
+# weekend). Disabled by explicit operator request to let the bot trade 24/7. Set True to restore
+# the weekend pause.
+ENABLE_WEEKEND_PAUSE = False
 
 # SMA Trend Filter (vars kept for reference; SMA computation removed from pair_scanner)
 SMA_PERIOD = 50

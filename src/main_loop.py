@@ -157,7 +157,11 @@ def is_weekend_pause() -> bool:
     Mon 00:00 UTC slipped in when the UTC pause lifted). Weekend thin liquidity
     drives deep losing chains (2026-08-02 loss analysis: the -$93 chain started
     Friday and ran through the weekend). weekday(): Mon=0 .. Fri=4, Sat=5, Sun=6.
+    Gated by config.ENABLE_WEEKEND_PAUSE -- when False the bot trades through the weekend.
     """
+    import config
+    if not getattr(config, "ENABLE_WEEKEND_PAUSE", True):
+        return False
     from datetime import datetime, timezone, timedelta
     cst_time = datetime.now(timezone.utc) + timedelta(hours=-6)
     return cst_time.weekday() in (4, 5, 6)
