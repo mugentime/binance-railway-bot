@@ -128,7 +128,27 @@ CULL_MIN_WINRATE = 0.35       # retire the symbol if its run win-rate is below t
 # 30.8-36.1% and net expectancy stayed NEGATIVE (-0.275% to -0.434%/trade) at every level -- raising
 # the threshold alone does not clear the 50% gate or fix expectancy, so ENTRY_THRESHOLD was
 # deliberately left unchanged this run (honesty-over-action).
-CULL_SEED_RETIRED = ["CHIPUSDT", "MAGMAUSDT", "ORDIUSDT", "PROMUSDT", "QUSDT", "APRUSDT", "ARIAUSDT", "AGTUSDT"]
+#
+# 2026-11-20: added USUSDT and GTCUSDT from a fresh Railway-routed backtest (86-symbol curated
+# universe minus the 8 symbols already retired above, 46.9 real days of 5m candles, same engine:
+# exact signal_scorer.py scoring + pair_scanner.py's ATR%/24h-volume filters + live TP/SL/
+# trailing/breakeven/timeout/cooldown mechanics). Both clear CULL_MIN_TRADES/CULL_MIN_WINRATE on
+# backtest data with no real live trade to contradict (zero real closes for either in the
+# persisted symbol_stats since 2026-11-08): USUSDT n=21, WR=28.6%, net -0.413%/trade; GTCUSDT
+# n=31, WR=29.0%, net -0.461%/trade. BRUSDT (n=22, WR=27.3%, net -0.692%/trade in this same run --
+# a SECOND consecutive backtest window below the floor) was again deliberately NOT added: it still
+# carries the large real 08-30->11-08 track record (+$106 net, 47% win) that outranks two backtest
+# windows per the precedent set above. MEGAUSDT (n=21, WR=23.8% in backtest) was also NOT added
+# despite clearing the trade-count bar: real trades this week (n=3, 1W/2L, net +$0.58) show the
+# OPPOSITE sign, so a thin real sample is trusted over backtest when they conflict (same logic as
+# BRUSDT). JCTUSDT (n=32, WR=40.6% in backtest, net -0.385%/trade; real trades this week were
+# worse, 1W/4L) stays un-culled: its backtest win rate clears the 35% floor even though net
+# expectancy is negative -- the existing rule is WR-gated, not PnL-gated, and widening the gate
+# itself is a bigger design change deferred to a future run. The same backtest run re-confirmed
+# the ENTRY_THRESHOLD finding above: sweeping 20/25/30/35 over 456/442/431/453 trades gave win
+# rates 32.5/31.7/32.7/30.0% and expectancy -0.197/-0.191/-0.303/-0.507%/trade -- flat-to-worse at
+# every higher level, so ENTRY_THRESHOLD is again left unchanged.
+CULL_SEED_RETIRED = ["CHIPUSDT", "MAGMAUSDT", "ORDIUSDT", "PROMUSDT", "QUSDT", "APRUSDT", "ARIAUSDT", "AGTUSDT", "USUSDT", "GTCUSDT"]
 
 # Overnight pause (2026-11-10): was blocking new entries 00:00-08:00 CST (operator-sleep / thin
 # liquidity). Disabled to run the bot 24/7 so the hourly optimizer gets ~50% more trade data during
