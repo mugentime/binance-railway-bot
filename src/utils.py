@@ -62,6 +62,7 @@ def save_state(manager, filepath=None):
         "chain_start_time": manager.chain_start_time,
         "symbol_stats": manager.symbol_stats,
         "retired_symbols": manager.retired_symbols,
+        "leverage_incompatible": manager.leverage_incompatible,
         "saved_at": datetime.utcnow().isoformat(),
     }
 

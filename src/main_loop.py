@@ -403,6 +403,7 @@ async def main_loop():
         manager.cooldown_blacklist = saved_state.get("cooldown_blacklist", {})
         manager.symbol_stats = saved_state.get("symbol_stats", {})
         manager.retired_symbols = saved_state.get("retired_symbols", [])
+        manager.leverage_incompatible = saved_state.get("leverage_incompatible", [])
         manager.max_adverse_excursion_pct = saved_state.get("max_adverse_excursion_pct", 0.0)
         manager.mae_candle = saved_state.get("mae_candle", 0)
         manager.trailing_active = saved_state.get("trailing_active", False)
@@ -760,7 +761,8 @@ async def main_loop():
             # Scan and score pairs
             pair_data = await scanner.scan_all_pairs()
             log("Scoring signals...")
-            blacklisted = list(set(manager.get_blacklisted_symbols()) | set(manager.get_retired_symbols()))
+            blacklisted = list(set(manager.get_blacklisted_symbols()) | set(manager.get_retired_symbols())
+                                | set(manager.get_leverage_incompatible_symbols()))
             signals = scorer.score_all_pairs(pair_data, blacklisted, regime_flipped=manager.regime_flipped)
 
             # Filter by safety blocks
@@ -804,6 +806,11 @@ async def main_loop():
                     leverage_ok = executor.set_leverage(candidate.symbol, config.LEVERAGE)
                     if not leverage_ok:
                         log(f"Skipping {candidate.symbol}: Leverage {config.LEVERAGE}x not supported, trying next signal", "warning")
+                        if candidate.symbol not in manager.leverage_incompatible:
+                            manager.leverage_incompatible.append(candidate.symbol)
+                            log(f"LEVERAGE CULL: {candidate.symbol} latched as leverage-incompatible — "
+                                f"exchange will not allow {config.LEVERAGE}x on this symbol, so it can "
+                                f"never fill; excluded from selection going forward (state-persisted).", "warning")
                         continue
 
                     try:

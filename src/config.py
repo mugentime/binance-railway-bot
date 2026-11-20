@@ -154,6 +154,24 @@ CULL_MIN_WINRATE = 0.35       # retire the symbol if its run win-rate is below t
 # every higher level, so ENTRY_THRESHOLD is again left unchanged.
 CULL_SEED_RETIRED = ["CHIPUSDT", "MAGMAUSDT", "ORDIUSDT", "PROMUSDT", "QUSDT", "APRUSDT", "ARIAUSDT", "AGTUSDT", "USUSDT", "GTCUSDT"]
 
+# Leverage-incompatible symbols (added 2026-11-20): a DIFFERENT exclusion from the win-rate cull
+# above, found by grepping 5 days of live deploy logs (2026-11-16->20) for "Leverage 20x not
+# supported" -- Binance rejects set_leverage(symbol, 20) with -4028 for these symbols (their max
+# leverage tier is below LEVERAGE), so a trade on them can NEVER fill; main_loop just falls through
+# to the next ranked candidate every single cycle they're the top signal. This is invisible to
+# CULL_MIN_TRADES/CULL_MIN_WINRATE above because a symbol that never fills never accrues a single
+# real trade, so it can never reach the cull's 20-trade sample gate -- it just repeatedly burns a
+# MAX_CANDIDATES_TO_TRY slot and (when it ranks #1) forces the bot down to a worse real candidate.
+# ARIAUSDT/AGTUSDT/GTCUSDT are already excluded via CULL_SEED_RETIRED for the separate win-rate
+# reason; listed here too so the leverage reason is documented and this list stays correct even if
+# CULL_SEED_RETIRED or ENABLE_LOSER_CULL ever changes. Unioned in main_loop.py unconditionally (not
+# gated by ENABLE_LOSER_CULL, since this isn't a strategy trade-off -- it's a hard exchange fact).
+# main_loop.py also self-heals this list going forward: any symbol whose set_leverage() call fails
+# live gets latched into manager.leverage_incompatible (persisted in state.json) the first time it
+# happens, so a future newly-added pair with the same issue is excluded after one failure instead
+# of needing another manual log-grep like this one.
+LEVERAGE_INCOMPATIBLE_SYMBOLS = ["AKEUSDT", "EVAAUSDT", "AINUSDT", "ARIAUSDT", "AGTUSDT", "GTCUSDT"]
+
 # Overnight pause (2026-11-10): was blocking new entries 00:00-08:00 CST (operator-sleep / thin
 # liquidity). Disabled to run the bot 24/7 so the hourly optimizer gets ~50% more trade data during
 # its 48h trial. Set True to restore the nightly pause. (Weekend pause is separate, see below.)

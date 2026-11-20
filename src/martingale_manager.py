@@ -60,6 +60,11 @@ class MartingaleManager:
         self.symbol_stats: Dict[str, Dict[str, int]] = {}
         self.retired_symbols: List[str] = []   # LATCHED: symbols the cull has retired for this run
 
+        # LATCHED (persisted in state.json): symbols whose set_leverage() call has failed live at
+        # least once (Binance -4028, exchange leverage tier too low) -- see config.
+        # LEVERAGE_INCOMPATIBLE_SYMBOLS for why this is tracked separately from retired_symbols.
+        self.leverage_incompatible: List[str] = []
+
         # Consecutive loss tracking for regime switching
         self.consecutive_losses: int = 0
         self.regime_flipped: bool = False  # True when regime is inverted
@@ -506,6 +511,14 @@ class MartingaleManager:
         if not config.ENABLE_LOSER_CULL:
             return []
         return list(set(self.retired_symbols) | set(config.CULL_SEED_RETIRED))
+
+    def get_leverage_incompatible_symbols(self) -> List[str]:
+        """Latched live set_leverage() failures UNIONed with the config seed list, for the
+        selection blacklist in main_loop. Unlike get_retired_symbols(), this is NEVER gated by
+        ENABLE_LOSER_CULL -- a symbol the exchange won't let the bot leverage at config.LEVERAGE
+        can never fill a trade regardless of strategy settings, so excluding it is not a cull
+        trade-off, it's just not wasting a candidate-try slot on something structurally dead."""
+        return list(set(self.leverage_incompatible) | set(config.LEVERAGE_INCOMPATIBLE_SYMBOLS))
 
     def is_timed_out(self, current_time: float) -> bool:
         """Check if position has exceeded max hold time"""
