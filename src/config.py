@@ -64,7 +64,11 @@ MAX_LEVEL = 2                 # Was 5 → 2 (2026-10-21). Monte Carlo (4000 boot
 LEVERAGE = 20                 # 20x leverage
 COOLDOWN_AFTER_MAX_LOSS = 3600  # 1 hour cooldown after blowing a full chain
 MAX_CHAIN_DURATION_HOURS = 48   # Force chain reset after 2 days (prevents 8-day chains)
-MAX_POSITION_PCT = 0.25       # EMERGENCY BRAKE: Never risk more than 25% of account in one position
+MAX_POSITION_PCT = 0.25       # EMERGENCY BRAKE: caps a chain's worst-case DOLLAR loss (already-realized
+                              # + this level's notional*SL_PCT) at 25% of chain_start_balance. Fixed
+                              # 2026-11-20 -- previously compared leveraged notional on both sides of
+                              # the check, which canceled LEVERAGE out and made the cap unreachable in
+                              # practice. See martingale_manager.position_size_usd() for the real math.
 DAILY_LOSS_LIMIT_USD = 1000.0   # Effectively disabled - high limit
 MAX_HOLD_CANDLES = 120        # Maximum candles to hold position before timeout close (5.0 hours at 2.5m scan interval)
 BREAKEVEN_HOLD_CANDLES = 72   # Close early if still negative after this many candles (3.0 hours at 2.5m scan interval)

@@ -104,12 +104,27 @@ class MartingaleManager:
         """
         calculated_size = self.base_size_usd() * (config.MARTINGALE_MULTIPLIER ** self.level) * config.LEVERAGE
 
-        # EMERGENCY BRAKE: Cap position at MAX_POSITION_PCT of account
-        max_allowed = self.chain_start_balance * config.MAX_POSITION_PCT * config.LEVERAGE
+        # EMERGENCY BRAKE (fixed 2026-11-20): cap actual DOLLAR RISK, not leveraged notional.
+        # Dollar risk if SL hits = notional * SL_PCT -- leverage only lowers the margin needed
+        # to open that notional, it does not change the PnL from a given price move. The old
+        # formula multiplied BOTH sides by LEVERAGE (calculated_size already has it baked in,
+        # and max_allowed multiplied it again), so the two LEVERAGE factors canceled out and
+        # the "25% of account" cap was actually ~5x the account's leveraged notional capacity --
+        # a threshold normal martingale sizing could never reach, i.e. the brake could never
+        # fire. This version caps the WHOLE CHAIN's worst-case loss (this level's risk plus
+        # whatever the chain has already realized) at MAX_POSITION_PCT of chain_start_balance,
+        # independent of LEVERAGE/BASE_SIZE_PCT/MARTINGALE_MULTIPLIER -- a real backstop against
+        # any future sizing change or bug, not just today's parameters.
+        realized_chain_loss = max(0.0, -sum(self.chain_pnl_history))
+        max_total_risk_usd = self.chain_start_balance * config.MAX_POSITION_PCT
+        remaining_risk_budget = max(0.0, max_total_risk_usd - realized_chain_loss)
+        max_allowed = remaining_risk_budget / config.SL_PCT
 
         if calculated_size > max_allowed:
-            log(f"🚨 EMERGENCY BRAKE: Position size ${calculated_size:.2f} exceeds maximum ${max_allowed:.2f} "
-                f"({config.MAX_POSITION_PCT*100:.0f}% of account) - CAPPING", "warning")
+            log(f"🚨 EMERGENCY BRAKE: Level {self.level} size ${calculated_size:.2f} would risk "
+                f"${calculated_size * config.SL_PCT:.2f} more if SL hits (chain already realized "
+                f"${realized_chain_loss:.2f} of ${max_total_risk_usd:.2f} = "
+                f"{config.MAX_POSITION_PCT*100:.0f}% of account cap) - CAPPING to ${max_allowed:.2f}", "warning")
             return max_allowed
 
         return calculated_size
