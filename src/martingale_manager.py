@@ -504,6 +504,20 @@ class MartingaleManager:
             f"WR {100*total_w/total_n:.1f}% | net PnL {format_usd(total_pnl)} | "
             f"expectancy {format_usd(total_pnl/total_n)}/trade")
 
+        # Per-pair breakdown (added 2026-11-21) so win-rate/expectancy PER SYMBOL is directly
+        # readable from the latest log line instead of re-scraping every WIN:/LOSS: line across
+        # history -- pure measurement, no effect on the cull or any trading decision.
+        ranked = sorted(
+            ((sym, s) for sym, s in self.symbol_stats.items() if s["n"] >= 2),
+            key=lambda kv: kv[1]["n"], reverse=True,
+        )
+        if ranked:
+            parts = [
+                f"{sym} n={s['n']} w={s['w']} wr={100*s['w']/s['n']:.0f}% pnl={format_usd(s.get('pnl', 0.0))}"
+                for sym, s in ranked
+            ]
+            log("PER-PAIR (persisted, n>=2): " + " | ".join(parts))
+
     def get_retired_symbols(self) -> List[str]:
         """Latched repeat-loser retirements (dynamic) UNIONed with the config seed list of already-
         proven losers, for the selection blacklist in main_loop so the scanner stops feeding
