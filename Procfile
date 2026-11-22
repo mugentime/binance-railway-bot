@@ -1,1 +1,1 @@
-web: python src/momentum_live.py --live
+web: sleep infinity
