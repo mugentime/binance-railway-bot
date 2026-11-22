@@ -278,6 +278,17 @@ def verify_and_sync_state(executor: OrderExecutor, manager: MartingaleManager) -
             save_state(manager)
             log(f"Adopted position: {manager.current_symbol} {manager.current_direction} @ "
                 f"{manager.entry_price:.6f} | Qty: {manager.entry_quantity}", "warning")
+            # Safety fix (2026-11-22): this path used to adopt the position with NO attempt to
+            # verify/place its SL, relying entirely on the periodic 5-candle check to notice —
+            # which left a real position unprotected for ~15 min minimum before the first retry.
+            # Try immediately, same as the sibling no-state/no-position-on-exchange-mismatch cases.
+            executor.verify_and_place_missing_sl(
+                symbol=manager.current_symbol,
+                direction=manager.current_direction,
+                tp_price=manager.tp_price(),
+                sl_price=manager.sl_price(),
+                quantity=manager.entry_quantity
+            )
             return True
 
         # Case 3: Both think position open - verify it's the SAME position
@@ -506,6 +517,12 @@ async def main_loop():
     consecutive_verify_failures = 0
     MAX_VERIFY_FAILURES = 30  # ~30 cycles (>1h at 2.5m) before forcing a clean restart
 
+    # Safety fix (2026-11-22): consecutive periodic missing-SL placement failures on the
+    # CURRENT position. Reset to 0 whenever the position closes/changes or a placement
+    # succeeds; see the "Periodic SL verification check" block below.
+    sl_failure_streak = 0
+    sl_failure_symbol = None
+
     try:
         while True:
             # Wait for next candle
@@ -678,6 +695,10 @@ async def main_loop():
 
                     # CRITICAL: Verify SL exists every 5 candles (safety check)
                     if candles_held % 5 == 0 and candles_held > 0:
+                        if sl_failure_symbol != manager.current_symbol:
+                            sl_failure_streak = 0
+                            sl_failure_symbol = manager.current_symbol
+
                         log(f"Periodic SL verification check (candle {candles_held})...")
                         sl_ok = executor.verify_and_place_missing_sl(
                             symbol=manager.current_symbol,
@@ -686,8 +707,58 @@ async def main_loop():
                             sl_price=manager.sl_price(),
                             quantity=manager.entry_quantity
                         )
-                        if not sl_ok:
-                            log(f"WARNING: SL verification failed for {manager.current_symbol}", "warning")
+                        if sl_ok:
+                            sl_failure_streak = 0
+                        else:
+                            sl_failure_streak += 1
+                            log(f"WARNING: SL verification failed for {manager.current_symbol} "
+                                f"({sl_failure_streak}/{config.SL_FAILURE_EMERGENCY_CLOSE_COUNT} consecutive)", "warning")
+
+                            # Safety fix (2026-11-22): this used to just log a warning forever.
+                            # Real incident: PIEVERSEUSDT sat naked (no SL on Binance) for ~3h
+                            # across ~14 failed retries with no escalation. After N consecutive
+                            # periodic failures, stop retrying and pull the position instead of
+                            # continuing to hold it unprotected.
+                            if sl_failure_streak >= config.SL_FAILURE_EMERGENCY_CLOSE_COUNT:
+                                log(f"CRITICAL: SL placement failed {sl_failure_streak}x in a row for "
+                                    f"{manager.current_symbol} (unprotected for >= "
+                                    f"{sl_failure_streak * 5} candles) — EMERGENCY MARKET CLOSE", "error")
+                                executor.cancel_all_orders(manager.current_symbol)
+                                try:
+                                    close_order = executor.close_position_market(
+                                        manager.current_symbol,
+                                        manager.current_direction,
+                                        manager.entry_quantity
+                                    )
+                                    exit_price = float(close_order["avgPrice"])
+                                    if close_order.get("alreadyClosed"):
+                                        log(f"ALREADY CLOSED: {manager.current_symbol} @ {exit_price:.6f} "
+                                            f"(SL algo order likely triggered)")
+                                    was_profitable = (
+                                        exit_price > manager.entry_price if manager.current_direction == "LONG"
+                                        else exit_price < manager.entry_price
+                                    )
+                                    if was_profitable:
+                                        manager.close_win(exit_price)
+                                    else:
+                                        manager.close_loss(exit_price)
+                                    save_state(manager)
+                                    log(f"EMERGENCY CLOSE (repeated SL failure): {manager.current_symbol} "
+                                        f"@ {exit_price:.6f}", "error")
+                                    stats = manager.stats()
+                                    log(f"STATS: {stats['total_trades']} trades | "
+                                        f"WR: {stats['win_rate']*100:.1f}% | "
+                                        f"PnL: {format_usd(stats['total_pnl'])} | "
+                                        f"Level: {stats['current_level']}")
+                                except Exception as e:
+                                    log(f"CRITICAL: Failed to emergency-close unprotected "
+                                        f"{manager.current_symbol}: {e}", "error")
+                                    log("MANUAL INTERVENTION REQUIRED - position may still be "
+                                        "open and unprotected on Binance!", "error")
+                                    import traceback
+                                    traceback.print_exc()
+                                sl_failure_streak = 0
+                                continue
 
                         # If we believe a trailing stop is armed but it's gone from the exchange,
                         # clear the flag so the block above re-arms it next cycle (still in profit).

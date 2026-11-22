@@ -71,6 +71,19 @@ MAX_POSITION_PCT = 0.25       # EMERGENCY BRAKE: caps a chain's worst-case DOLLA
                               # practice. See martingale_manager.position_size_usd() for the real math.
 DAILY_LOSS_LIMIT_USD = 1000.0   # Effectively disabled - high limit
 MAX_HOLD_CANDLES = 120        # Maximum candles to hold position before timeout close (5.0 hours at 2.5m scan interval)
+SL_FAILURE_EMERGENCY_CLOSE_COUNT = 3  # Safety fix (2026-11-22): the periodic "every 5 candles"
+                               # missing-SL check (main_loop.py) used to only log a WARNING on
+                               # failure and keep retrying forever. Real incident: PIEVERSEUSDT
+                               # LONG adopted via the untracked-position auto-recovery path (which
+                               # never calls SL placement at all) sat with NO stop-loss order on
+                               # Binance for ~3 hours (12:05-15:05 UTC 2026-11-22, candles 1-72),
+                               # with every one of the ~14 periodic SL-placement retries rejected
+                               # 400 by Binance, and no fallback. This is strictly a risk-REDUCING
+                               # change, not a TP/SL-economics change: after this many CONSECUTIVE
+                               # periodic SL-placement failures on the same open position (~15 min
+                               # at the 5-candle check interval), the bot force-closes the position
+                               # at market rather than continuing to hold it unprotected. Does not
+                               # touch TP_PCT/SL_PCT/entries/pairs/martingale sizing.
 BREAKEVEN_HOLD_CANDLES = 72   # Close early if still negative after this many candles (3.0 hours at 2.5m scan interval)
                                # NOTE: candles_held counts SCAN_INTERVAL_SECS (2.5m) cycles, NOT 5m klines.
                                # 30-day backtest: 72% of 10%+ moves take >3h to peak, so this must stay
