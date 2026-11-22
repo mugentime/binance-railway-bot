@@ -518,6 +518,47 @@ class MartingaleManager:
             ]
             log("PER-PAIR (persisted, n>=2): " + " | ".join(parts))
 
+        # Score-bucket + direction breakdown (added 2026-11-22) from the now-persisted
+        # self.history (see utils.save_state/main_loop's restore -- history was previously
+        # in-memory only and wiped every redeploy, the same blind spot PER-PAIR already solved
+        # for per-symbol data). Answers "do higher-score entries actually win more?" and
+        # "does LONG or SHORT carry the book?" directly from real trades, with no backtest and
+        # no effect on any trading decision (entry/exit logic reads neither of these buckets).
+        if len(self.history) >= 2:
+            def _score_bucket(s: float) -> str:
+                if s < 40:
+                    return "20-40"
+                if s < 60:
+                    return "40-60"
+                if s < 80:
+                    return "60-80"
+                return "80+"
+
+            buckets: Dict[str, Dict[str, float]] = {}
+            directions: Dict[str, Dict[str, float]] = {}
+            for t in self.history:
+                b = buckets.setdefault(_score_bucket(t.score), {"n": 0, "w": 0, "pnl": 0.0})
+                b["n"] += 1
+                b["w"] += 1 if t.outcome == "WIN" else 0
+                b["pnl"] += t.pnl_usd
+                dr = directions.setdefault(t.direction, {"n": 0, "w": 0, "pnl": 0.0})
+                dr["n"] += 1
+                dr["w"] += 1 if t.outcome == "WIN" else 0
+                dr["pnl"] += t.pnl_usd
+
+            bucket_order = ["20-40", "40-60", "60-80", "80+"]
+            bparts = [
+                f"{b} n={buckets[b]['n']} wr={100*buckets[b]['w']/buckets[b]['n']:.0f}% "
+                f"pnl={format_usd(buckets[b]['pnl'])}"
+                for b in bucket_order if b in buckets
+            ]
+            dparts = [
+                f"{dname} n={d['n']} wr={100*d['w']/d['n']:.0f}% pnl={format_usd(d['pnl'])}"
+                for dname, d in directions.items()
+            ]
+            log("SCORE-BUCKET (persisted): " + " | ".join(bparts))
+            log("DIRECTION (persisted): " + " | ".join(dparts))
+
     def get_retired_symbols(self) -> List[str]:
         """Latched repeat-loser retirements (dynamic) UNIONed with the config seed list of already-
         proven losers, for the selection blacklist in main_loop so the scanner stops feeding

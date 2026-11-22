@@ -8,6 +8,7 @@ import time
 import json
 import signal
 import sys
+from dataclasses import asdict
 from datetime import datetime
 
 # Persist state on the Railway volume when mounted (STATE_DIR env var), so
@@ -63,6 +64,11 @@ def save_state(manager, filepath=None):
         "symbol_stats": manager.symbol_stats,
         "retired_symbols": manager.retired_symbols,
         "leverage_incompatible": manager.leverage_incompatible,
+        # Per-trade history (score/direction/level/outcome/pnl), added 2026-11-22: previously
+        # in-memory only (manager.history was never in this dict), so it was wiped by every
+        # redeploy -- the same blind spot symbol_stats/PER-PAIR already solved for per-symbol
+        # data. Capped to the last 500 trades; pure measurement, read nowhere in trading logic.
+        "history": [asdict(t) for t in manager.history[-500:]],
         "saved_at": datetime.utcnow().isoformat(),
     }
 

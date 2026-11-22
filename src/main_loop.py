@@ -13,7 +13,7 @@ from utils import log, save_state, load_state, format_usd, setup_signal_handlers
 import config
 from pair_scanner import PairScanner
 from signal_scorer import SignalScorer
-from martingale_manager import MartingaleManager
+from martingale_manager import MartingaleManager, TradeRecord
 from order_executor import OrderExecutor
 from safety_checks import SafetyChecker
 import httpx
@@ -404,6 +404,14 @@ async def main_loop():
         manager.symbol_stats = saved_state.get("symbol_stats", {})
         manager.retired_symbols = saved_state.get("retired_symbols", [])
         manager.leverage_incompatible = saved_state.get("leverage_incompatible", [])
+        # Per-trade history restore (added 2026-11-22, see utils.save_state) -- reconstructs
+        # TradeRecord objects so score/direction/level breakdowns can accumulate across restarts
+        # instead of resetting to empty every redeploy. Missing/malformed entries are skipped
+        # rather than crashing startup on an older state.json saved before this field existed.
+        try:
+            manager.history = [TradeRecord(**t) for t in saved_state.get("history", [])]
+        except TypeError:
+            manager.history = []
         manager.max_adverse_excursion_pct = saved_state.get("max_adverse_excursion_pct", 0.0)
         manager.mae_candle = saved_state.get("mae_candle", 0)
         manager.trailing_active = saved_state.get("trailing_active", False)
