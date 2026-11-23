@@ -503,18 +503,41 @@ class OrderExecutor:
                 filled_quote += cq if cq > 0 else eq * price
 
         # MARKET-fallback the unfilled remainder so the chain is never left short.
+        # Guard against a sub-minimum-lot residual: if $remaining rounds to 0 quantity at
+        # this symbol's precision (e.g. $2.44 left on a symbol whose min lot is ~$3.40),
+        # place_market_order would get a Binance 400 on quantity=0, raise, and abort the
+        # WHOLE entry before TP/SL is placed -- stranding an already-real maker-filled
+        # position with no protection until the next periodic missing-SL self-heal cycle
+        # (seen live: PIEVERSEUSDT 2026-11-23T15:30Z, ~2.5min naked). Predict the fallback
+        # quantity first and skip the doomed order instead of letting it blow up the entry.
         remaining = notional_usd - filled_quote
         if remaining >= 1.0:
-            log(f"Maker entry {symbol}: ${remaining:.2f} unfilled after "
-                f"{config.MAKER_ENTRY_RETRIES} maker attempts -> MARKET fallback (taker)", "warning")
-            mkt = self.place_market_order(symbol, side, remaining)
-            meq = float(mkt.get("executedQty", 0) or 0)
-            mcq = float(mkt.get("cumQuote", 0) or 0)
-            mavg = float(mkt.get("avgPrice", 0) or 0)
-            if meq > 0:
-                filled_qty += meq
-                filled_quote += mcq if mcq > 0 else meq * mavg
-                mkt_qty += meq
+            qty_precision = self.symbol_info_cache[symbol]["quantityPrecision"]
+            best_bid, best_ask = self._get_best_bid_ask(symbol)
+            est_price = best_bid if side == "SELL" else best_ask
+            est_qty = round_down(remaining / est_price, qty_precision) if est_price > 0 else 0
+            if est_qty <= 0:
+                log(f"Maker entry {symbol}: ${remaining:.2f} residual rounds to 0 qty at this "
+                    f"symbol's lot precision -- below minimum tradable size, accepting the "
+                    f"maker fill as the entry rather than risking a doomed 0-qty MARKET order "
+                    f"that would abort the whole entry and strand TP/SL placement", "warning")
+            else:
+                log(f"Maker entry {symbol}: ${remaining:.2f} unfilled after "
+                    f"{config.MAKER_ENTRY_RETRIES} maker attempts -> MARKET fallback (taker)", "warning")
+                try:
+                    mkt = self.place_market_order(symbol, side, remaining)
+                    meq = float(mkt.get("executedQty", 0) or 0)
+                    mcq = float(mkt.get("cumQuote", 0) or 0)
+                    mavg = float(mkt.get("avgPrice", 0) or 0)
+                    if meq > 0:
+                        filled_qty += meq
+                        filled_quote += mcq if mcq > 0 else meq * mavg
+                        mkt_qty += meq
+                except Exception as e:
+                    log(f"Maker entry {symbol}: MARKET fallback for ${remaining:.2f} residual "
+                        f"failed ({e}) -- accepting the maker-filled qty={filled_qty} as the "
+                        f"entry rather than aborting an already-real position's TP/SL placement",
+                        "warning")
 
         if filled_qty <= 0:
             raise Exception(f"Maker entry {symbol} {side}: nothing filled (maker + MARKET fallback)")
